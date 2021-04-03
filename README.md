@@ -15,4 +15,4 @@ I uploaded a video on my portuguese channel comparing it to Python and C, check 
 
 Wlang is currently in alpha and not available to the general public yet. Launching a language while it is in development is not a good idea at the moment because I can't focus on its development and bug track.
 If you like this project and want to contribute, please consider donating or subscribing to my youtube channel, where I'll post a dev log of this language.
-Also, join the discussion here on github about the future and your toughts on the language!
+Also, join the discussion here on github about the future and your thoughts on the language!
