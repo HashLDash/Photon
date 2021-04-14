@@ -10,7 +10,7 @@ Wlang applications can run in any platform. Some examples are: Windows, Linux, M
 # I want to see it!
 
 Devlog is available [here](https://www.youtube.com/watch?v=Seu5q_hc6go&list=PL89TmjrkwpOfteQJRptqmK-y8pr6uJdlc).
-I uploaded a video on my portuguese channel comparing it to Python and C, check it out [here](https://youtu.be/_8xtTyCTPXI).
+I also uploaded a video on my portuguese channel comparing it to Python and C, check it out [here](https://youtu.be/_8xtTyCTPXI).
 
 # ALPHA Stage
 
