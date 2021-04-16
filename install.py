@@ -1,0 +1,1 @@
+# Photon installer script
