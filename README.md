@@ -1,4 +1,5 @@
 
+---
 **Documentation in English**
 # Wlang 
 
@@ -22,9 +23,9 @@ Wlang is currently in alpha and not available to the general public yet. Launchi
 If you like this project and want to contribute, please consider donating or subscribing to my youtube [channel](https://www.youtube.com/channel/UChE5M9BAsdtlllOpfhIu8Tw), where I'll post a dev log of this language ([devlog](https://www.youtube.com/watch?v=Seu5q_hc6go&list=PL89TmjrkwpOfteQJRptqmK-y8pr6uJdlc)).
 Also, join the discussion here on github about the future and your thoughts on the language!
 
-
 </details>
 
+---
 
 **Documentação em português**
 
@@ -48,5 +49,6 @@ Wlang está atualmente em alfa e não está disponível para o público em geral
 Se você gosta deste projeto e deseja contribuir, considere doar ou se inscrever no meu [canal youtube](https://www.youtube.com/channel/UChE5M9BAsdtlllOpfhIu8Tw) , onde postarei um dev log desta linguagem ([devlog](https://www.youtube.com/watch?v=Seu5q_hc6go&list=PL89TmjrkwpOfteQJRptqmK-y8pr6uJdlc)).
 Além disso, participe da discussão aqui no github sobre o futuro e sua opinião sobre a linguagem!
 
-
 </details>
+
+---
