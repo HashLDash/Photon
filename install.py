@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # Photon installer script
 
 import os
