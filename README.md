@@ -35,10 +35,10 @@ Linguagem de programação extremamente rápida e portátil!
 
 # O que é Wlang?
 
-Wlang é uma linguagem de programação que visa preencher as lacunas da linguagem Python no que diz respeito ao desempenho e portabilidade. Eu amo Python, mas não posso usá-lo em qualquer lugar que eu queira porque não é uma linguagem compatível com a plataforma, não tem desempenho ou é muito complicado empacotá-lo ou implantá-lo.
-Os aplicativos Wlang podem ser executados em qualquer plataforma. Alguns exemplos são: Windows, Linux, MacOS, BSD, Android, IOs, RaspberryPi, HTML5, Xbox, Playstation, etc.
+Wlang é uma linguagem de programação que visa preencher as lacunas da linguagem Python no que diz respeito ao desempenho e portabilidade. Eu amo Python, mas não posso usá-lo em qualquer lugar que eu queira porque não é uma nativamente suportada, não tem desempenho suficiente ou aprensenta muitas complicações para distribuir um executável na plataforma de destino.
+Por outro lado, os aplicativos Wlang podem ser facilmente executados em qualquer plataforma. Alguns exemplos são: Windows, Linux, MacOS, BSD, Android, IOs, RaspberryPi, HTML5, Xbox, Playstation, etc.
 
-# Eu quero ve-lo!
+# Quero ver!
 
 O Devlog está disponível [aqui](https://www.youtube.com/watch?v=Seu5q_hc6go&list=PL89TmjrkwpOfteQJRptqmK-y8pr6uJdlc).
 Também carreguei um vídeo no meu canal português comparando-o com Python e C, confira [aqui](https://youtu.be/_8xtTyCTPXI).
