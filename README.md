@@ -1,4 +1,6 @@
+
 # Wlang
+<details><summary>Documentation in English</summary>
 
 Lightning fast and portable programming language!
 
@@ -19,14 +21,12 @@ If you like this project and want to contribute, please consider donating or sub
 Also, join the discussion here on github about the future and your thoughts on the language!
 
 
+</details>
 
 
 
-
-
-
-
-# Wlang
+<h1>Wlang</h1>
+<details><summary>Documentação em português</summary>
 
 Linguagem de programação extremamente rápida e portátil!
 
@@ -45,3 +45,6 @@ Também carreguei um vídeo no meu canal português comparando-o com Python e C,
 Wlang está atualmente em alfa e não está disponível para o público em geral ainda. Lançar uma linguagem enquanto ela está em desenvolvimento não é uma boa ideia no momento porque não posso me concentrar em seu desenvolvimento e rastreamento de bug.
 Se você gosta deste projeto e deseja contribuir, considere doar ou se inscrever no meu [canal youtube](https://www.youtube.com/channel/UChE5M9BAsdtlllOpfhIu8Tw) , onde postarei um dev log desta linguagem ([devlog](https://www.youtube.com/watch?v=Seu5q_hc6go&list=PL89TmjrkwpOfteQJRptqmK-y8pr6uJdlc)).
 Além disso, participe da discussão aqui no github sobre o futuro e sua opinião sobre a linguagem!
+
+
+</details>
