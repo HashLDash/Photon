@@ -1,6 +1,8 @@
 
-# Wlang
-<details><summary>Documentation in English</summary>
+**Documentation in English**
+# Wlang 
+
+<details><summary>Know more.</summary>
 
 Lightning fast and portable programming language!
 
@@ -24,10 +26,10 @@ Also, join the discussion here on github about the future and your thoughts on t
 </details>
 
 
+**Documentação em português**
 
-<h1>Wlang</h1>
-<details><summary>Documentação em português</summary>
-
+# Wlang
+<details><summary>Saiba mais.</summary>
 Linguagem de programação extremamente rápida e portátil!
 
 # O que é Wlang?
