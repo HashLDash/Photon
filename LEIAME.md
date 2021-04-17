@@ -1,9 +1,9 @@
-# Wlang
+# Photon
 Will's lightning fast and portable programming language!
 
-# O que é Wlang?
+# O que é Photon?
 
-Wlang é uma linguagem de programação com uma sintaxe bem amigável e parecida com Python, porém muuuiitoo mais rápida :)
+Photon é uma linguagem de programação com uma sintaxe bem amigável e parecida com Python, porém muuuiitoo mais rápida :)
 É uma linguagem que pode ser compilada para todas as plataformas e também possui um interpretador (REPL).
 
 Basicamente, o objetivo da linguagem é preencher as lacunas do Python em performance e portabilidade. Atualmente o Wlang já tem uma performance muito superior ao Python e pode ser compilada e distribuída para qualquer plataforma, de forma nativa ou não, e utilizando diversos frameworks para parte gráfica como Kha, Cordova, Flutter e Raylib.
