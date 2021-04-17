@@ -55,4 +55,4 @@ Além disso, participe da discussão aqui no github sobre o futuro e sua opiniã
 
 # Discord
 
-[discord](https://discord.gg/XJxhps6h)
+[discord](https://discord.gg/GdgAVEuY92)
