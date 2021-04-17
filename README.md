@@ -53,6 +53,6 @@ Além disso, participe da discussão aqui no github sobre o futuro e sua opiniã
 
 ---
 
-#Discord
+# Discord
 
 [discord](https://discord.gg/XJxhps6h)
