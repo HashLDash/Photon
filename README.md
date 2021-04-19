@@ -1,7 +1,9 @@
 <h1 align="center">Photon</h1>
 
 <p align="center"><img src="https://img.shields.io/badge/installing%20on-linux%20%7C%20mac-informational" alt="Install on">
-<img src="https://img.shields.io/badge/converting%20to-python%20%7C%20c%20%7C%20d%20%7C%20dart%20%7C%20haxe%20%7C%20javascript-blue" alt="Install on"></p>
+<img src="https://img.shields.io/badge/converting%20to-python%20%7C%20c%20%7C%20d%20%7C%20dart%20%7C%20haxe%20%7C%20javascript-blue" alt="Convert to">
+<img src="https://img.shields.io/badge/running-everywhere-success" alt="Run in"></p>
+
 <p align="center"><a href="https://www.youtube.com/channel/UCjxrE6D_P9X_HnSW2mpw1BQ"><img src="https://img.shields.io/youtube/channel/subscribers/UCjxrE6D_P9X_HnSW2mpw1BQ?label=HashLDash&style=social" alt="PT-BR Channeç"></a>
 <a href="https://github.com/HashLDash/Photon/issues"><img src="https://img.shields.io/badge/contributions-welcome-brightgreen.svg" alt="Contributions Welcome"></a>
 <a href="https://discord.gg/GdgAVEuY92"><img src="https://img.shields.io/discord/832730262281650217?color=%237289d9&label=chat&logo=discord&logoColor=%237289d9" alt="Discord Server"></a></p>
