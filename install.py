@@ -22,7 +22,6 @@ if sys.platform in {'linux','darwin'}:
         print(
         "Please run this script with the command 'sudo'",
         "example 'sudo python3 install.py'")
-    os.chmod('/usr/local/bin/photon',0o777)
 elif sys.platform == 'win32':
     p_dir = os.path.expandvars('%ProgramFiles%\\Photon')
     try:
