@@ -11,9 +11,17 @@ with open('photon.py') as w:
 code = code.replace('@PHOTON_INSTALL_PATH', f'r"{os.getcwd()}/"')
 
 if sys.platform in {'linux','darwin'}:
-    with open('/usr/local/bin/photon','w') as w:
-        w.write(code)
+    try:
+        with open('/usr/local/bin/photon','w') as w:
+            w.write(code)
 
+    os.chmod('/usr/local/bin/photon',0o777)
+        print("Successfully installed!")
+    except PermissionError:
+
+        print(
+        "Please run this script with the command 'sudo'",
+        "example 'sudo python3 install.py'")
     os.chmod('/usr/local/bin/photon',0o777)
 elif sys.platform == 'win32':
     p_dir = os.path.expandvars('%ProgramFiles%\\Photon')
