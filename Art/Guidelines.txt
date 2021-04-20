@@ -1,5 +1,0 @@
-- Logos must be unique
-- Don't use images from the internet in the design
-- Logos that are similar to other logos will not be added
-- Save your logo ideas into a separate svg file (You can add as many ideas as you want in your svg file)
-- If you followed all of these guidelines, send a PR
