@@ -15,7 +15,7 @@ if sys.platform in {'linux','darwin'}:
         with open('/usr/local/bin/photon','w') as w:
             w.write(code)
 
-    os.chmod('/usr/local/bin/photon',0o777)
+        os.chmod('/usr/local/bin/photon',0o777)
         print("Successfully installed!")
     except PermissionError:
 
