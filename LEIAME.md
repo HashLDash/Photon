@@ -1,5 +1,17 @@
+<h1 align="center">Photon</h1>
+
+<p align="center"><img src="https://img.shields.io/badge/Instalando%20no-linux%20%7C%20mac-informational" alt="Install on">
+<img src="https://img.shields.io/badge/Convertendo%20para-python%20%7C%20c%20%7C%20d%20%7C%20dart%20%7C%20haxe%20%7C%20javascript-blue" alt="Convert to">
+<img src="https://img.shields.io/badge/Rodando-em%20tudo-success" alt="Run in"></p>
+
+<p align="center"><a href="https://www.youtube.com/channel/UCjxrE6D_P9X_HnSW2mpw1BQ"><img src="https://img.shields.io/youtube/channel/subscribers/UCjxrE6D_P9X_HnSW2mpw1BQ?label=HashLDash&style=social" alt="PT-BR Channeç"></a>
+<a href="https://github.com/HashLDash/Photon/issues"><img src="https://img.shields.io/badge/Contribui%C3%A7%C3%B5es-Bem%C2%ACVindo-brightgreen.svg" alt="Contributions Welcome"></a>
+<a href="https://discord.gg/GdgAVEuY92"><img src="https://img.shields.io/discord/832730262281650217?color=%237289d9&label=chat&logo=discord&logoColor=%237289d9" alt="Discord Server"></a></p>
+
+
+
 # Photon
-Will's lightning fast and portable programming language!
+Linguagem de programação extremamente rápida e portátil do Will!
 
 # O que é Photon?
 
