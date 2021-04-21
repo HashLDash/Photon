@@ -8,7 +8,7 @@ import sys
 with open('core/photon.py') as w:
     code = w.read()
 
-code = code.replace('@PHOTON_INSTALL_PATH', f'r"{os.getcwd()}/"')
+code = code.replace('@PHOTON_INSTALL_PATH', f'r"{os.getcwd()}/core"')
 
 if sys.platform in {'linux','darwin'}:
     try:
