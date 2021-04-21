@@ -12,5 +12,5 @@ try:
         print("It has nothing to be removed!")
 except PermissionError:
     print(
-        "Please run this script with the command 'sudo'",
-        "example 'sudo python3 uninstaller.py'")
+        " Please run this script with the 'sudo' command\n",
+        "Example:\n   'sudo python3 uninstall.py'")

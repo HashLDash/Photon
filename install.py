@@ -5,7 +5,7 @@
 import os
 import sys
 
-with open('photon.py') as w:
+with open('core/photon.py') as w:
     code = w.read()
 
 code = code.replace('@PHOTON_INSTALL_PATH', f'r"{os.getcwd()}/"')
@@ -20,8 +20,8 @@ if sys.platform in {'linux','darwin'}:
     except PermissionError:
 
         print(
-        "Please run this script with the command 'sudo'",
-        "example 'sudo python3 install.py'")
+        " Please run this script with the 'sudo' command.\n",
+        "Example:\n    'sudo python3 install.py'")
 elif sys.platform == 'win32':
     p_dir = os.path.expandvars('%ProgramFiles%\\Photon')
     try:
