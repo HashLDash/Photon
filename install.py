@@ -5,10 +5,10 @@
 import os
 import sys
 
-with open('photon.py') as w:
+with open('core/photon.py') as w:
     code = w.read()
 
-code = code.replace('@PHOTON_INSTALL_PATH',f'"{os.getcwd()}/"')
+code = code.replace('@PHOTON_INSTALL_PATH',f'"{os.getcwd()}/core"')
 
 if sys.platform in {'linux','darwin'}:
     try:
@@ -20,7 +20,7 @@ if sys.platform in {'linux','darwin'}:
     except PermissionError:
 
         print(
-        "Please run this script with the command 'sudo'",
-        "example 'sudo python3 install.py'")
+        " Please run this script with the 'sudo' command.\n",
+        "Example:\n    'sudo python3 install.py'")
 else:
     print('Automatic installation in this system is not supported yet.')
