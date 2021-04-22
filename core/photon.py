@@ -44,10 +44,10 @@ if __name__ == "__main__":
             defaultConfig = {}
         variable, value = command.split('=')
         vairable, value = variable.strip(), value.strip()
-        if variable in ['defaultLang']:
+        if variable in ['lang']:
             if value in ['c', 'd', 'dart', 'haxe', 'js']:
-                print(f'Setting defaultLang to {value}')
-                defaultConfig['defaultLang'] = value
+                print(f'Setting default lang to {value}')
+                defaultConfig['lang'] = value
             else:
                 print('Error: Invalid lang. Available langs are: c, d, dart, haxe and js')
         else:
@@ -58,7 +58,7 @@ if __name__ == "__main__":
         print('Available commands:')
         print('    photon [file.w] Runs the script using the default lang')
         print('    photon build [platform] Builds and runs the project for the target platform')
-        print('    photon set defaultLang=[lang] Set the default language to [lang]')
+        print('    photon set lang=[lang] Set the default language to [lang]')
     elif first == 'android-view':
         import os
         os.system('adb exec-out screenrecord --output-format=h264 - | ffplay -framerate 60 -probesize 32 -sync video  -')
@@ -68,7 +68,7 @@ if __name__ == "__main__":
         import json
         try:
             with open(f'{Path.home()}/.photon/photon.conf','r') as conf:
-                lang = json.load(conf)['defaultLang']
+                lang = json.load(conf)['lang']
         except Exception as e:
             #print(f'Error: {e} loading default lang. Using c')
             #print(f'You can change that using "photon set defaultLang=lang"')
