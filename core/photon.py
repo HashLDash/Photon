@@ -4,7 +4,9 @@
 
 if __name__ == "__main__":
     import sys
-    sys.path.insert(0, @PHOTON_INSTALL_PATH)
+    import os
+    PHOTON_INSTALL_PATH = os.path.dirname(os.path.realpath(__file__))
+    sys.path.insert(0, PHOTON_INSTALL_PATH)
     from interpreter import Interpreter
     from builder import Builder
     try:
@@ -18,7 +20,7 @@ if __name__ == "__main__":
     if first == 'build':
         try:
             platform = sys.argv[2]
-            Builder(platform, standardLibs=@PHOTON_INSTALL_PATH+'Libs/')
+            Builder(platform, standardLibs=os.path.join(PHOTON_INSTALL_PATH, 'Libs/'))
         except IndexError:
             print('Welcome to Photon builder!')
             print('')
@@ -60,7 +62,6 @@ if __name__ == "__main__":
         print('    photon build [platform] Builds and runs the project for the target platform')
         print('    photon set lang=[lang] Set the default language to [lang]')
     elif first == 'android-view':
-        import os
         os.system('adb exec-out screenrecord --output-format=h264 - | ffplay -framerate 60 -probesize 32 -sync video  -')
     else:
         filename = first
@@ -73,4 +74,4 @@ if __name__ == "__main__":
             #print(f'Error: {e} loading default lang. Using c')
             #print(f'You can change that using "photon set defaultLang=lang"')
             lang = 'c'
-        Interpreter(filename, lang=lang, standardLibs=@PHOTON_INSTALL_PATH+'/Libs/').run()
+        Interpreter(filename, lang=lang, standardLibs=os.path.join(PHOTON_INSTALL_PATH, 'Libs/')).run()
