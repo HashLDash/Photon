@@ -68,7 +68,7 @@ class Interpreter():
             else:
                 if not self.transpileOnly:
                     self.engine.run()
-                    exit()
+                    sys.exit()
                 else:
                     self.engine.write()
                     self.classes = self.engine.classes

@@ -5,7 +5,7 @@
 if __name__ == "__main__":
     import sys
     import os
-    PHOTON_INSTALL_PATH = os.path.dirname(os.path.realpath(__file__))
+    PHOTON_INSTALL_PATH = getattr(sys, '_MEIPASS', os.path.dirname(os.path.realpath(__file__)))
     sys.path.insert(0, PHOTON_INSTALL_PATH)
     from interpreter import Interpreter
     from builder import Builder
@@ -16,7 +16,7 @@ if __name__ == "__main__":
         print('Or try:')
         print('    photon --help')
         print('To see more options')
-        exit()
+        sys.exit()
     if first == 'build':
         try:
             platform = sys.argv[2]
