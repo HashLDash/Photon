@@ -5,7 +5,7 @@ _build
 .vscode
 docs/_static/pypi.svg
 .tox
-__pycache__
+__pycache__/
 black.egg-info
 build/
 dist/
@@ -17,4 +17,3 @@ src/_black_version.py
 *.swp
 .hypothesis/
 venv/
-core/__pycache__

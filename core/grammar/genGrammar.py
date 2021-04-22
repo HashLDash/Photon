@@ -27,6 +27,14 @@ def genRules(val):
             terms.append((v,))
     return list(product(*terms))
 
+def createGrammar(grammar):
+    with open('generatedGrammar.py', 'w') as g:
+        g.write('patterns = {\n')
+        for feature, patterns in grammar.items():
+            for pattern in patterns:
+                g.write(f'  {pattern}: {feature},\n')
+        g.write('}')
+
 with open(grammar, 'r') as g:
     generated = {}
     inDefinition = ''
@@ -44,4 +52,4 @@ with open(grammar, 'r') as g:
     if patterns:
         generated[inDefinition] = list(patterns)
         patterns = []
-    pprint(generated)
+    createGrammar(generated)
