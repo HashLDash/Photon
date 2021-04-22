@@ -35,7 +35,8 @@ if __name__ == "__main__":
             print('Please provide the package name. Ex:\n    photon logcat com.photon.example')
     elif first == 'set':
         command = ' '.join(sys.argv[2:])
-        import json, os, pathlib
+        import json
+        import pathlib
         home = pathlib.Path.home()
         if not '.photon' in os.listdir(home):
             os.mkdir(f'{home}/.photon')
