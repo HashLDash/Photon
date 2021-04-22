@@ -40,6 +40,8 @@ with open(grammar, 'r') as g:
     inDefinition = ''
     patterns = []
     for l in g:
+        if l.startswith('#'):
+            continue
         if '=' in l:
             if patterns:
                 generated[inDefinition] = list(patterns)

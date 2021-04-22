@@ -1,7 +1,10 @@
 patterns = {
+  ('hashtag',): comment,
+  ('singleQuote',): string,
+  ('doubleQuote',): string,
   ('var', 'underline', 'var'): var,
-  ('var', 'dot', 'var'): var,
-  ('var', 'plus', 'var'): var,
-  ('var', 'equal', 'var'): var,
-  ('var', 'dot', 'var'): var,
+  ('underline', 'var'): var,
+  ('var', 'underline'): var,
+  ('underline',): var,
+  ('value', 'dot', 'value'): floatNumber,
 }
