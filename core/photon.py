@@ -30,7 +30,7 @@ if __name__ == "__main__":
     elif first == 'logcat':
         try:
             packageName = sys.argv[2]
-            s.call("adb shell 'logcat --pid=$(pidof -s {packageName})'", shell=True)
+            os.system(f"adb shell 'logcat --pid=$(pidof -s {packageName})'")
         except IndexError:
             print('Please provide the package name. Ex:\n    photon logcat com.photon.example')
     elif first == 'set':
