@@ -1,0 +1,11 @@
+comment = hashtag
+
+string = singleQuote
+    | doubleQuote
+
+var = var underline var
+    | underline var
+    | var underline
+    | underline
+
+floatNumber = value dot value
