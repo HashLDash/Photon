@@ -16,7 +16,7 @@ if sys.platform in {'linux', 'linux2', 'darwin'}:
         with open('/usr/local/bin/photon','w') as w:
             w.write(code)
         os.chmod('/usr/local/bin/photon',0o777)
-        print("Successfully installed!")
+        print("Successfully installed! Now you can use the photon command!")
     except PermissionError:
         print(
         " Please run this script with the 'sudo' command.\n",
@@ -31,6 +31,7 @@ elif sys.platform in {'win32', 'cygwin', 'msys'}:
         with open(os.path.join(p_dir, 'photon.bat'), 'w') as w:
             w.write('@echo off\nset bat_dir=%~dp0\npython "%bat_dir%photon.py"')
         os.system(f'setx /M PATH "%PATH%;{p_dir}"')
+        print("Successfully installed! Now you can use the photon command!")
     except PermissionError:
         print('The installation has not been completed. Try to run the script as administrator')
 else:
