@@ -1,0 +1,14 @@
+Package:photon
+Version: 0.2
+Priority:
+Architecture: all
+Essential:
+Depends:python3 (>=3.6.0)
+Pre-depends:
+Suggests: gcc
+Installed-Size:
+Maintainer: William Scaff
+Conflicts:
+Replaces:
+Provides:
+Description: Lightning fast and portable programming language!

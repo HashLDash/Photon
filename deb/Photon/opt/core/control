@@ -1,0 +1,14 @@
+Package:photon
+Version: 0.1
+Priority:
+Architecture: all
+Essential:
+Depends:
+Pre-depends:python3.6
+Suggests:
+Installed-Size:
+Maintainer: William
+Conflicts:
+Replaces:
+Provides:
+Description: Lightning fast and portable programming language!
