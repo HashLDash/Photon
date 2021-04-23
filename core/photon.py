@@ -50,6 +50,10 @@ if __name__ == "__main__":
         if variable in ['lang']:
             if value in ['c', 'd', 'dart', 'haxe', 'js']:
                 print(f'Setting default lang to {value}')
+                if not haveDependencies(value, sys.platform):
+                    resolveDependencies(value, sys.platform)
+                    print('Dependencies successfuly installed.')
+                    exit()
                 defaultConfig['lang'] = value
             else:
                 print('Error: Invalid lang. Available langs are: c, d, dart, haxe and js')
