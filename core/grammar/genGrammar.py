@@ -7,7 +7,7 @@ try:
     grammar = sys.argv[1]
 except:
     print('Please, provide a grammar')
-    exit()
+    sys.exit()
 
 def genRules(val):
     vals = [ i for i in re.split('(\W)', val) if not (i=='' or i==' ' or i=='\n') ]

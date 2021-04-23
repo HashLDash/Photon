@@ -8,9 +8,9 @@ import sys
 with open('core/photon.py') as w:
     code = w.read()
 
-code = code.replace('@PHOTON_INSTALL_PATH', f'r"{os.getcwd()}/core"')
+code = code.replace('PHOTON_INSTALL_PATH =', f'PHOTON_INSTALL_PATH = r"{os.getcwd()}/core" #')
 
-if sys.platform in {'linux','darwin'}:
+if sys.platform in {'linux', 'linux2', 'darwin'}:
     try:
         with open('/usr/local/bin/photon','w') as w:
             w.write(code)
@@ -22,7 +22,7 @@ if sys.platform in {'linux','darwin'}:
         print(
         " Please run this script with the 'sudo' command.\n",
         "Example:\n    'sudo python3 install.py'")
-elif sys.platform == 'win32':
+elif sys.platform in {'win32', 'cygwin', 'msys'}:
     p_dir = os.path.expandvars('%ProgramFiles%\\Photon')
     try:
         if not os.path.exists(p_dir):
