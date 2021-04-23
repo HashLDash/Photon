@@ -4,7 +4,7 @@ Para instalar o photon pelo deb execute esse comando:
 ```
 dpkg -i photon.0.1.deb
 ```
-ou se já tem o photon instalado essa pasta digite no terminal:
+ou se já tem o photon instalado, nessa pasta digite no terminal:
 ```
 photon -deb
 ```
