@@ -4,7 +4,7 @@
 
 import os
 import sys
-import core.dependencies
+from core.dependencies import haveDependencies, resolveDependencies
 
 with open('core/photon.py') as w:
     code = w.read()
