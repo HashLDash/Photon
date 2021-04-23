@@ -2,7 +2,7 @@
 
  Execute esse comando no seu terminal
 
-``` sudo dpkg -i photon.0.1.dep ```
+``` sudo dpkg -i photon.0.1.deb ```
 
 
 
