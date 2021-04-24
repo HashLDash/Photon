@@ -66,8 +66,11 @@ if __name__ == "__main__":
         print('    photon [file.w] Runs the script using the default lang')
         print('    photon build [platform] Builds and runs the project for the target platform')
         print('    photon set lang=[lang] Set the default language to [lang]')
+        print('    photon --version Shows the the current version')
     elif first == 'android-view':
         os.system('adb exec-out screenrecord --output-format=h264 - | ffplay -framerate 60 -probesize 32 -sync video  -')
+    elif first == '--version':
+        print('Photon Version 0.0.1')
     else:
         filename = first
         from pathlib import Path
