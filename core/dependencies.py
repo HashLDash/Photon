@@ -183,7 +183,7 @@ deps = {
     ('d', 'win32'): ['dmd'],
     ('d', 'darwin'): ['dmd'],
     ('haxe', 'linux'): ['haxe'],
-    ('haxe', 'win32'): ['haxe']
+    ('haxe', 'win32'): ['haxe'],
     ('haxe', 'darwin'): ['haxe'],
     ('js', 'linux'): ['node'],
     ('js', 'win32'): ['node'],
