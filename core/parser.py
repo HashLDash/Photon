@@ -4,6 +4,7 @@
 # This struct is used by the Engine to execute the code.
 
 import re
+from lexer import *
 
 statements = ['if','else','elif','def','cdef','for','in','as','return','import','class','while','break','continue','try']
 operators = ['+','-','%','/','*','**','not','and','or','is', '&']
@@ -87,17 +88,10 @@ def token2word(tokens):
     for t in tokens:
         if t['token'] == 'indent':
             continue
-        elif t['token'] == 'var':
-            phrase += t['var']['name']
         elif 'symbol' in t:
             phrase += t['symbol']
-        elif t['token'] in {'dotAccess', 'args', 'assign', 'call', 'range', 'type', 'sizeof', 'sizeofFunc', 'addr', 'addrFunc', 'print', 'value'}:
+        elif t['token'] in {'num', 'var', 'expr','print','printFunction'}:
             phrase += t['token']
-        elif 'value' in t:
-            try:
-                phrase += str(t['value']['value'])
-            except Exception as e:
-                input(f'Error converting to word {t["value"]} with {e}')
         else:
             raise Exception(f'Cannot convert the token {t["token"]} to a word')
     return phrase
@@ -109,14 +103,13 @@ def reduceToken(tokens):
 
     if tokens == 'continue':
         return 'continue'
-    input(tokens)
     tokenList = [ token['token'] for token in tokens if not token['token'] == 'indent' ]
-    input(tokens)
     parsePhrase = token2word(tokens)
+    input(parsePhrase)
     for pattern in patterns:
         for i in range(len(tokenList)):
             if pattern == tuple(tokenList[i:i+len(pattern)]):
-                result = reduceToken(patterns[pattern](i,tokens))
+                result = reduceToken(patterns[pattern](i+1,tokens))
                 if result == 'continue':
                     continue
                 else:
@@ -176,26 +169,6 @@ def showError(error):
     Last Parse attempt was:\n "{parsePhrase}"
     '''
     raise SyntaxError(msg)
-
-def inference(t):
-    print('Infer token and type')
-    return {'token':'value', 'value':'something'}
-
-def comment(i, t):
-    print('comment')
-    return []
-
-def string(i, t):
-    print('string')
-    return []
-
-def var(i, t):
-    print('var')
-    return []
-
-def floatNumber(i, t):
-    print('floatNumber')
-    return []
 
 # Load grammar
 import os

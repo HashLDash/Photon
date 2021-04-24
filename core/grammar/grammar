@@ -8,4 +8,6 @@ var = var underline var
     | var underline
     | underline
 
-floatNumber = value dot value
+floatNumber = num dot num
+
+printFunction = print lparen expr rparen

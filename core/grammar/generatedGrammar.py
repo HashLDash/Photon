@@ -6,5 +6,6 @@ patterns = {
   ('underline', 'var'): var,
   ('var', 'underline'): var,
   ('underline',): var,
-  ('value', 'dot', 'value'): floatNumber,
+  ('num', 'dot', 'num'): floatNumber,
+  ('print', 'lparen', 'expr', 'rparen'): printFunction,
 }
