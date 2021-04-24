@@ -105,7 +105,6 @@ def reduceToken(tokens):
         return 'continue'
     tokenList = [ token['token'] for token in tokens if not token['token'] == 'indent' ]
     parsePhrase = token2word(tokens)
-    input(parsePhrase)
     for pattern in patterns:
         for i in range(len(tokenList)):
             if pattern == tuple(tokenList[i:i+len(pattern)]):

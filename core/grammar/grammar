@@ -10,4 +10,4 @@ var = var underline var
 
 floatNumber = num dot num
 
-printFunction = print lparen expr rparen
+printFunction = print lparen (expr num) rparen

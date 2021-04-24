@@ -8,4 +8,5 @@ patterns = {
   ('underline',): var,
   ('num', 'dot', 'num'): floatNumber,
   ('print', 'lparen', 'expr', 'rparen'): printFunction,
+  ('print', 'lparen', 'num', 'rparen'): printFunction,
 }

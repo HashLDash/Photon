@@ -79,10 +79,19 @@ def floatNumber(i, t):
     print('floatNumber')
     return []
 
+def convertToExpr(token):
+    if token['token'] == 'num':
+        return {'token':'expr', 'args':[token['value']], 'ops':[]}
+    else:
+        raise SyntaxError('Cant convert token to expr')
+
 def printFunction(i, t):
     ''' Return a printFunction token '''
 
-    t[i] = {'token':'printFunction', 'expr':t[i+2]}
+    if t[i+2]['token'] == 'expr':
+        t[i] = {'token':'printFunction', 'expr':t[i+2]}
+    else:
+        t[i] = {'token':'printFunction', 'expr':convertToExpr(t[i+2])}
     del t[i+1] # lparen
     del t[i+1] # expr
     del t[i+1] # rparen
