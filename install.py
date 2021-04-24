@@ -5,6 +5,19 @@
 import os
 import sys
 from core.dependencies import haveDependencies, resolveDependencies
+import ctypes
+
+def isAdmin():
+    try:
+        # Unix systems
+        return os.getuid() == 0
+    except AttributeError:
+        # Windows
+        return ctypes.windll.shell32.IsUserAnAdmin()
+
+if not isAdmin():
+    ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join(sys.argv), None, 1)
+    sys.exit()
 
 with open('core/photon.py') as w:
     code = w.read()
