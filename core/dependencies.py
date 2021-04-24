@@ -190,5 +190,5 @@ deps = {
     ('js', 'darwin'): ['node'],
     ('dart', 'linux'): ['dart'],
     ('dart', 'win32'): ['dart'],
-    ('dart', 'darwin'): ['dart],
+    ('dart', 'darwin'): ['dart'],
 }
