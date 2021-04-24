@@ -8,7 +8,11 @@ def haveDependencies(lang, platform):
     ''' Return True if all dependencies are installed
         for the corresponding lang and platform or
         False otherwise. '''
-    #TODO: Implement
+    for dep in deps[(lang, platform)]:
+        if not programIsInstalled(dep):
+            break
+    else:
+        return True
     return False
 
 def resolveDependencies(lang, platform):
@@ -92,6 +96,22 @@ def resolveCLinux():
     ''' Install gcc '''
     pass
 
+def resolveDLinux():
+    ''' Install dmd '''
+    pass
+
+def resolveHaxeLinux():
+    ''' Install haxe '''
+    pass
+
+def resolveJsLinux():
+    ''' Install nodejs '''
+    pass
+
+def resolveDartLinux():
+    ''' Install dart '''
+    pass
+
 def resolveCWin32():
     ''' Install gcc '''
     chocoInstaller("mingw")
@@ -117,12 +137,58 @@ def resolveDartWin32():
     chocoInstaller("dart-sdk")
     return printResultPostChocoInstaller("dart")
 
+def resolveCDarwin():
+    ''' Install gcc '''
+    pass
+
+def resolveDDarwin():
+    ''' Install dmd '''
+    pass
+
+def resolveHaxeDarwin():
+    ''' Install haxe '''
+    pass
+
+def resolveJsDarwin():
+    ''' Install nodejs '''
+    pass
+
+def resolveDartDarwin():
+    ''' Install dart '''
+    pass
+
 solver = {
     ('c', 'linux'): resolveCLinux,
     ('c', 'win32'): resolveCWin32,
+    ('c', 'darwin'): resolveCDarwin,
+    ('d', 'linux'): resolveDLinux,
     ('d', 'win32'): resolveDWin32,
+    ('d', 'darwin'): resolveDDarwin,
+    ('haxe', 'linux'): resolveHaxeLinux,
     ('haxe', 'win32'): resolveHaxeWin32,
+    ('haxe', 'darwin'): resolveHaxeDarwin,
+    ('js', 'linux'): resolveJsLinux,
     ('js', 'win32'): resolveJsWin32,
+    ('js', 'darwin'): resolveJsDarwin,
+    ('dart', 'linux'): resolveDartLinux,
     ('dart', 'win32'): resolveDartWin32,
+    ('dart', 'darwin'): resolveDartDarwin,
 }
 
+deps = {
+    ('c', 'linux'): ['gcc'],
+    ('c', 'win32'): ['gcc'],
+    ('c', 'darwin'): ['gcc'],
+    ('d', 'linux'): ['dmd'],
+    ('d', 'win32'): ['dmd'],
+    ('d', 'darwin'): ['dmd'],
+    ('haxe', 'linux'): ['haxe'],
+    ('haxe', 'win32'): ['haxe']
+    ('haxe', 'darwin'): ['haxe'],
+    ('js', 'linux'): ['node'],
+    ('js', 'win32'): ['node'],
+    ('js', 'darwin'): ['node'],
+    ('dart', 'linux'): ['dart'],
+    ('dart', 'win32'): ['dart'],
+    ('dart', 'darwin'): ['dart],
+}
