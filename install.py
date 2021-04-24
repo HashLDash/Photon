@@ -4,7 +4,17 @@
 
 import os
 import sys
+import ctypes
 from core.dependencies import haveDependencies, resolveDependencies
+
+def is_admin():
+    try:
+        return (os.getuid() == 0)
+    except:
+        return ctypes.windll.shell32.IsUserAnAdmin() != 0
+
+if not is_admin():
+    print('Attention, you are trying to install Photon without administrator permission (ROOT).')
 
 with open('core/photon.py') as w:
     code = w.read()
