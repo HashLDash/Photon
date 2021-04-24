@@ -16,8 +16,12 @@ def isAdmin():
         return ctypes.windll.shell32.IsUserAnAdmin()
 
 if not isAdmin():
-    ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join(sys.argv), None, 1)
-    sys.exit()
+    try:
+        ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join(sys.argv), None, 1)
+        sys.exit()
+    except AttributeError:
+        # Not on windows, proceed
+        pass
 
 with open('core/photon.py') as w:
     code = w.read()
