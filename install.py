@@ -4,23 +4,36 @@
 
 import os
 import sys
-from core.dependencies import haveDependencies, resolveDependencies
 import ctypes
+from core.dependencies import haveDependencies, resolveDependencies
 
+# Obtains a simple description of the current operating system platform
+def getSystem():
+    if sys.platform in {'linux', 'linux2', 'darwin'}:
+        return "unix"
+    elif os.name == "nt" or os.environ.get('OS', '') != 'Windows_NT' or sys.platform in {'win32', 'cygwin', 'msys'}:
+        return "win"
+    return None
+
+# Returns if the script is being run as an administrator (ROOT)
 def isAdmin():
     try:
-        # Unix systems
-        return os.getuid() == 0
-    except AttributeError:
-        # Windows
-        return ctypes.windll.shell32.IsUserAnAdmin()
+        platform_os = getSystem()
+        if platform_os == "unix":
+            return os.getuid() == 0
+        elif platform_os == "win":
+            return ctypes.windll.shell32.IsUserAnAdmin()
+        return False
+    except:
+        return False
 
-if not isAdmin():
+platform_os = getSystem()
+
+if not isAdmin() and platform_os == "win":
     try:
         ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join(sys.argv), None, 1)
         sys.exit()
-    except AttributeError:
-        # Not on windows, proceed
+    except:
         pass
 
 with open('core/photon.py') as w:
@@ -28,17 +41,17 @@ with open('core/photon.py') as w:
 
 code = code.replace('PHOTON_INSTALL_PATH =', f'PHOTON_INSTALL_PATH = r"{os.getcwd()}/core" #')
 
-if sys.platform in {'linux', 'linux2', 'darwin'}:
+if platform_os == "unix":
     try:
-        with open('/usr/local/bin/photon','w') as w:
+        with open('/usr/local/bin/photon', 'w') as w:
             w.write(code)
-        os.chmod('/usr/local/bin/photon',0o777)
+        os.chmod('/usr/local/bin/photon', 0o777)
         print("Successfully installed! Now you can use the photon command!")
     except PermissionError:
         print(
         " Please run this script with the 'sudo' command.\n",
         "Example:\n    'sudo python3 install.py'")
-elif sys.platform in {'win32', 'cygwin', 'msys'}:
+elif platform_os == "win":
     p_dir = os.path.expandvars('%ProgramFiles%\\Photon')
     try:
         if not os.path.exists(p_dir):

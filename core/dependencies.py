@@ -28,7 +28,7 @@ def getSystem():
         return "unix"
     elif os.name == "nt" or os.environ.get('OS', '') != 'Windows_NT' or sys.platform in {'win32', 'cygwin', 'msys'}:
         return "win"
-    return None 
+    return None
 
 # Verify if program is installed it system
 def programIsInstalled(name):
@@ -42,6 +42,15 @@ def programIsInstalled(name):
             raise Exception('`platform_os` not supported')
     except Exception as e:
         print(f"error: {e}")
+        return False
+
+# Shows whether the program was installed or not and returns the result of the query
+def printResultPostProgramInstaller(name):
+    if programIsInstalled(name):
+        print(f'Program `{name}` has been successfully installed!')
+        return True
+    else:
+        print(f'Program `{name}` was not found.')
         return False
 
 # INIT - Chocolatey to Windows
@@ -83,15 +92,49 @@ def chocoInstaller(name):
     print(str(os.popen(shell_exec_cmd).read()))
     return True
 
-def printResultPostChocoInstaller(name):
-    if programIsInstalled(name):
-        print(f'Dependency `{name}` has been successfully installed!')
+# INIT - HomeBrew to MacOS
+def bashIsInstalled():
+    if programIsInstalled("/bin/bash"):
+        print("# `/bin/bash` is installed!")
         return True
     else:
-        print(f'Dependency `{name}` was not found.')
+        print("# `/bin/bash` was not found!")
         return False
-# END - Chocolatey to Windows
 
+def brewIsInstalled():
+    if programIsInstalled("brew"):
+        print("# HomeBrew is installed!")
+        return True
+    else:
+        print("# HomeBrew was not found!")
+        return False
+
+def brewInstall():
+    if not bashIsInstalled():
+        return False
+    if brewIsInstalled():
+        return True
+    shell_exec_cmd = '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'
+    print('# Installing HomeBrew - Command: \r\n')
+    print(f'{shell_exec_cmd}\r\n')
+    print('# Result:')
+    print(str(os.popen(shell_exec_cmd).read()))
+    return brewIsInstalled()
+
+def brewInstaller(name):
+    shell_exec_cmd = ""
+    if not brewInstall():
+        return False
+    if name == "dart":
+        shell_exec_cmd = "brew tap dart-lang/dart; "
+    shell_exec_cmd += f'brew install {name}'
+    print('# Installing dependency with HomeBrew - Command: \r\n')
+    print(f'{shell_exec_cmd}\r\n')
+    print('# Result:')
+    print(str(os.popen(shell_exec_cmd).read()))
+    return True
+
+# INIT - Linux
 def resolveCLinux():
     ''' Install gcc '''
     pass
@@ -112,50 +155,57 @@ def resolveDartLinux():
     ''' Install dart '''
     pass
 
+# INIT - Win32
 def resolveCWin32():
     ''' Install gcc '''
     chocoInstaller("mingw")
-    return printResultPostChocoInstaller("gcc")
+    return printResultPostProgramInstaller("gcc")
 
 def resolveDWin32():
     ''' Install dmd '''
     chocoInstaller("dmd")
-    return printResultPostChocoInstaller("dmd")
+    return printResultPostProgramInstaller("dmd")
 
 def resolveHaxeWin32():
     ''' Install haxe '''
     chocoInstaller("haxe")
-    return printResultPostChocoInstaller("haxe")
+    return printResultPostProgramInstaller("haxe")
 
 def resolveJsWin32():
     ''' Install nodejs '''
     chocoInstaller("nodejs")
-    return printResultPostChocoInstaller("node")
+    return printResultPostProgramInstaller("node")
 
 def resolveDartWin32():
     ''' Install dart '''
     chocoInstaller("dart-sdk")
-    return printResultPostChocoInstaller("dart")
+    return printResultPostProgramInstaller("dart")
 
+# INIT - Darwin
 def resolveCDarwin():
     ''' Install gcc '''
-    pass
+    brewInstaller("gcc")
+    return printResultPostProgramInstaller("gcc")
 
 def resolveDDarwin():
     ''' Install dmd '''
-    pass
+    brewInstaller("dmd")
+    return printResultPostProgramInstaller("dmd")
 
 def resolveHaxeDarwin():
     ''' Install haxe '''
-    pass
+    brewInstaller("haxe")
+    return printResultPostProgramInstaller("haxe")
 
 def resolveJsDarwin():
     ''' Install nodejs '''
-    pass
+    brewInstaller("nodejs")
+    return printResultPostProgramInstaller("node")
 
 def resolveDartDarwin():
     ''' Install dart '''
-    pass
+    brewInstaller("dart")
+    return printResultPostProgramInstaller("dart")
 
 solver = {
     ('c', 'linux'): resolveCLinux,
