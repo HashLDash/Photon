@@ -93,7 +93,8 @@ def printResultPostChocoInstaller(name):
 # END - Chocolatey to Windows
 
 linux_cmds = {'dmd': 'curl https://dlang.org/install.sh | bash -s || (mkdir -p ~/dlang && wget '
-                     'https://dlang.org/install.sh -O ~/dlang/install.sh)'}
+                     'https://dlang.org/install.sh -O ~/dlang/install.sh && chmod +x ~/dlang/install.sh && '
+                     '~/dlang/install.sh)'}
 
 if os.path.exists('/etc/debian_version'):  # debian, ubuntu, pop!_os, zorin os
     linux_cmds['gcc'] = 'sudo apt install build-essential'
