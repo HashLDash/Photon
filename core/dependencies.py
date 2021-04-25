@@ -130,7 +130,11 @@ elif os.path.exists('/etc/redhat-release'):  # red hat, centos, fedora
 
 def linuxInstaller(package):
     if package in linux_cmds:
-        os.system(f'sh -c "{linux_cmds[package]}"')
+        shell_exec_cmd = f'sh -c "{linux_cmds[package]}"'
+        print('# Installing dependency - Command: \r\n')
+        print(f'{shell_exec_cmd}\r\n')
+        print('# Result:')
+        os.system(shell_exec_cmd)
     else:
         print(f"We couldn't try to automatically install `{package}`, please install it manually.")
         return False
