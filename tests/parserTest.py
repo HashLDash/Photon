@@ -43,5 +43,13 @@ class ParserTest(unittest.TestCase):
             'ops': []},
             'opcode': 'printFunction'})
 
+    def test_printFunc3(self):
+        struct = self.runFile('printFunc4.w')
+        self.assertEqual(struct, {
+            'token': 'printFunction',
+            'expr': {'token': 'expr', 'args': [{'type': 'float', 'value': '2.'}],
+            'ops': []},
+            'opcode': 'printFunction'})
+
 if __name__ == "__main__":
     unittest.main()

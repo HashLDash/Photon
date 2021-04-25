@@ -85,6 +85,7 @@ def floatNumber(i, t):
             'value': {
                 'type':'float',
                 'value': f"{t[i]['value']['value']}.{t[i+2]['value']['value']}"}}
+        del t[i+1] #dot
     except:
         t[i] = {
             'token':'floatNumber',
@@ -92,11 +93,7 @@ def floatNumber(i, t):
                 'type':'float',
                 'value': f"{t[i]['value']['value']}."}}
 
-    del t[i+1] #dot
-    try:
-        del t[i+1] #decimal
-    except:
-        pass
+    del t[i+1] #dot or decimal
     return t
 
 def convertToExpr(token):
