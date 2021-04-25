@@ -75,15 +75,45 @@ def var(i, t):
     print('var')
     return []
 
+
 def floatNumber(i, t):
-    print('floatNumber')
-    return []
+    ''' Return a float number from the given tokenList '''
+
+    try:
+        t[i] = {
+            'token':'floatNumber',
+            'value': {
+                'type':'float',
+                'value': f"{t[i]['value']['value']}.{t[i+2]['value']['value']}"}}
+    except:
+        t[i] = {
+            'token':'floatNumber',
+            'value': {
+                'type':'float',
+                'value': f"{t[i]['value']['value']}."}}
+
+    del t[i+1] #dot
+    try:
+        del t[i+1] #decimal
+    except:
+        pass
+    return t
 
 def convertToExpr(token):
-    if token['token'] == 'num':
+    if token['token'] in {'num', 'floatNumber'}:
         return {'token':'expr', 'args':[token['value']], 'ops':[]}
+    elif token['token'] in {'var'}:
+        return {'token':'expr', 'args':[token['var']], 'ops':[]}
     else:
         raise SyntaxError('Cant convert token to expr')
+
+def expr(i, t):
+    if t[i]['token'] in {'num', 'floatNumber', 'var'}:
+        t[i] = convertToExpr(t[i])
+    else:
+        raise SyntaxError('Expression of token {t[i]["token"]} not implemented.')
+    return t
+        
 
 def printFunction(i, t):
     ''' Return a printFunction token '''
