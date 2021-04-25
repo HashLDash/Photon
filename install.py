@@ -4,8 +4,14 @@
 
 import os
 import sys
-import ctypes
 from core.dependencies import haveDependencies, resolveDependencies
+
+try:
+    import ctypes
+    haveCtypes = True
+except ModuleNotFoundError:
+    # Probably on raspberrypy
+    haveCtypes = False
 
 # Obtains a simple description of the current operating system platform
 def getSystem():
@@ -29,7 +35,7 @@ def isAdmin():
 
 platform_os = getSystem()
 
-if not isAdmin() and platform_os == "win":
+if not isAdmin() and platform_os == "win" and haveCtypes:
     try:
         ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join(sys.argv), None, 1)
         sys.exit()
