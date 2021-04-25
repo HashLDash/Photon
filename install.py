@@ -5,7 +5,13 @@
 import os
 import sys
 from core.dependencies import haveDependencies, resolveDependencies
-import ctypes
+
+try:
+    import ctypes
+    haveCtypes = True
+except ModuleNotFoundError:
+    # Probably on raspberrypy
+    haveCtypes = False
 
 def isAdmin():
     try:
@@ -15,7 +21,7 @@ def isAdmin():
         # Windows
         return ctypes.windll.shell32.IsUserAnAdmin()
 
-if not isAdmin():
+if haveCtypes and not isAdmin():
     try:
         ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join(sys.argv), None, 1)
         sys.exit()
