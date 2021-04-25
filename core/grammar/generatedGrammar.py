@@ -7,6 +7,9 @@ patterns = {
   ('var', 'underline'): var,
   ('underline',): var,
   ('num', 'dot', 'num'): floatNumber,
+  ('num', 'dot'): floatNumber,
+  ('num',): expr,
+  ('floatNumber',): expr,
+  ('var',): expr,
   ('print', 'lparen', 'expr', 'rparen'): printFunction,
-  ('print', 'lparen', 'num', 'rparen'): printFunction,
 }

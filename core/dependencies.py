@@ -36,7 +36,7 @@ def programIsInstalled(name):
         platform_os = getSystem()
         if platform_os == "win":
             return str(os.popen(f'where /q {name} && echo %ERRORLEVEL%').read()).strip() == "0"
-        elif platform_os == "unix": 
+        elif platform_os == "unix":
             return str(os.popen(f'which {name}').read()).strip() != ""
         else:
             raise Exception('`platform_os` not supported')
@@ -53,7 +53,7 @@ def printResultPostProgramInstaller(name):
         print(f'Program `{name}` was not found.')
         return False
 
-# INIT - Chocolatey to Windows
+# INIT - Installer for Win32/Windows (Chocolatey)
 def powershellIsInstalled():
     if programIsInstalled("powershell"):
         print("# PowerShell is installed!")
@@ -92,7 +92,7 @@ def chocoInstaller(name):
     print(str(os.popen(shell_exec_cmd).read()))
     return True
 
-# INIT - HomeBrew to MacOS
+# INIT - Installer for Darwin/macOS (HomeBrew)
 def bashIsInstalled():
     if programIsInstalled("/bin/bash"):
         print("# `/bin/bash` is installed!")
@@ -134,26 +134,83 @@ def brewInstaller(name):
     print(str(os.popen(shell_exec_cmd).read()))
     return True
 
+# INIT - Installers for Linux (APT, PACMAN, EMERGE, ZYPPER and DNF)
+=======
+linux_cmds = {'dmd': 'curl https://dlang.org/install.sh | bash -s || (mkdir -p ~/dlang && wget '
+                     'https://dlang.org/install.sh -O ~/dlang/install.sh && chmod +x ~/dlang/install.sh && '
+                     '~/dlang/install.sh)'}
+
+if os.path.exists('/etc/debian_version'):  # debian, ubuntu, pop!_os, zorin os
+    linux_cmds['gcc'] = 'sudo apt install build-essential'
+    linux_cmds['dmd'] = 'sudo wget https://netcologne.dl.sourceforge.net/project/d-apt/files/d-apt.list -O ' \
+                        '/etc/apt/sources.list.d/d-apt.list && sudo apt-get update --allow-insecure-repositories && ' \
+                        'sudo apt-get -y --allow-unauthenticated install --reinstall d-apt-keyring && sudo apt-get ' \
+                        'update && sudo apt install dmd-compiler dub libcurl3 libphobos2-79 libphobos2-dev '
+    linux_cmds['haxe'] = 'sudo apt-get install haxe && mkdir ~/haxelib && haxelib setup ~/haxelib'
+    linux_cmds['nodejs'] = 'sudo apt install nodejs'
+    linux_cmds['dart'] = "sudo apt-get install apt-transport-https && sudo sh -c 'wget -qO- " \
+                         "https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add -' && sudo sh -c 'wget " \
+                         "-qO- https://storage.googleapis.com/download.dartlang.org/linux/debian/dart_stable.list > " \
+                         "/etc/apt/sources.list.d/dart_stable.list' && sudo apt-get update && sudo apt-get install " \
+                         "dart "
+elif os.path.exists('/etc/arch-release'):  # arch, manjaro
+    linux_cmds['gcc'] = 'sudo pacman -S gcc'
+    linux_cmds['dmd'] = 'sudo pacman -S dmd'
+    linux_cmds['haxe'] = 'sudo pacman -S haxe'
+    linux_cmds['nodejs'] = 'sudo pacman -S nodejs'
+    linux_cmds['dart'] = 'sudo pacman -S dart'
+elif os.path.exists('/etc/gentoo-release'):  # gentoo
+    linux_cmds['gcc'] = 'sudo emerge sys-devel/gcc'
+    linux_cmds['dmd'] = 'sudo emerge app-portage/layman && sudo layman -f -a dlang && sudo emerge dev-lang/dmd'
+    linux_cmds['nodejs'] = 'sudo emerge nodejs'
+elif os.path.exists('/etc/SuSE-release'):  # open suse
+    linux_cmds['gcc'] = 'sudo zypper install gcc'
+    linux_cmds['haxe'] = 'sudo zypper install haxe && mkdir ~/haxelib && haxelib setup ~/haxelib'
+    linux_cmds['nodejs'] = 'sudo zypper install nodejs4'
+elif os.path.exists('/etc/redhat-release'):  # red hat, centos, fedora
+    linux_cmds['gcc'] = 'sudo dnf install gcc || sudo yum install gcc'
+    linux_cmds['haxe'] = '(sudo dnf install haxe || (sudo yum install epel-release; sudo yum install haxe)) && mkdir ' \
+                         '~/haxelib && haxelib setup ~/haxelib'
+    linux_cmds['nodejs'] = 'sudo dnf module install nodejs:12'
+
+def linuxInstaller(package):
+    if package in linux_cmds:
+        shell_exec_cmd = f'sh -c "{linux_cmds[package]}"'
+        print('# Installing dependency - Command: \r\n')
+        print(f'{shell_exec_cmd}\r\n')
+        print('# Result:')
+        os.system(shell_exec_cmd)
+    else:
+        print(f"We couldn't try to automatically install `{package}`, please install it manually.")
+        return False
+
+    if programIsInstalled(package):
+        print(f'Dependency `{package}` has been successfully installed!')
+        return True
+    else:
+        print(f'Dependency `{package}` was not found.')
+        return False
+
 # INIT - Linux
 def resolveCLinux():
     ''' Install gcc '''
-    pass
+    return linuxInstaller('gcc')
 
 def resolveDLinux():
     ''' Install dmd '''
-    pass
+    return linuxInstaller('dmd')
 
 def resolveHaxeLinux():
     ''' Install haxe '''
-    pass
+    return linuxInstaller('haxe')
 
 def resolveJsLinux():
     ''' Install nodejs '''
-    pass
+    return linuxInstaller('nodejs')
 
 def resolveDartLinux():
     ''' Install dart '''
-    pass
+    return linuxInstaller('dart')
 
 # INIT - Win32
 def resolveCWin32():

@@ -9,5 +9,10 @@ var = var underline var
     | underline
 
 floatNumber = num dot num
+            | num dot
 
-printFunction = print lparen (expr num) rparen
+expr = num
+     | floatNumber
+     | var
+
+printFunction = print lparen (expr) rparen
