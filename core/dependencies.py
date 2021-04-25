@@ -123,7 +123,7 @@ elif os.path.exists('/etc/SuSE-release'):  # open suse
     linux_cmds['haxe'] = 'sudo zypper install haxe && mkdir ~/haxelib && haxelib setup ~/haxelib'
     linux_cmds['nodejs'] = 'sudo zypper install nodejs4'
 elif os.path.exists('/etc/redhat-release'):  # red hat, centos, fedora
-    linux_cmds['gcc'] = 'sudo yum install gcc'
+    linux_cmds['gcc'] = 'sudo dnf install gcc || sudo yum install gcc'
     linux_cmds['haxe'] = '(sudo dnf install haxe || (sudo yum install epel-release; sudo yum install haxe)) && mkdir ' \
                          '~/haxelib && haxelib setup ~/haxelib'
     linux_cmds['nodejs'] = 'sudo dnf module install nodejs:12'
