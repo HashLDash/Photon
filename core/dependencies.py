@@ -135,7 +135,6 @@ def brewInstaller(name):
     return True
 
 # INIT - Installers for Linux (APT, PACMAN, EMERGE, ZYPPER and DNF)
-=======
 linux_cmds = {'dmd': 'curl https://dlang.org/install.sh | bash -s || (mkdir -p ~/dlang && wget '
                      'https://dlang.org/install.sh -O ~/dlang/install.sh && chmod +x ~/dlang/install.sh && '
                      '~/dlang/install.sh)'}
