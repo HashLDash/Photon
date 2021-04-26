@@ -35,7 +35,7 @@ def isAdmin():
 
 platform_os = getSystem()
 
-if not isAdmin() and platform_os == "win" and haveCtypes:
+if haveCtypes and not isAdmin() and platform_os == "win":
     try:
         ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, " ".join(sys.argv), None, 1)
         sys.exit()
