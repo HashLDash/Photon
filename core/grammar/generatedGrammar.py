@@ -13,5 +13,5 @@ patterns = {
   ('num',): expr,
   ('floatNumber',): expr,
   ('var',): expr,
-  ('print', 'lparen', 'expr', 'rparen'): printFunction,
+  ('print', 'lparen', 'expr', 'rparen'): printFunc,
 }

@@ -139,13 +139,13 @@ def multiType(i, t):
     raise NotImplemented
     return t
 
-def printFunction(i, t):
+def printFunc(i, t):
     ''' Return a printFunction token '''
 
     if t[i+2]['token'] == 'expr':
-        t[i] = {'token':'printFunction', 'expr':t[i+2]}
+        t[i] = {'token':'printFunc', 'expr':t[i+2]}
     else:
-        t[i] = {'token':'printFunction', 'expr':convertToExpr(t[i+2])}
+        t[i] = {'token':'printFunc', 'expr':convertToExpr(t[i+2])}
     del t[i+1] # lparen
     del t[i+1] # expr
     del t[i+1] # rparen

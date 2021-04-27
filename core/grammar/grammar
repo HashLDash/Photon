@@ -18,4 +18,4 @@ expr = num
      | floatNumber
      | var
 
-printFunction = print lparen (expr) rparen
+printFunc = print lparen (expr) rparen

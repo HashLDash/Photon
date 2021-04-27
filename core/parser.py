@@ -90,7 +90,7 @@ def token2word(tokens):
             continue
         elif 'symbol' in t:
             phrase += t['symbol']
-        elif t['token'] in {'num', 'var', 'expr','print','printFunction',
+        elif t['token'] in {'num', 'var', 'expr','print','printFunc',
         'floatNumber', 'type'}:
             phrase += t['token']
         else:

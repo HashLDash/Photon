@@ -1,2 +1,1 @@
-int var
 print(var)
