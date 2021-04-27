@@ -8,6 +8,7 @@ class BaseTranspiler():
         self.instructions = {
             'printFunction': self.printFunction,
             'expr': self.processVarInit,
+            'assign': self.processAssign,
         }
         self.currentScope = {}
         self.source = []
@@ -24,6 +25,12 @@ class BaseTranspiler():
     def nativeType(self, varType):
         if varType in self.nativeTypes:
             return self.nativeTypes[varType]
+        else:
+            raise NotImplemented
+
+    def inferType(self, expr):
+        if self.typeKnown(expr['type']):
+            return expr['type']
         else:
             raise NotImplemented
 
@@ -47,7 +54,7 @@ class BaseTranspiler():
             varType = 'unknown'
         return {'value':token['name'], 'type':varType}
 
-    def processExpression(self, token):
+    def processExpr(self, token):
         #TODO: To be implemented
         if not token['ops']:
             tok = token['args'][0]
@@ -55,9 +62,18 @@ class BaseTranspiler():
                 return self.processVar(tok)
 
         return token['args'][0]
+    
+    def processAssign(self, token):
+        target = token['target']
+        if target['token'] == 'var':
+            variable = self.processVar(target)
+        else:
+            raise SyntaxError(f'Assign with variable {target} no supported yet.')
+        expr = self.processExpr(token['expr'])
+        self.source.append(self.formatAssign(target, expr))
 
     def printFunction(self, token):
-        value = self.processExpression(token['expr'])
+        value = self.processExpr(token['expr'])
         self.source.append(self.formatPrint(value))
 
     def isBlock(self, line):

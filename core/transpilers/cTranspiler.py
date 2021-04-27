@@ -27,6 +27,30 @@ class Transpiler(BaseTranspiler):
 
     def formatVarInit(self, name, varType):
         return f'{varType} {name};'
+    
+    def formatAssign(self, target, expr):
+        cast = None
+        if target['token'] == 'var':
+            variable = target['name']
+            if variable in self.currentScope:
+                if self.typeKnown(target['type']):
+                    # Casting to a different type
+                    varType = self.nativeType(target['type'])
+                    cast = varType
+                varType = ''
+            if self.typeKnown(target['type']):
+                # Type was explicit
+                varType = self.nativeType(target['type'])
+            else:
+                varType = self.inferType(expr)
+        else:
+            raise SyntaxError(f'Format assign with variable {target} not implemented yet.')
+        formattedExpr = self.formatExpr(expr, cast=cast)
+        return f'{varType} {variable} = {formattedExpr};'
+
+    def formatExpr(self, value, cast=None):
+        #TODO: implement cast to type
+        return value['value']
 
     def formatPrint(self, value):
         if value['type'] == 'int':

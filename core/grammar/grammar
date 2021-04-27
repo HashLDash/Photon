@@ -21,4 +21,6 @@ expr = num
      | floatNumber
      | var
 
+assign = expr equal expr
+
 printFunc = print lparen (expr) rparen

@@ -210,3 +210,15 @@ def printFunc(i, t):
     del t[i+1] # expr
     del t[i+1] # rparen
     return t
+
+def assign(i, t):
+    '''
+    expr equal expr
+    '''
+    if t[i]['args'][0]['token'] == 'var':
+        t[i] = {'token':'assign', 'target':t[i]['args'][0], 'expr':t[i+2]}
+        del t[i+1] # equal
+        del t[i+1] # expr
+        return t
+    # Not a valid assign, continue
+    return 'continue'
