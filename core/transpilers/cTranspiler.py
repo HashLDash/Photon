@@ -25,6 +25,9 @@ class Transpiler(BaseTranspiler):
             'unknown':'auto',
         }
 
+    def formatVarInit(self, name, varType):
+        return f'{varType} {name};'
+
     def formatPrint(self, value):
         if value['type'] == 'int':
             return f'printf("%d\\n", {value["value"]});'
@@ -32,6 +35,8 @@ class Transpiler(BaseTranspiler):
             return f'printf("%f\\n", {value["value"]});'
         elif value['type'] == 'str':
             return f'printf("%s\\n", {value["value"]});'
+        else:
+            raise SyntaxError(f'Print function with token {value} not supported yet.')
 
     def write(self):
         boilerPlateStart = [

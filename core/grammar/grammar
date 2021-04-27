@@ -3,6 +3,9 @@ comment = hashtag
 string = singleQuote
     | doubleQuote
 
+typeDeclaration = var var
+                | type var
+
 var = var underline var
     | underline var
     | var underline

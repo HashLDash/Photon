@@ -11,11 +11,11 @@ def inference(value):
             return {'token':'value','value': {'type':'unknown','value':value} }
         except:
             if value == 'True' or value == 'False':
-                return {'token':'expr','args': [{'type':'bool','value':value.lower()}], 'ops':[] }
+                return {'token':'expr','type':'bool','args': [{'type':'bool','value':value.lower()}], 'ops':[] }
             elif value == 'null':
-                return {'token':'expr','args': [{'type':'null','value':'null'}], 'ops':[] }
+                return {'token':'expr','type':'null','args': [{'type':'null','value':'null'}], 'ops':[] }
             else:
-                return {'token':'var','var': {'type':'var','name':value} }
+                return {'token':'var', 'type':'unknown', 'name':value}
 
 def comment(i, t):
     print('comment')
@@ -72,9 +72,29 @@ def string(i, t):
     return t
 
 def var(i, t):
-    print('var')
-    return []
+    return t
 
+def typeDeclaration(i, t):
+    varType = []
+    last = ''
+    name = ''
+    if t[i]['token'] == 'type':
+        for n, tok in enumerate(t[i:]):
+            if tok['token'] == 'type':
+                varType.append(tok['type'])
+            elif tok['token'] == 'var' and not last == 'var':
+                name = tok['name']
+                last = 'var'
+            elif tok['token'] == 'var' and last == 'var':
+                varType.append(name)
+                name = tok['name']
+                break
+    if not name:
+        raise SyntaxError('Type declaration error')
+    t[i] = {'token':'var', 'name':name, 'type':' '.join(varType)} 
+    for _ in range(n):
+        del t[i+1] # type and var types
+    return t
 
 def floatNumber(i, t):
     ''' Return a float number from the given tokenList '''
@@ -98,9 +118,13 @@ def floatNumber(i, t):
 
 def convertToExpr(token):
     if token['token'] in {'num', 'floatNumber'}:
-        return {'token':'expr', 'args':[token['value']], 'ops':[]}
+        if token['token'] == 'num':
+            varType = 'int'
+        else:
+            varType = 'float'
+        return {'token':'expr', 'type':varType, 'args':[token['value']], 'ops':[]}
     elif token['token'] in {'var'}:
-        return {'token':'expr', 'args':[token['var']], 'ops':[]}
+        return {'token':'expr', 'type':token['type'], 'args':[token], 'ops':[]}
     else:
         raise SyntaxError('Cant convert token to expr')
 
@@ -111,6 +135,9 @@ def expr(i, t):
         raise SyntaxError('Expression of token {t[i]["token"]} not implemented.')
     return t
         
+def multiType(i, t):
+    raise NotImplemented
+    return t
 
 def printFunction(i, t):
     ''' Return a printFunction token '''

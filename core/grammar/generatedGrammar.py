@@ -2,6 +2,8 @@ patterns = {
   ('hashtag',): comment,
   ('singleQuote',): string,
   ('doubleQuote',): string,
+  ('var', 'var'): typeDeclaration,
+  ('type', 'var'): typeDeclaration,
   ('var', 'underline', 'var'): var,
   ('underline', 'var'): var,
   ('var', 'underline'): var,

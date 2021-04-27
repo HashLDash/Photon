@@ -23,7 +23,7 @@ class ParserTest(unittest.TestCase):
         struct = self.runFile('printFunc1.w')
         self.assertEqual(struct, {
             'token': 'printFunction',
-            'expr': {'token': 'expr', 'args': [{'type': 'str', 'value': '"Hello World"'}],
+            'expr': {'token': 'expr', 'type':'str', 'args': [{'type': 'str', 'value': '"Hello World"'}],
             'ops': []},
             'opcode': 'printFunction'})
 
@@ -43,11 +43,20 @@ class ParserTest(unittest.TestCase):
             'ops': []},
             'opcode': 'printFunction'})
 
-    def test_printFunc3(self):
+    def test_printFunc4(self):
         struct = self.runFile('printFunc4.w')
         self.assertEqual(struct, {
             'token': 'printFunction',
             'expr': {'token': 'expr', 'args': [{'type': 'float', 'value': '2.'}],
+            'ops': []},
+            'opcode': 'printFunction'})
+
+    def test_printFunc5(self):
+        struct = self.runFile('printFunc5.w')
+        input(struct)
+        self.assertEqual(struct, {
+            'token': 'printFunction',
+            'expr': {'token': 'expr', 'args': [{'token':'var','type': 'unknown', 'name': 'var'}],
             'ops': []},
             'opcode': 'printFunction'})
 
