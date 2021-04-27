@@ -70,6 +70,12 @@ class BaseTranspiler():
         else:
             raise SyntaxError(f'Assign with variable {target} no supported yet.')
         expr = self.processExpr(token['expr'])
+        if self.typeKnown(variable['type']):
+            self.currentScope[variable['value']] = {'type':variable['type']}
+        else:
+            varType = self.inferType(expr)
+            if self.typeKnown(varType):
+                self.currentScope[variable['value']] = {'type':varType}
         self.source.append(self.formatAssign(target, expr))
 
     def printFunc(self, token):

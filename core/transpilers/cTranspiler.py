@@ -42,7 +42,7 @@ class Transpiler(BaseTranspiler):
                 # Type was explicit
                 varType = self.nativeType(target['type'])
             else:
-                varType = self.inferType(expr)
+                varType = self.nativeType(self.inferType(expr))
         else:
             raise SyntaxError(f'Format assign with variable {target} not implemented yet.')
         formattedExpr = self.formatExpr(expr, cast=cast)
