@@ -5,6 +5,8 @@ string = singleQuote
 
 arrayType = (type var) beginBlock num
 
+mapType = (type var) beginBlock (type var)
+
 typeDeclaration = (var type) var
 
 var = var underline var

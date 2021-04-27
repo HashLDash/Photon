@@ -83,6 +83,29 @@ class ParserTest(unittest.TestCase):
         self.assertEqual(struct['args'][0]['elementType'], 'SomeClass')
         self.assertEqual(struct['args'][0]['len'], '10')
 
+    def test_varInitStrStrMap(self):
+        struct = self.runFile('varInit/initStrStrMap.w')
+        self.assertEqual(struct['token'], 'expr')
+        self.assertEqual(struct['args'][0]['name'], 'var')
+        self.assertEqual(struct['args'][0]['type'], 'map')
+        self.assertEqual(struct['args'][0]['keyType'], 'str')
+        self.assertEqual(struct['args'][0]['valType'], 'str')
+
+    def test_varInitClassStrMap(self):
+        struct = self.runFile('varInit/initClassStrMap.w')
+        self.assertEqual(struct['token'], 'expr')
+        self.assertEqual(struct['args'][0]['name'], 'var')
+        self.assertEqual(struct['args'][0]['type'], 'map')
+        self.assertEqual(struct['args'][0]['keyType'], 'SomeClass')
+        self.assertEqual(struct['args'][0]['valType'], 'str')
+
+    def test_varInitStrClassMap(self):
+        struct = self.runFile('varInit/initStrClassMap.w')
+        self.assertEqual(struct['token'], 'expr')
+        self.assertEqual(struct['args'][0]['name'], 'var')
+        self.assertEqual(struct['args'][0]['type'], 'map')
+        self.assertEqual(struct['args'][0]['keyType'], 'str')
+        self.assertEqual(struct['args'][0]['valType'], 'SomeClass')
 
 if __name__ == "__main__":
     unittest.main()

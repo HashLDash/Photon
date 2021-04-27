@@ -84,7 +84,7 @@ def arrayType(i, t):
     elif t[i]['token'] == 'type':
         elementType = t[i]['type']
     else:
-        raise SyntaxError('Array type ok {t[i]["token"} not implemented.')
+        raise SyntaxError('Array type tok {t[i]["token"} not implemented.')
 
     arrayLen = t[i+2]['value']
 
@@ -92,6 +92,31 @@ def arrayType(i, t):
 
     del t[i+1] #beginBlock
     del t[i+1] #num
+    return t
+
+def mapType(i, t):
+    ''' 
+    Return a type token according to signature.
+    (var type) beginBlock (var type) -> map
+    '''
+    if t[i]['token'] == 'var':
+        keyType = t[i]['name']
+    elif t[i]['token'] == 'type':
+        keyType = t[i]['type']
+    else:
+        raise SyntaxError('Map key type tok {t[i]["token"} not implemented.')
+
+    if t[i+2]['token'] == 'var':
+        valType = t[i+2]['name']
+    elif t[i+2]['token'] == 'type':
+        valType = t[i+2]['type']
+    else:
+        raise SyntaxError('Map val type tok {t[i]["token"} not implemented.')
+
+    t[i] = {'token':'type', 'type':'map', 'keyType':keyType, 'valType':valType}
+
+    del t[i+1] #beginBlock
+    del t[i+1] #var or type
     return t
 
 def typeDeclaration(i, t):

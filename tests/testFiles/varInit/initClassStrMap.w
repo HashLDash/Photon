@@ -1,0 +1,1 @@
+SomeClass:str var
