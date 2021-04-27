@@ -6,7 +6,7 @@ class BaseTranspiler():
         self.module = module
 
         self.instructions = {
-            'printFunction': self.printFunction,
+            'printFunc': self.printFunc,
             'expr': self.processVarInit,
             'assign': self.processAssign,
         }
@@ -72,7 +72,7 @@ class BaseTranspiler():
         expr = self.processExpr(token['expr'])
         self.source.append(self.formatAssign(target, expr))
 
-    def printFunction(self, token):
+    def printFunc(self, token):
         value = self.processExpr(token['expr'])
         self.source.append(self.formatPrint(value))
 
