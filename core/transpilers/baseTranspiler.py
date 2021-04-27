@@ -48,7 +48,9 @@ class BaseTranspiler():
 
     def processVar(self, token):
         name = token['name']
-        if name in self.currentScope:
+        if self.typeKnown(token['type']):
+            varType = token['type']
+        elif name in self.currentScope:
             varType = self.currentScope[name]['type']
         else:
             varType = 'unknown'

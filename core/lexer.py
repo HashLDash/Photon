@@ -145,6 +145,10 @@ def typeDeclaration(i, t):
                 varType.append(name)
                 name = tok['name']
                 break
+            elif not tok['token'] in {'type','var'}:
+                # subtract to not consume the token
+                n -= 1
+                break
     if not name:
         raise SyntaxError('Type declaration error')
     t[i] = {'token':'var', 'name':name, 'type':' '.join(varType)} 

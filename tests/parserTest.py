@@ -121,5 +121,12 @@ class ParserTest(unittest.TestCase):
         self.assertEqual(struct['expr']['args'][0]['value'], '1')
         self.assertEqual(struct['expr']['args'][0]['type'], 'int')
 
+    def test_assignExplicitFloatVarInt(self):
+        struct = self.runFile('assign/floatVarEqualInt.w')
+        self.assertEqual(struct['token'], 'assign')
+        self.assertEqual(struct['target']['token'], 'var')
+        self.assertEqual(struct['target']['type'], 'float')
+        self.assertEqual(struct['expr']['args'][0]['value'], '4')
+
 if __name__ == "__main__":
     unittest.main()

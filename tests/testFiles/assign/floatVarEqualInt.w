@@ -1,0 +1,1 @@
+float var = 4
