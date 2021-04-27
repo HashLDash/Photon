@@ -97,6 +97,7 @@ linux_cmds = {'dmd': 'curl https://dlang.org/install.sh | bash -s || (mkdir -p ~
                      '~/dlang/install.sh)'}
 
 if os.path.exists('/etc/debian_version'):  # debian, ubuntu, pop!_os, zorin os
+    linux_cmds['before'] = 'sudo apt-get update'
     linux_cmds['gcc'] = 'sudo apt install build-essential'
     linux_cmds['dmd'] = 'sudo wget https://netcologne.dl.sourceforge.net/project/d-apt/files/d-apt.list -O ' \
                         '/etc/apt/sources.list.d/d-apt.list && sudo apt-get update --allow-insecure-repositories && ' \
@@ -110,20 +111,24 @@ if os.path.exists('/etc/debian_version'):  # debian, ubuntu, pop!_os, zorin os
                          "/etc/apt/sources.list.d/dart_stable.list' && sudo apt-get update && sudo apt-get install " \
                          "dart "
 elif os.path.exists('/etc/arch-release'):  # arch, manjaro
+    linux_cmds['before'] = 'sudo pacman -Syy'
     linux_cmds['gcc'] = 'sudo pacman -S gcc'
     linux_cmds['dmd'] = 'sudo pacman -S dmd'
     linux_cmds['haxe'] = 'sudo pacman -S haxe'
     linux_cmds['nodejs'] = 'sudo pacman -S nodejs'
     linux_cmds['dart'] = 'sudo pacman -S dart'
 elif os.path.exists('/etc/gentoo-release'):  # gentoo
+    linux_cmds['before'] = 'sudo emerge --sync'
     linux_cmds['gcc'] = 'sudo emerge sys-devel/gcc'
     linux_cmds['dmd'] = 'sudo emerge app-portage/layman && sudo layman -f -a dlang && sudo emerge dev-lang/dmd'
     linux_cmds['nodejs'] = 'sudo emerge nodejs'
-elif os.path.exists('/etc/SuSE-release'):  # open suse
+elif os.path.exists('/etc/SuSE-release'):  # opensuse
+    linux_cmds['before'] = 'sudo zypper refresh'
     linux_cmds['gcc'] = 'sudo zypper install gcc'
     linux_cmds['haxe'] = 'sudo zypper install haxe && mkdir ~/haxelib && haxelib setup ~/haxelib'
     linux_cmds['nodejs'] = 'sudo zypper install nodejs4'
 elif os.path.exists('/etc/redhat-release'):  # red hat, centos, fedora
+    linux_cmds['before'] = 'sudo dnf check-update; sudo yum check-update'
     linux_cmds['gcc'] = 'sudo dnf install gcc || sudo yum install gcc'
     linux_cmds['haxe'] = '(sudo dnf install haxe || (sudo yum install epel-release; sudo yum install haxe)) && mkdir ' \
                          '~/haxelib && haxelib setup ~/haxelib'
@@ -131,6 +136,9 @@ elif os.path.exists('/etc/redhat-release'):  # red hat, centos, fedora
 
 def linuxInstaller(package):
     if package in linux_cmds:
+        if 'before' in linux_cmds:
+            os.system(f'sh -c "{linux_cmds["before"]}"')
+
         shell_exec_cmd = f'sh -c "{linux_cmds[package]}"'
         print('# Installing dependency - Command: \r\n')
         print(f'{shell_exec_cmd}\r\n')
