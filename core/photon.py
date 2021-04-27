@@ -9,6 +9,7 @@ if __name__ == "__main__":
     sys.path.insert(0, PHOTON_INSTALL_PATH)
     from interpreter import Interpreter
     from builder import Builder
+    from dependencies import haveDependencies, resolveDependencies
     try:
         first = sys.argv[1]
     except IndexError:
