@@ -6,7 +6,7 @@ class Transpiler(BaseTranspiler):
         super().__init__(filename, **kwargs)
         self.filename = self.filename.replace('.w','.c')
         self.commentSymbol = '//'
-        self.imports = ['#include <stdio.h>', '#include <stdlib.h>']
+        self.imports = {'#include <stdio.h>', '#include <stdlib.h>'}
         self.funcIdentifier = '/*def*/'
         self.constructorName = 'new'
         self.block = {'typedef ','/*def*/', 'for ','while ','if ','else ', 'int main('}
@@ -37,12 +37,14 @@ class Transpiler(BaseTranspiler):
                     # Casting to a different type
                     varType = self.nativeType(target['type'])
                     cast = varType
-                varType = ''
-            if self.typeKnown(target['type']):
-                # Type was explicit
-                varType = self.nativeType(target['type'])
+                else:
+                    varType = ''
             else:
-                varType = self.nativeType(self.inferType(expr))
+                if self.typeKnown(target['type']):
+                    # Type was explicit
+                    varType = self.nativeType(target['type'])
+                else:
+                    varType = self.nativeType(self.inferType(expr))
         else:
             raise SyntaxError(f'Format assign with variable {target} not implemented yet.')
         formattedExpr = self.formatExpr(expr, cast=cast)
