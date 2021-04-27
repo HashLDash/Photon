@@ -62,5 +62,11 @@ class ParserTest(unittest.TestCase):
         self.assertEqual(struct['args'][0]['name'], 'a')
         self.assertEqual(struct['args'][0]['type'], 'str')
 
+    def test_varInitClass(self):
+        struct = self.runFile('varInit/initClass.w')
+        self.assertEqual(struct['token'], 'expr')
+        self.assertEqual(struct['args'][0]['name'], 'a')
+        self.assertEqual(struct['args'][0]['type'], 'SomeClass')
+
 if __name__ == "__main__":
     unittest.main()

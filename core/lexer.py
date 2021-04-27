@@ -78,7 +78,7 @@ def typeDeclaration(i, t):
     varType = []
     last = ''
     name = ''
-    if t[i]['token'] == 'type':
+    if t[i]['token'] in {'type', 'var'}:
         for n, tok in enumerate(t[i:]):
             if tok['token'] == 'type':
                 varType.append(tok['type'])
