@@ -3,12 +3,12 @@ def inference(value):
 
     try:
         float(value)
-        return {'token':'num', 'value': {'type':'int','value':value}}
+        return {'token':'num', 'value': value, 'type':'int'}
     except:
         try:
             print(float(value[0]))
             print('it is something??')
-            return {'token':'value','value': {'type':'unknown','value':value} }
+            return {'token':'value','type':'unknown','value':value}
         except:
             if value == 'True' or value == 'False':
                 return {'token':'expr','type':'bool','args': [{'type':'bool','value':value.lower()}], 'ops':[] }
@@ -47,7 +47,7 @@ def string(i, t):
         elif token['token'] == 'var':
             s += token['name']
         elif 'num' in token:
-            s += str(token['value']['value'])
+            s += str(token['value'])
         elif 'operator' in token:
             s += token['operator']
         elif 'symbol' in token:
@@ -64,7 +64,7 @@ def string(i, t):
 
     t[i] = {
         'token':'expr',
-        'args':[{'type':'str','value':f'{quote}{s}{quote}'}],
+        'args':[{'token':'str', 'type':'str','value':f'{quote}{s}{quote}'}],
         'ops':[]
     }
     for _ in range(n):
@@ -74,14 +74,45 @@ def string(i, t):
 def var(i, t):
     return t
 
+def arrayType(i, t):
+    ''' 
+    Return a type token according to signature.
+    (var type) beginBlock num -> array
+    '''
+    if t[i]['token'] == 'var':
+        elementType = t[i]['name']
+    elif t[i]['token'] == 'type':
+        elementType = t[i]['type']
+    else:
+        raise SyntaxError('Array type ok {t[i]["token"} not implemented.')
+
+    arrayLen = t[i+2]['value']
+
+    t[i] = {'token':'type', 'type':'array', 'elementType':elementType, 'len':arrayLen}
+
+    del t[i+1] #beginBlock
+    del t[i+1] #num
+    return t
+
 def typeDeclaration(i, t):
     varType = []
     last = ''
     name = ''
+    elementType = ''
+    arrayLen = ''
+    keyType = ''
+    valType = ''
     if t[i]['token'] in {'type', 'var'}:
         for n, tok in enumerate(t[i:]):
             if tok['token'] == 'type':
-                varType.append(tok['type'])
+                if tok['type'] == 'array':
+                    elementType = tok['elementType']
+                    arrayLen = tok['len']
+                elif tok['type'] == 'map':
+                    keyType = tok['keyType']
+                    valType = tok['valType']
+                else:
+                    varType.append(tok['type'])
             elif tok['token'] == 'var' and not last == 'var':
                 name = tok['name']
                 last = 'var'
@@ -92,6 +123,16 @@ def typeDeclaration(i, t):
     if not name:
         raise SyntaxError('Type declaration error')
     t[i] = {'token':'var', 'name':name, 'type':' '.join(varType)} 
+    if arrayLen:
+        # It's an array, include len and elementType
+        t[i]['type'] = 'array'
+        t[i]['len'] = arrayLen
+        t[i]['elementType'] = elementType
+    elif valType:
+        # It's a map, include keyType and valType
+        t[i]['type'] = 'map'
+        t[i]['keyType'] = keyType
+        t[i]['valType'] = valType
     for _ in range(n):
         del t[i+1] # type and var types
     return t
@@ -102,16 +143,14 @@ def floatNumber(i, t):
     try:
         t[i] = {
             'token':'floatNumber',
-            'value': {
-                'type':'float',
-                'value': f"{t[i]['value']['value']}.{t[i+2]['value']['value']}"}}
+            'type':'float',
+            'value': f"{t[i]['value']}.{t[i+2]['value']}"}
         del t[i+1] #dot
     except:
         t[i] = {
             'token':'floatNumber',
-            'value': {
-                'type':'float',
-                'value': f"{t[i]['value']['value']}."}}
+            'type':'float',
+            'value': f"{t[i]['value']}."}
 
     del t[i+1] #dot or decimal
     return t
@@ -122,7 +161,7 @@ def convertToExpr(token):
             varType = 'int'
         else:
             varType = 'float'
-        return {'token':'expr', 'type':varType, 'args':[token['value']], 'ops':[]}
+        return {'token':'expr', 'type':varType, 'args':[token], 'ops':[]}
     elif token['token'] in {'var'}:
         return {'token':'expr', 'type':token['type'], 'args':[token], 'ops':[]}
     else:
@@ -135,10 +174,6 @@ def expr(i, t):
         raise SyntaxError('Expression of token {t[i]["token"]} not implemented.')
     return t
         
-def multiType(i, t):
-    raise NotImplemented
-    return t
-
 def printFunc(i, t):
     ''' Return a printFunction token '''
 

@@ -22,22 +22,22 @@ class ParserTest(unittest.TestCase):
     def test_printStr(self):
         struct = self.runFile('/printFunc/printStr.w')
         self.assertEqual(struct['token'], 'printFunc')
-        self.assertEqual(struct['expr']['args'][0], {'type':'str', 'value':'"Hello World"'})
+        self.assertEqual(struct['expr']['args'][0], {'token':'str', 'type':'str', 'value':'"Hello World"'})
 
     def test_printInt(self):
         struct = self.runFile('printFunc/printInt.w')
         self.assertEqual(struct['token'], 'printFunc')
-        self.assertEqual(struct['expr']['args'][0], {'type':'int', 'value':'26'})
+        self.assertEqual(struct['expr']['args'][0], {'token':'num', 'type':'int', 'value':'26'})
 
     def test_printFloat(self):
         struct = self.runFile('printFunc/printFloat.w')
         self.assertEqual(struct['token'], 'printFunc')
-        self.assertEqual(struct['expr']['args'][0], {'type':'float', 'value':'4.7'})
+        self.assertEqual(struct['expr']['args'][0], {'token':'floatNumber','type':'float', 'value':'4.7'})
 
     def test_printFloatDot(self):
         struct = self.runFile('printFunc/printFloatDot.w')
         self.assertEqual(struct['token'], 'printFunc')
-        self.assertEqual(struct['expr']['args'][0], {'type':'float', 'value':'2.'})
+        self.assertEqual(struct['expr']['args'][0], {'token':'floatNumber','type':'float', 'value':'2.'})
 
     def test_printVar(self):
         struct = self.runFile('printFunc/printVar.w')
@@ -67,6 +67,22 @@ class ParserTest(unittest.TestCase):
         self.assertEqual(struct['token'], 'expr')
         self.assertEqual(struct['args'][0]['name'], 'a')
         self.assertEqual(struct['args'][0]['type'], 'SomeClass')
+
+    def test_varInitStrArray(self):
+        struct = self.runFile('varInit/initStrArray.w')
+        self.assertEqual(struct['token'], 'expr')
+        self.assertEqual(struct['args'][0]['name'], 'array')
+        self.assertEqual(struct['args'][0]['elementType'], 'str')
+        self.assertEqual(struct['args'][0]['len'], '10')
+
+    def test_varInitClassArray(self):
+        struct = self.runFile('varInit/initClassArray.w')
+        self.assertEqual(struct['token'], 'expr')
+        self.assertEqual(struct['args'][0]['name'], 'array')
+        self.assertEqual(struct['args'][0]['type'], 'array')
+        self.assertEqual(struct['args'][0]['elementType'], 'SomeClass')
+        self.assertEqual(struct['args'][0]['len'], '10')
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -3,8 +3,9 @@ comment = hashtag
 string = singleQuote
     | doubleQuote
 
-typeDeclaration = var var
-                | type var
+arrayType = (type var) beginBlock num
+
+typeDeclaration = (var type) var
 
 var = var underline var
     | underline var
