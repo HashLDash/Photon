@@ -1,1 +1,2 @@
+int var
 print(var)

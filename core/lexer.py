@@ -44,8 +44,8 @@ def string(i, t):
             s += '"\'"'
         elif 'doubleQuote' in token:
             s += "'\"'"
-        elif 'var' in token:
-            s += token['var']['name']
+        elif token['token'] == 'var':
+            s += token['name']
         elif 'num' in token:
             s += str(token['value']['value'])
         elif 'operator' in token:
