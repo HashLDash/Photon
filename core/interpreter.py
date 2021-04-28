@@ -6,7 +6,7 @@
 #   - Call the engine to Process the struct
 #   - Run the processed struct
 
-from parser import parse, assembly
+from photonParser import parse, assembly
 import sys
 
 class Interpreter():

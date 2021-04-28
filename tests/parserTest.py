@@ -1,6 +1,6 @@
 import sys, os
 sys.path.insert(1, os.path.pardir+'/core')
-from parser import parse
+from photonParser import parse
 from interpreter import Interpreter
 import unittest
 
