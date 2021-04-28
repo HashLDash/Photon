@@ -53,10 +53,12 @@ if platform_os == "unix":
             w.write(code)
         os.chmod('/usr/local/bin/photon', 0o777)
         print("Successfully installed! Now you can use the photon command!")
+        input('Press enter to close and play with Photon!')
     except PermissionError:
         print(
         " Please run this script with the 'sudo' command.\n",
         "Example:\n    'sudo python3 install.py'")
+        input('Press enter to close.')
 elif platform_os == "win":
     p_dir = os.path.expandvars('%ProgramFiles%\\Photon')
     try:
@@ -71,7 +73,8 @@ elif platform_os == "win":
     except PermissionError:
         print('The installation has not been completed. Try to run the script as administrator')
 else:
-    print('Automatic installation in this system is not supported yet.')
+    print('Automatic installation in this system is not supported yet. Press enter to close.')
+    input()
     sys.exit()
 
 if not haveDependencies('c', sys.platform):
