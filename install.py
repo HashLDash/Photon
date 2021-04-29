@@ -67,7 +67,7 @@ elif platform_os == "win":
         with open(os.path.join(p_dir, 'photon.py'), 'w') as w:
             w.write(code)
         with open(os.path.join(p_dir, 'photon.bat'), 'w') as w:
-            w.write('@echo off\nset bat_dir=%~dp0\npython "%bat_dir%photon.py"')
+            w.write('@echo off\nset bat_dir=%~dp0\npython "%bat_dir%photon.py" "%1" "%2" "%3"')
         os.system(f'setx /M PATH "%PATH%;{p_dir}"')
         print("Successfully installed! Now you can use the photon command!")
     except PermissionError:
