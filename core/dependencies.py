@@ -85,7 +85,7 @@ def chocoInstall():
 def chocoInstaller(name):
     if not chocoInstall():
         return False
-    shell_exec_cmd = "powershell -Command \"Start-Process powershell -Verb RunAs -PassThru -Wait -ArgumentList \\\"/c choco install " + name + "; timeout /t 5; exit\\\"\""
+    shell_exec_cmd = "powershell -Command \"Start-Process powershell -Verb RunAs -PassThru -Wait -ArgumentList \\\"/c choco install " + name + " -y; timeout /t 5; exit\\\"\""
     print('# Installing dependency with Chocolatey - Command: \r\n')
     print(f'{shell_exec_cmd}\r\n')
     print('# Result:')
