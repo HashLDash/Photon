@@ -4,5 +4,5 @@ powershell -Command "Start-Process powershell -Verb RunAs -PassThru -Wait -Argum
 
 powershell -Command "Start-Process powershell -Verb RunAs -PassThru -Wait -ArgumentList \"/c choco install mingw; timeout /t 5; exit\""
 
-powershell -Command "Start-Process powershell -Verb RunAs -PassThru -Wait -ArgumentList \"/c python %~dp0\install.py; timeout /t 5; exit\""
+powershell -Command "Start-Process powershell -Verb RunAs -PassThru -Wait -ArgumentList \"/c python '%~dp0/install.py'; timeout /t 5; exit\""
 
