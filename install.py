@@ -42,10 +42,10 @@ if haveCtypes and not isAdmin() and platform_os == "win":
     except:
         pass
 
-with open('core/photon.py') as w:
+with open(f'{os.path.dirname(__file__)}/core/photon.py') as w:
     code = w.read()
 
-code = code.replace('PHOTON_INSTALL_PATH =', f'PHOTON_INSTALL_PATH = r"{os.getcwd()}/core" #')
+code = code.replace('PHOTON_INSTALL_PATH =', f'PHOTON_INSTALL_PATH = r"{os.path.dirname(__file__)}/core" #')
 
 if platform_os == "unix":
     try:
