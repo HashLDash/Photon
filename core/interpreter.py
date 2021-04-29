@@ -28,6 +28,8 @@ class Interpreter():
             with open(filename,'r') as f:
                 self.source = [line for line in f]
         else:
+            print("Interpreter not implemented yet.")
+            sys.exit()
             self.engine = Engine()
             self.input = self.console
         self.end = False
