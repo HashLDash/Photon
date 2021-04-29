@@ -46,7 +46,11 @@ if __name__ == "__main__":
                 defaultConfig = json.load(conf)
         else:
             defaultConfig = {}
-        variable, value = command.split('=')
+        try:
+            variable, value = command.split('=')
+        except ValueError:
+            # On Windows '=' is ignored on argv
+            variable, value = sys.argv[2:]
         vairable, value = variable.strip(), value.strip()
         if variable in ['lang']:
             if value in ['c', 'd', 'dart', 'haxe', 'js']:
