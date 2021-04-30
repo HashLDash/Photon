@@ -1,7 +1,7 @@
 comment = hashtag
 
 string = singleQuote
-    | doubleQuote
+       | doubleQuote
 
 arrayType = (type var) beginBlock num
 
@@ -20,6 +20,7 @@ floatNumber = num dot num
 expr = num
      | floatNumber
      | var
+     | (num var) operator (num var)
 
 assign = expr equal expr
 

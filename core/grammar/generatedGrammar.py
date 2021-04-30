@@ -19,6 +19,10 @@ patterns = {
   ('num',): expr,
   ('floatNumber',): expr,
   ('var',): expr,
+  ('num', 'operator', 'num'): expr,
+  ('num', 'operator', 'var'): expr,
+  ('var', 'operator', 'num'): expr,
+  ('var', 'operator', 'var'): expr,
   ('expr', 'equal', 'expr'): assign,
   ('print', 'lparen', 'expr', 'rparen'): printFunc,
 }

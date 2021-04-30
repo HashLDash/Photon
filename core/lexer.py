@@ -197,7 +197,23 @@ def convertToExpr(token):
         raise SyntaxError('Cant convert token to expr')
 
 def expr(i, t):
-    if t[i]['token'] in {'num', 'floatNumber', 'var'}:
+    if t[i+1]['token'] == 'operator':
+        args = []
+        ops = []
+        for token in t[i:i+3]:
+            if token['token'] == 'expr':
+                args = args + token['args']
+                ops = ops + token['ops']
+            elif token['token'] in {'num','var'}:
+                args.append(token)
+            elif token['token'] == 'operator':
+                ops.append(token['operator'])
+            else:
+                raise SyntaxError('Expression of token {token["token"]} not implemented.')
+        t[i] = {'token':'expr', 'type':'unknown', 'args':args, 'ops':ops}
+        del t[i+1] # operator
+        del t[i+1] # var or num
+    elif t[i]['token'] in {'num', 'floatNumber', 'var'}:
         t[i] = convertToExpr(t[i])
     else:
         raise SyntaxError('Expression of token {t[i]["token"]} not implemented.')
