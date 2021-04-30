@@ -128,5 +128,24 @@ class ParserTest(unittest.TestCase):
         self.assertEqual(struct['target']['type'], 'float')
         self.assertEqual(struct['expr']['args'][0]['value'], '4')
 
+    def test_assignVarEqualExpr(self):
+        struct = self.runFile('assign/varEqualExpr.w')
+        self.assertEqual(struct['token'], 'assign')
+        self.assertEqual(struct['target']['token'], 'var')
+        self.assertEqual(struct['target']['type'], 'unknown')
+        self.assertEqual(struct['expr']['args'][0]['value'], '1')
+        self.assertEqual(struct['expr']['args'][1]['value'], '2')
+        self.assertEqual(struct['expr']['ops'], ['+'])
+
+    def test_assignVarEqualModifierExpr(self):
+        struct = self.runFile('assign/varEqualModifierExpr.w')
+        self.assertEqual(struct['token'], 'assign')
+        self.assertEqual(struct['target']['token'], 'var')
+        self.assertEqual(struct['target']['type'], 'unknown')
+        self.assertEqual(struct['expr']['args'][0]['value'], '-1')
+        self.assertEqual(struct['expr']['args'][1]['value'], '2')
+        self.assertEqual(struct['expr']['args'][2]['value'], '6')
+        self.assertEqual(struct['expr']['ops'], ['+','-'])
+
 if __name__ == "__main__":
     unittest.main()
