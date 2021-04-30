@@ -72,6 +72,8 @@ if __name__ == "__main__":
         print('    photon build [platform] Builds and runs the project for the target platform')
         print('    photon set lang=[lang] Set the default language to [lang]')
         print('    photon --version Shows the the current version')
+    elif first == 'update':
+        os.system(f'git -C {PHOTON_INSTALL_PATH} pull')
     elif first == 'android-view':
         os.system('adb exec-out screenrecord --output-format=h264 - | ffplay -framerate 60 -probesize 32 -sync video  -')
     elif first == '--version':
