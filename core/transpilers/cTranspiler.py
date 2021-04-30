@@ -67,7 +67,7 @@ class Transpiler(BaseTranspiler):
     def write(self):
         boilerPlateStart = [
             'int main() {',
-            'setlocale(LC_ALL,"Portuguese");',
+            'setlocale(LC_ALL,"");',
         ]
         boilerPlateEnd = [
             '}'
