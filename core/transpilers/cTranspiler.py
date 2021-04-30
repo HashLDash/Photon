@@ -6,7 +6,7 @@ class Transpiler(BaseTranspiler):
         super().__init__(filename, **kwargs)
         self.filename = self.filename.replace('.w','.c')
         self.commentSymbol = '//'
-        self.imports = {'#include <stdio.h>', '#include <stdlib.h>'}
+        self.imports = {'#include <stdio.h>', '#include <stdlib.h>', '#include <locale.h>'}
         self.funcIdentifier = '/*def*/'
         self.constructorName = 'new'
         self.block = {'typedef ','/*def*/', 'for ','while ','if ','else ', 'int main('}
@@ -67,6 +67,7 @@ class Transpiler(BaseTranspiler):
     def write(self):
         boilerPlateStart = [
             'int main() {',
+            'setlocale(LC_ALL,"Portuguese");',
         ]
         boilerPlateEnd = [
             '}'
@@ -81,6 +82,7 @@ class Transpiler(BaseTranspiler):
             self.filename = f'{moduleName}.c'
             boilerPlateStart = []
             boilerPlateEnd = []
+            del self.imports[0]
             del self.imports[0]
             del self.imports[0]
         with open(f'Sources/{self.filename}','w') as f:
