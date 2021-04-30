@@ -20,7 +20,7 @@ floatNumber = num dot num
 expr = num
      | floatNumber
      | var
-     | (num var) operator (num var)
+     | (num var expr) operator (num var expr)
      | operator (expr)
 
 assign = expr equal expr
