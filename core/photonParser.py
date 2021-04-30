@@ -111,6 +111,7 @@ def reduceToken(tokens):
     for pattern in patterns:
         for i in range(len(tokenList)):
             if pattern == tuple(tokenList[i:i+len(pattern)]):
+                print(pattern)
                 result = reduceToken(patterns[pattern](i+1,tokens))
                 if result == 'continue':
                     continue

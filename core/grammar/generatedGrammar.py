@@ -23,6 +23,7 @@ patterns = {
   ('num', 'operator', 'var'): expr,
   ('var', 'operator', 'num'): expr,
   ('var', 'operator', 'var'): expr,
+  ('operator', 'expr'): expr,
   ('expr', 'equal', 'expr'): assign,
   ('print', 'lparen', 'expr', 'rparen'): printFunc,
 }

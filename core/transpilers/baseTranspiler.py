@@ -11,6 +11,7 @@ class BaseTranspiler():
             'expr': self.processVarInit,
             'assign': self.processAssign,
             '+': self.add,
+            '-': self.sub,
         }
         self.currentScope = {}
         self.source = []
@@ -75,7 +76,10 @@ class BaseTranspiler():
                 return self.processVar(tok)
         elif len(args) == 1 and len(ops) == 1:
             # modifier operator
-            return {'value':ops[0]+token['args'][0]['value'],'type':'unknown'}
+            if self.typeKnown(token['type']):
+                return {'value':ops[0]+token['args'][0]['value'],'type':token['type']}
+            else:
+                raise NotImplemented
         else:
             for op in self.operators:
                 while op in ops:
@@ -119,6 +123,15 @@ class BaseTranspiler():
         elif t1 in {'float','int'} and t2 in {'float','int'}:
             varType = 'float'
         return {'value':f'{arg1["value"]} + {arg2["value"]}', 'type':varType}
+
+    def sub(self, arg1, arg2):
+        t1 = arg1['type']
+        t2 = arg2['type']
+        if t1 == 'int' and t2 == 'int':
+            varType = 'int'
+        elif t1 in {'float','int'} and t2 in {'float','int'}:
+            varType = 'float'
+        return {'value':f'{arg1["value"]} - {arg2["value"]}', 'type':varType}
 
     def isBlock(self, line):
         for b in self.block:

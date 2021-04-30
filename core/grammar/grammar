@@ -21,6 +21,7 @@ expr = num
      | floatNumber
      | var
      | (num var) operator (num var)
+     | operator (expr)
 
 assign = expr equal expr
 
