@@ -66,7 +66,7 @@ if __name__ == "__main__":
             print('This setting is not available. Available parameters are:\n    defaultLang')
         with open(f'{home}/.photon/photon.conf','w') as conf:
             json.dump(defaultConfig, conf)
-    elif first == '--help':
+    elif first == '--help' or first == '-h':
         print('Available commands:')
         print('    photon [file.w] Runs the script using the default lang')
         print('    photon build [platform] Builds and runs the project for the target platform')
@@ -76,13 +76,13 @@ if __name__ == "__main__":
         os.system(f'git -C {PHOTON_INSTALL_PATH} pull')
     elif first == 'android-view':
         os.system('adb exec-out screenrecord --output-format=h264 - | ffplay -framerate 60 -probesize 32 -sync video  -')
-    elif first == '--version':
+    elif first == '--version' or first == '-v' :
         print('Photon Version 0.0.1')
     else:
-        filename = first
-        from pathlib import Path
-        import json
         try:
+            filename = first
+            from pathlib import Path
+            import json
             with open(f'{Path.home()}/.photon/photon.conf','r') as conf:
                 lang = json.load(conf)['lang']
         except Exception as e:
