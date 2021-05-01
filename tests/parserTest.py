@@ -147,5 +147,16 @@ class ParserTest(unittest.TestCase):
         self.assertEqual(struct['expr']['args'][2]['value'], '6')
         self.assertEqual(struct['expr']['ops'], ['+','-'])
 
+    def test_assignVarEqualExprGroup(self):
+        struct = self.runFile('assign/varEqualExprGroup.w')
+        self.assertEqual(struct['token'], 'assign')
+        self.assertEqual(struct['target']['token'], 'var')
+        self.assertEqual(struct['target']['type'], 'unknown')
+        self.assertEqual(struct['expr']['ops'], ['+'])
+        self.assertEqual(struct['expr']['args'][0]['expr']['args'][0]['value'], '1')
+        self.assertEqual(struct['expr']['args'][0]['expr']['args'][1]['value'], '2')
+        self.assertEqual(struct['expr']['args'][0]['expr']['ops'], ['+'])
+        self.assertEqual(struct['expr']['args'][1]['value'], '5')
+
 if __name__ == "__main__":
     unittest.main()

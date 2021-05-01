@@ -227,7 +227,7 @@ def expr(i, t):
 
 def group(i, t):
     ''' Return a group token '''
-    if t[i-1]['token'] in {'symbol','operator'}:
+    if t[i-1]['token'] == 'operator' or 'symbol' in t[i-1]:
         # Its a group
         t[i] = {'token':'group', 'expr':t[i+1]}
         del t[i+1] # expr
