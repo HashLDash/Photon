@@ -17,10 +17,12 @@ var = var underline var
 floatNumber = num dot num
             | num dot
 
+group = lparen expr rparen
+
 expr = num
      | floatNumber
      | var
-     | (num var expr) operator (num var expr)
+     | (num var expr group) operator (num var expr group)
      | operator (expr)
 
 assign = expr equal expr

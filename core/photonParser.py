@@ -91,7 +91,7 @@ def token2word(tokens):
         elif 'symbol' in t:
             phrase += t['symbol']
         elif t['token'] in {'num', 'var', 'expr','print','printFunc',
-        'floatNumber', 'type', 'assign','operator'}:
+        'floatNumber', 'type', 'assign','operator','group'}:
             phrase += t['token']
         else:
             raise Exception(f'Cannot convert the token {t["token"]} to a word')

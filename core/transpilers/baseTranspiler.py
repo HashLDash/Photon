@@ -67,6 +67,8 @@ class BaseTranspiler():
         if 'value' in token and 'type' in token and self.typeKnown(token['type']):
             # Already processed, return
             return token
+        elif token['token'] == 'group':
+            return self.processGroup(token)
 
     def processExpr(self, token):
         #TODO: To be implemented
@@ -150,6 +152,10 @@ class BaseTranspiler():
         if t1 in {'float','int'} and t2 in {'float','int'}:
             varType = 'float'
         return {'value':f'{arg1["value"]} / {arg2["value"]}', 'type':varType}
+    
+    def processGroup(self, token):
+        expr = self.processExpr(token['expr'])
+        return {'value':f'({expr["value"]})', 'type':expr['type']}
 
     def isBlock(self, line):
         for b in self.block:

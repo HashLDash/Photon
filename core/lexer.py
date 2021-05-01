@@ -203,19 +203,19 @@ def expr(i, t):
         t2['args'][0]['value'] = t[i]['operator'] + t2['args'][0]['value']
         t[i] = t2
         del t[i+1] # var or num
-    elif len(t[i:]) > 1 and t[i+1]['token'] == 'operator':
+    elif len(t[i:]) > 1 and t[i+1]['token'] == 'operator' and t[i+2]['token'] in {'num','var','group','expr'}:
         args = []
         ops = []
         for token in t[i:i+3]:
             if token['token'] == 'expr':
                 args = args + token['args']
                 ops = ops + token['ops']
-            elif token['token'] in {'num','var'}:
+            elif token['token'] in {'num','var','group'}:
                 args.append(token)
             elif token['token'] == 'operator':
                 ops.append(token['operator'])
             else:
-                raise SyntaxError('Expression of token {token["token"]} not implemented.')
+                raise SyntaxError(f'Expression of token {token["token"]} not implemented.')
         t[i] = {'token':'expr', 'type':'unknown', 'args':args, 'ops':ops}
         del t[i+1] # operator
         del t[i+1] # var or num
@@ -224,6 +224,18 @@ def expr(i, t):
     else:
         raise SyntaxError('Expression of token {t[i]["token"]} not implemented.')
     return t
+
+def group(i, t):
+    ''' Return a group token '''
+    if t[i-1]['token'] in {'symbol','operator'}:
+        # Its a group
+        t[i] = {'token':'group', 'expr':t[i+1]}
+        del t[i+1] # expr
+        del t[i+1] # rparen
+        return t
+    else:
+        # Its a call, redirect
+        return 'continue'
         
 def printFunc(i, t):
     ''' Return a printFunction token '''
