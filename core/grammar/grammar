@@ -22,7 +22,8 @@ group = lparen expr rparen
 expr = num
      | floatNumber
      | var
-     | (num var expr group) operator (num var expr group)
+     | group
+     | (num var expr) operator (num var expr)
      | operator (expr)
 
 assign = expr equal expr

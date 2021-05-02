@@ -61,14 +61,22 @@ class BaseTranspiler():
             varType = self.currentScope[name]['type']
         else:
             varType = 'unknown'
+        if 'modifier' in token:
+            token['name'] = token['modifier'] + token['name']
         return {'value':token['name'], 'type':varType}
 
     def getValAndType(self, token):
         if 'value' in token and 'type' in token and self.typeKnown(token['type']):
             # Already processed, return
+            if 'modifier' in token:
+                token['value'] = token['modifier'] + token['value']
             return token
         elif token['token'] == 'group':
             return self.processGroup(token)
+        elif token['token'] == 'var':
+            return self.processVar(token)
+        else:
+            raise ValueError(f'ValAndType with token {token} not implemented')
 
     def processExpr(self, token):
         #TODO: To be implemented
@@ -155,7 +163,11 @@ class BaseTranspiler():
     
     def processGroup(self, token):
         expr = self.processExpr(token['expr'])
-        return {'value':f'({expr["value"]})', 'type':expr['type']}
+        if 'modifier' in token:
+            op = token['modifier']
+        else:
+            op = ''
+        return {'value':f'{op}({expr["value"]})', 'type':expr['type']}
 
     def isBlock(self, line):
         for b in self.block:

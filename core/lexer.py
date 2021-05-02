@@ -200,7 +200,7 @@ def expr(i, t):
     if t[i]['token'] == 'operator':
         # Modifier operator
         t2 = t[i+1].copy()
-        t2['args'][0]['value'] = t[i]['operator'] + t2['args'][0]['value']
+        t2['args'][0]['modifier'] = t[i]['operator']
         t[i] = t2
         del t[i+1] # var or num
     elif len(t[i:]) > 1 and t[i+1]['token'] == 'operator' and t[i+2]['token'] in {'num','var','group','expr'}:

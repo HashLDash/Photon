@@ -142,7 +142,8 @@ class ParserTest(unittest.TestCase):
         self.assertEqual(struct['token'], 'assign')
         self.assertEqual(struct['target']['token'], 'var')
         self.assertEqual(struct['target']['type'], 'unknown')
-        self.assertEqual(struct['expr']['args'][0]['value'], '-1')
+        self.assertEqual(struct['expr']['args'][0]['value'], '1')
+        self.assertEqual(struct['expr']['args'][0]['modifier'], '-')
         self.assertEqual(struct['expr']['args'][1]['value'], '2')
         self.assertEqual(struct['expr']['args'][2]['value'], '6')
         self.assertEqual(struct['expr']['ops'], ['+','-'])
@@ -157,6 +158,16 @@ class ParserTest(unittest.TestCase):
         self.assertEqual(struct['expr']['args'][0]['expr']['args'][1]['value'], '2')
         self.assertEqual(struct['expr']['args'][0]['expr']['ops'], ['+'])
         self.assertEqual(struct['expr']['args'][1]['value'], '5')
+
+    def test_assignModifierWithVar(self):
+        struct = self.runFile('assign/modifierWithVar.w')
+        self.assertEqual(struct['token'], 'assign')
+        self.assertEqual(struct['target']['token'], 'var')
+        self.assertEqual(struct['target']['type'], 'unknown')
+        self.assertEqual(struct['expr']['args'][0]['name'], 'b')
+        self.assertEqual(struct['expr']['args'][0]['modifier'], '-')
+        self.assertEqual(struct['expr']['args'][1]['value'], '1')
+        self.assertEqual(struct['expr']['ops'], ['+'])
 
 if __name__ == "__main__":
     unittest.main()
