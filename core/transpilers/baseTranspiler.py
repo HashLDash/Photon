@@ -14,6 +14,11 @@ class BaseTranspiler():
             '-': self.sub,
             '*': self.mul,
             '/': self.div,
+            '**': self.exp,
+            '==': self.equals,
+            '>=': self.greaterEqual,
+            '<=': self.lessEqual,
+            '!=': self.notEqual,
         }
         self.currentScope = {}
         self.source = []
@@ -160,7 +165,23 @@ class BaseTranspiler():
         if t1 in {'float','int'} and t2 in {'float','int'}:
             varType = 'float'
         return {'value':f'{arg1["value"]} / {arg2["value"]}', 'type':varType}
+
+    def exp(self, arg1, arg2):
+        self.imports.add('#include <math.h>')
+        return {'value':f'pow({arg1["value"]}, {arg2["value"]})', 'type':'float'}
+
+    def equals(self, arg1, arg2):
+        return {'value':f'{arg1["value"]} == {arg2["value"]}', 'type':'bool'}
+
+    def greaterEqual(self, arg1, arg2):
+        return {'value':f'{arg1["value"]} >= {arg2["value"]}', 'type':'bool'}
     
+    def lessEqual(self, arg1, arg2):
+        return {'value':f'{arg1["value"]} <= {arg2["value"]}', 'type':'bool'}
+
+    def notEqual(self, arg1, arg2):
+        return {'value':f'{arg1["value"]} != {arg2["value"]}', 'type':'bool'}
+
     def processGroup(self, token):
         expr = self.processExpr(token['expr'])
         if 'modifier' in token:

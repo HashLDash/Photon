@@ -19,6 +19,8 @@ floatNumber = num dot num
 
 group = lparen expr rparen
 
+operator = (equal operator) (equal operator)
+
 expr = num
      | floatNumber
      | var

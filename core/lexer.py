@@ -21,6 +21,21 @@ def comment(i, t):
     print('comment')
     return []
 
+def operator(i, t):
+    ''' Combine operators that are compatible '''
+
+    op1 = t[i]['operator'] if 'operator' in t[i] else t[i]['symbol']
+    op2 = t[i+1]['operator'] if 'operator' in t[i+1] else t[i]['symbol']
+    op = op1 + op2
+    if op in {'**', '==', '>=', '<=','<<','>>','!='}:
+        t[i] = {'token':'operator','operator':op}
+    elif op in {'+=','-=','*=','/='}:
+        t[i] = {'token':'augEqual','symbol':op}
+    else:
+        return 'continue'
+    del t[i+1] # operator or symbol
+    return t
+
 def string(i, t):
     ''' Return a string value token according to tokenList '''
     
@@ -191,7 +206,7 @@ def convertToExpr(token):
         else:
             varType = 'float'
         return {'token':'expr', 'type':varType, 'args':[token], 'ops':[]}
-    elif token['token'] in {'var'}:
+    elif token['token'] in {'var','group'}:
         return {'token':'expr', 'type':token['type'], 'args':[token], 'ops':[]}
     else:
         raise SyntaxError('Cant convert token to expr')
@@ -219,17 +234,17 @@ def expr(i, t):
         t[i] = {'token':'expr', 'type':'unknown', 'args':args, 'ops':ops}
         del t[i+1] # operator
         del t[i+1] # var or num
-    elif t[i]['token'] in {'num', 'floatNumber', 'var'}:
+    elif t[i]['token'] in {'num', 'floatNumber', 'var', 'group'}:
         t[i] = convertToExpr(t[i])
     else:
-        raise SyntaxError('Expression of token {t[i]["token"]} not implemented.')
+        raise SyntaxError(f'Expression of token {t[i]["token"]} not implemented.')
     return t
 
 def group(i, t):
     ''' Return a group token '''
     if t[i-1]['token'] == 'operator' or 'symbol' in t[i-1]:
         # Its a group
-        t[i] = {'token':'group', 'expr':t[i+1]}
+        t[i] = {'token':'group', 'type':t[i+1]['type'], 'expr':t[i+1]}
         del t[i+1] # expr
         del t[i+1] # rparen
         return t

@@ -53,6 +53,9 @@ class Transpiler(BaseTranspiler):
     def formatExpr(self, value, cast=None):
         #TODO: implement cast to type
         return value['value']
+    
+    def div(self, arg1, arg2):
+        return {'value':f'({self.nativeType("float")}){arg1["value"]} / {arg2["value"]}', 'type':'float'}
 
     def formatPrint(self, value):
         if value['type'] == 'int':
@@ -61,6 +64,8 @@ class Transpiler(BaseTranspiler):
             return f'printf("%f\\n", {value["value"]});'
         elif value['type'] == 'str':
             return f'printf("%s\\n", {value["value"]});'
+        elif value['type'] == 'bool':
+            return f'if ({value["value"]} == 0) {{printf("False\\n");}} else {{printf("True\\n");}}'
         else:
             raise SyntaxError(f'Print function with token {value} not supported yet.')
 
