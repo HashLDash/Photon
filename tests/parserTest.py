@@ -20,7 +20,7 @@ class ParserTest(unittest.TestCase):
         return struct
         
     def test_printStr(self):
-        struct = self.runFile('/printFunc/printStr.w')
+        struct = self.runFile('printFunc/printStr.w')
         self.assertEqual(struct['token'], 'printFunc')
         self.assertEqual(struct['expr']['args'][0], {'token':'str', 'type':'str', 'value':'"Hello World"'})
 
