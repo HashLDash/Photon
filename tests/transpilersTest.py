@@ -8,9 +8,14 @@ from subprocess import Popen, PIPE
 class TranspilersTest(unittest.TestCase):
     def runFile(self, file, lang='c'):
         result = Popen(f'photon testFiles/{file}', shell=True, stdout=PIPE)
-        result.stdout
-        out = str(result.stdout.readlines()[0].strip(), encoding='utf8')
+        out = ''
+        for line in result.stdout:
+            out += str(line, encoding='utf8').strip()
+            sys.stdout.buffer.write(line)
+            sys.stdout.buffer.flush()
+            break
         result.stdout.close()
+        result.wait()
         return out
 
     def test_printInt(self):
