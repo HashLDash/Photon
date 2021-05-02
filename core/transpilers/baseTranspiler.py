@@ -42,6 +42,7 @@ class BaseTranspiler():
         if self.typeKnown(expr['type']):
             return expr['type']
         else:
+            print('Infering type')
             input(expr)
             return 'unknown'
             raise NotImplemented
@@ -89,8 +90,7 @@ class BaseTranspiler():
         ops = token['ops']
         if not ops:
             tok = args[0]
-            if tok['token'] == 'var':
-                return self.processVar(tok)
+            return self.getValAndType(tok)
         elif len(args) == 1 and len(ops) == 1:
             # modifier operator
             if self.typeKnown(token['type']):
