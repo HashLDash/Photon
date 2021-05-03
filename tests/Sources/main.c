@@ -1,10 +1,11 @@
 #include <locale.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 
 int main() {
     setlocale(LC_ALL, "");
-    printf("%s\n", "Hello World");
+    long var = 2;
+    printf("%d\n", var);
     return 0;
 }
