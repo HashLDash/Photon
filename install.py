@@ -18,7 +18,7 @@ try:
         if not os.path.exists(p_dir):
             os.mkdir(p_dir)
         with open(os.path.join(p_dir, 'photon.bat'), 'w') as w:
-            w.write(f'@echo off\npython "{PHOTON_PATH}" "%*"')
+            w.write(f'@echo off\npython "{PHOTON_PATH}" %*')
         os.system(f'setx /M PATH "%PATH%;{p_dir}"')
     else:
         print('Automatic installation in this system is not supported yet.')
