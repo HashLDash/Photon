@@ -241,7 +241,8 @@ def expr(i, t):
     return t
 
 def group(i, t):
-    ''' Return a group token '''
+    ''' Return a group token
+    '''
     if t[i-1]['token'] == 'operator' or 'symbol' in t[i-1]:
         # Its a group
         t[i] = {'token':'group', 'type':t[i+1]['type'], 'expr':t[i+1]}
@@ -253,8 +254,8 @@ def group(i, t):
         return 'continue'
         
 def printFunc(i, t):
-    ''' Return a printFunction token '''
-
+    ''' Return a printFunction token
+    '''
     if t[i+2]['token'] == 'expr':
         t[i] = {'token':'printFunc', 'expr':t[i+2]}
     else:
@@ -265,8 +266,7 @@ def printFunc(i, t):
     return t
 
 def assign(i, t):
-    '''
-    expr equal expr
+    ''' expr equal expr
     '''
     if t[i]['args'][0]['token'] == 'var':
         t[i] = {'token':'assign', 'target':t[i]['args'][0], 'expr':t[i+2]}
@@ -275,3 +275,18 @@ def assign(i, t):
         return t
     # Not a valid assign, continue
     return 'continue'
+
+def ifelif(i, t):
+    ''' Create an if or elif token
+    '''
+    # Token will have a block field
+
+    # Change token to if or elif
+    t[i]['token'] = t[i]['token'].replace('Statement','')
+    # Add expression
+    t[i]['expr'] = t[i+1]
+
+    del t[i+1] # expr
+    del t[i+1] # beginBlock
+    return t
+

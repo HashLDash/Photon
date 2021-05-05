@@ -36,5 +36,7 @@ patterns = {
   ('expr', 'operator', 'expr'): expr,
   ('operator', 'expr'): expr,
   ('expr', 'equal', 'expr'): assign,
+  ('ifStatement', 'expr', 'beginBlock'): ifelif,
+  ('elifStatement', 'expr', 'beginBlock'): ifelif,
   ('print', 'lparen', 'expr', 'rparen'): printFunc,
 }

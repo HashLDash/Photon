@@ -77,7 +77,8 @@ class Interpreter():
                     return 'exit'
     
     def getBlock(self, indent):
-        ''' Return a list of code corresponding to the inddentation level '''
+        ''' Return a list of code corresponding to the indentation level
+        '''
         self.line = self.input('... ')
         blockTokenized = parse(self.line, filename=self.filename, no=self.lineNumber)
         blockIndent = blockTokenized[0]['indent']

@@ -30,4 +30,6 @@ expr = num
 
 assign = expr equal expr
 
+ifelif = (ifStatement elifStatement) expr beginBlock
+
 printFunc = print lparen (expr) rparen

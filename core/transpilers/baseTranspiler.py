@@ -10,6 +10,7 @@ class BaseTranspiler():
             'printFunc': self.printFunc,
             'expr': self.processVarInit,
             'assign': self.processAssign,
+            'if': self.processIf,
             '+': self.add,
             '-': self.sub,
             '*': self.mul,
@@ -127,6 +128,23 @@ class BaseTranspiler():
             varType = self.inferType(expr)
             if self.typeKnown(varType):
                 self.currentScope[variable['value']] = {'type':varType}
+
+    def processIf(self, token):
+        expr = self.processExpr(token['expr'])
+        self.source.append(self.formatIf(expr))
+        for c in token['block']:
+            self.process(c)
+        if 'elifs' in token:
+            for elifStatement in token['elifs']:
+                expr = self.processExpr(elifStatement['expr'])
+                self.source.append(self.formatElif(expr))
+                for c in elifStatement['elifBlock']:
+                    self.process(c)
+        if 'else' in token:
+            self.source.append(self.formatElse())
+            for c in token['else']:
+                self.process(c)
+        self.source.append(self.formatEndIf())
 
     def printFunc(self, token):
         value = self.processExpr(token['expr'])

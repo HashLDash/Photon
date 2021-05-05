@@ -54,6 +54,18 @@ class Transpiler(BaseTranspiler):
         #TODO: implement cast to type
         return value['value']
     
+    def formatIf(self, expr):
+        return f'if ({expr["value"]}) {{'
+
+    def formatElif(self, expr):
+        return f'}} else if ({expr["value"]}) {{'
+
+    def formatElse(self):
+        return '} else {'
+
+    def formatEndIf(self):
+        return '}'
+    
     def div(self, arg1, arg2):
         return {'value':f'({self.nativeType("float")}){arg1["value"]} / {arg2["value"]}', 'type':'float'}
 
