@@ -37,7 +37,7 @@ def programIsInstalled(name):
         if platform_os == "win":
             return str(os.popen(f'where /q {name} && echo %ERRORLEVEL%').read()).strip() == "0"
         elif platform_os == "unix":
-            return str(os.popen(f'which {name}').read()).strip() != ""
+            return str(os.popen(f'command -v {name}').read()).strip() != ""
         else:
             raise Exception('`platform_os` not supported')
     except Exception as e:

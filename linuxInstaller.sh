@@ -8,7 +8,7 @@ printf "${green}Linux Installer - Photon${normal}\n"
 if [ -f '/etc/debian_version' ]; then
     sudo apt-get update && sudo apt-get install python3 build-essential git
 elif [ -f '/etc/arch-release' ]; then
-    sudo pacman -Syy python gcc git
+    sudo pacman -Syy python gcc git glibc
 elif [ -f '/etc/gentoo-release' ]; then
     sudo emerge --sync && sudo emerge dev-lang/python sys-devel/gcc dev-vcs/git
 elif [ -f '/etc/SuSE-release' ]; then
