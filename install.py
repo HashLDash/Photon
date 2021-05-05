@@ -11,8 +11,11 @@ PHOTON_PATH = os.path.join(os.path.dirname(__file__), 'core', 'photon.py')
 
 try:
     if sys.platform in {'linux', 'linux2', 'darwin'}:
-        os.symlink(PHOTON_PATH, '/usr/local/bin/photon')
-        os.chmod('/usr/local/bin/photon', 0o777)
+        p_path = '/usr/local/bin/photon'
+        if os.path.exists(p_path):
+            os.remove(p_path)
+        os.symlink(PHOTON_PATH, p_path)
+        os.chmod(PHOTON_PATH, 0o777)
     elif sys.platform in {'win32', 'cygwin', 'msys'} or os.name == "nt" or os.environ.get('OS', '') == 'Windows_NT':
         p_dir = os.path.expandvars('%ProgramFiles%\\Photon')
         if not os.path.exists(p_dir):
