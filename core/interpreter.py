@@ -28,9 +28,11 @@ class Interpreter():
             with open(filename,'r') as f:
                 self.source = [line for line in f]
         else:
-            #print("Interpreter not implemented yet.")
-            #sys.exit()
-            import readline
+            try:
+                import readline
+            except ModuleNotFoundError:
+                # Windows doesn't have readline
+                import pyreadline
             from engines.pyEngine import Engine
             self.engine = Engine(filename=filename,target=target, module=module, standardLibs=standardLibs)
             self.input = self.console
