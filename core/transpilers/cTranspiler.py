@@ -32,6 +32,10 @@ class Transpiler(BaseTranspiler):
     def formatVarInit(self, name, varType):
         return f'{varType} {name};'
     
+    def formatStr(self, string):
+        #TODO: handle format strings
+        return string
+
     def formatAssign(self, target, expr):
         cast = None
         if target['token'] == 'var':

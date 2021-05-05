@@ -32,7 +32,11 @@ class Interpreter():
                 import readline
             except ModuleNotFoundError:
                 # Windows doesn't have readline
-                import pyreadline
+                try:
+                    import pyreadline
+                except ModuleNotFoundError:
+                    # Run without history and arrow key functionality
+                    pass
             from engines.pyEngine import Engine
             self.engine = Engine(filename=filename,target=target, module=module, standardLibs=standardLibs)
             self.input = self.console

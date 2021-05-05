@@ -74,6 +74,8 @@ class BaseTranspiler():
 
     def getValAndType(self, token):
         if 'value' in token and 'type' in token and self.typeKnown(token['type']):
+            if token['type'] == 'str':
+                token['value'] = self.formatStr(token['value'])
             # Already processed, return
             if 'modifier' in token:
                 token['value'] = token['modifier'] + token['value']
