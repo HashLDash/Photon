@@ -1,6 +1,10 @@
 from transpilers.baseTranspiler import BaseTranspiler
 import os
 
+def debug(*args):
+    #print(*args)
+    pass
+
 class Transpiler(BaseTranspiler):
     def __init__(self, filename, **kwargs):
         super().__init__(filename, **kwargs)
@@ -106,7 +110,7 @@ class Transpiler(BaseTranspiler):
         with open(f'Sources/{self.filename}','w') as f:
             for imp in self.imports:
                 module = imp.split(' ')[-1].replace('.w','').replace('"','')
-                print(f'Importing {module}')
+                debug(f'Importing {module}')
                 if f'{module}.c' in os.listdir('Sources'):
                     with open(f'Sources/{module}.c','r') as m:
                         for line in m:
@@ -120,12 +124,12 @@ class Transpiler(BaseTranspiler):
                 f.write(' '*indent+line+'\n')
                 if self.isBlock(line):
                     indent += 4
-        print('Generated '+self.filename)
+        debug('Generated '+self.filename)
 
     def run(self):
         from subprocess import call, check_call
         self.write()
-        print(f'Running {self.filename}')
+        debug(f'Running {self.filename}')
         try:
             check_call(['gcc', '-O3', f'Sources/{self.filename}', '-o',
             'Sources/main'])

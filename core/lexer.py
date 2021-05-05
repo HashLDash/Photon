@@ -6,8 +6,8 @@ def inference(value):
         return {'token':'num', 'value': value, 'type':'int'}
     except:
         try:
-            print(float(value[0]))
-            print('it is something??')
+            input(float(value[0]))
+            input('it is something??')
             return {'token':'value','type':'unknown','value':value}
         except:
             if value == 'True' or value == 'False':
