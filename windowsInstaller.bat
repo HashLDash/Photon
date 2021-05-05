@@ -20,7 +20,7 @@ POWERSHELL -COMMAND "Start-Process powershell -Verb RunAs -PassThru -Wait -Argum
 MSG /TIME 3 * Await Windows Installer of Photon! (Part 3)
 POWERSHELL -COMMAND "Start-Process powershell -Verb RunAs -PassThru -Wait -ArgumentList \"/c choco install python mingw git -y; timeout /t 3; exit\""
 MSG /TIME 3 * Await Windows Installer of Photon! (Part 4)
-POWERSHELL -COMMAND "Start-Process powershell -Verb RunAs -PassThru -Wait -ArgumentList \"/c python '%~dp0/install.py'; timeout /t 3; exit\""
+POWERSHELL -COMMAND "Start-Process powershell -Verb RunAs -PassThru -Wait -ArgumentList \"/c pip install pyreadline; python '%~dp0/install.py'; timeout /t 3; exit\""
 MSG /TIME 3 * Photon successfully installed!
 TIMEOUT /T 3 /NOBREAK
 EXIT
