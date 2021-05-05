@@ -30,7 +30,7 @@ class Interpreter():
         else:
             print("Interpreter not implemented yet.")
             sys.exit()
-            self.engine = Engine()
+            self.engine = Engine(filename=filename,target=target, module=module, standardLibs=standardLibs)
             self.input = self.console
         self.end = False
         self.processing = True

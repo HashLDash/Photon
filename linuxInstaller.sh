@@ -3,7 +3,7 @@ red='\033[0;31m'
 green='\033[0;32m'
 normal='\033[0m'
 
-printf "${green}Linux Installer - Photon${normal}"
+printf "${green}Linux Installer - Photon${normal}\n"
 
 if [ -f '/etc/debian_version' ]; then
     sudo apt-get update && sudo apt-get install python3 build-essential git
@@ -25,9 +25,9 @@ SCRIPT=$(readlink -f "$0")
 SCRIPTPATH=$(dirname "$SCRIPT")
 
 if command -v python3; then
-    python3 "$SCRIPTPATH/install.py"
+    sudo python3 "$SCRIPTPATH/install.py"
 elif command -v python; then
-    python "$SCRIPTPATH/install.py"
+    sudo python "$SCRIPTPATH/install.py"
 else
     printf "${red}Was not possible to install Python >= 3.6, please do it manually\n${normal}"
     exit 1
