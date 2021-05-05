@@ -27,7 +27,9 @@ class Transpiler(BaseTranspiler):
         }
 
     def formatVarInit(self, name, varType):
-        return f'{name}:{varType} = None'
+        if varType:
+            return f'{name}:{varType} = None'
+        return f'{name} = None'
     
     def formatAssign(self, target, expr):
         cast = None
@@ -49,7 +51,9 @@ class Transpiler(BaseTranspiler):
         else:
             raise SyntaxError(f'Format assign with variable {target} not implemented yet.')
         formattedExpr = self.formatExpr(expr, cast=cast)
-        return f'{variable}:{varType} = {formattedExpr}'
+        if varType:
+            return f'{variable}:{varType} = {formattedExpr}'
+        return f'{variable} = {formattedExpr}'
 
     def formatExpr(self, value, cast=None):
         #TODO: implement cast to type
