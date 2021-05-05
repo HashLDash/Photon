@@ -10,13 +10,12 @@ if __name__ == "__main__":
     from interpreter import Interpreter
     from builder import Builder
     from dependencies import haveDependencies, resolveDependencies
+    __version__ = '0.0.1'
     try:
         first = sys.argv[1]
     except IndexError:
-        print('Interpreter mode not implemented yet. Please try executing a source file instead')
-        print('Or try:')
-        print('    photon --help')
-        print('To see more options')
+        print(f'Photon - {__version__} - pyEngine')
+        Interpreter().run()
         sys.exit()
     if first == 'build':
         try:

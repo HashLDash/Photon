@@ -10,7 +10,7 @@ from photonParser import parse, assembly
 import sys
 
 class Interpreter():
-    def __init__(self, filename, lang='c', target=sys.platform, module=False, standardLibs=''):
+    def __init__(self, filename='', lang='c', target=sys.platform, module=False, standardLibs=''):
         if lang == 'c':
             from transpilers.cTranspiler import Transpiler
         elif lang == 'dart':
@@ -28,8 +28,9 @@ class Interpreter():
             with open(filename,'r') as f:
                 self.source = [line for line in f]
         else:
-            print("Interpreter not implemented yet.")
-            sys.exit()
+            #print("Interpreter not implemented yet.")
+            #sys.exit()
+            from engines.pyEngine import Engine
             self.engine = Engine(filename=filename,target=target, module=module, standardLibs=standardLibs)
             self.input = self.console
         self.end = False
