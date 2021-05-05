@@ -30,6 +30,7 @@ class Interpreter():
         else:
             #print("Interpreter not implemented yet.")
             #sys.exit()
+            import readline
             from engines.pyEngine import Engine
             self.engine = Engine(filename=filename,target=target, module=module, standardLibs=standardLibs)
             self.input = self.console
