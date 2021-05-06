@@ -30,6 +30,10 @@ class Transpiler(BaseTranspiler):
         if varType:
             return f'{name}:{varType} = None'
         return f'{name} = None'
+
+    def formatStr(self, string):
+        string = string[1:-1].replace('"','\"')
+        return f'f"{string}"'
     
     def formatAssign(self, target, expr):
         cast = None
