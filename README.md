@@ -28,7 +28,7 @@ I also uploaded a video on my portuguese channel comparing it to Python and C, c
 Download or clone (preferred) the repository where you want to install it. Execute the windowsInstaller.bat if you are in Windows or linuxInstaller.sh if you are in Linux. After the installation process, you should have photon installed in available in your PATH.
 Now you can write this simple Hello World, with any text editor of your choice.
 
-```
+```python
 print("Hello World!")
 ```
 
