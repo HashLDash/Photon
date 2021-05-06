@@ -16,9 +16,11 @@ try:
             os.remove(p_path)
         except FileNotFoundError:
             pass  # ensure the path does not exists
+        else:
+            print('Removing and creating new symlink')
         os.symlink(PHOTON_PATH, p_path)
         os.chmod(PHOTON_PATH, 0o777)
-        print(f'Photon Install Path: {p_path}')
+        print(f'Photon Command Path: {p_path}')
     elif sys.platform in {'win32', 'cygwin', 'msys'} or os.name == "nt" or os.environ.get('OS', '') == 'Windows_NT':
         p_dir = os.path.expandvars('%ProgramFiles%\\Photon')
         if not os.path.exists(p_dir):
@@ -29,7 +31,7 @@ try:
             print('Photon already on PATH, skipping')
         else:
             os.system(f'setx /M PATH "%PATH%;{p_dir}"')
-        print(f'Photon Install Path: {os.path.join(p_dir, "photon")}')
+        print(f'Photon Command Path: {os.path.join(p_dir, "photon")}')
     else:
         print('Automatic installation in this system is not supported yet.')
         sys.exit(1)
