@@ -10,7 +10,23 @@ Set-ExecutionPolicy Bypass -Scope Process -Force
 iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
 $env:Path = "$env:Path;$env:AllUsersProfile\chocolatey\bin"
 
-choco install python mingw git
+if ((Get-Command "python.exe" -ErrorAction SilentlyContinue) -eq $null) 
+{ 
+   $dependencies = " python"
+}
+if ((Get-Command "gcc.exe" -ErrorAction SilentlyContinue) -eq $null) 
+{ 
+   $dependencies = "$dependencies mingw"
+}
+if ((Get-Command "git.exe" -ErrorAction SilentlyContinue) -eq $null) 
+{ 
+   $dependencies = "$dependencies git"
+}
+
+if (Get-Variable 'dependencies' -ErrorAction 'Ignore') {
+  choco install $dependencies
+}
+
 pip install pyreadline
 
 $scriptPath = split-path -parent $MyInvocation.MyCommand.Definition
