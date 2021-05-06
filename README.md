@@ -23,6 +23,25 @@ Photon applications can run in any platform. Some examples are: Windows, Linux, 
 Devlog is available [here](https://www.youtube.com/watch?v=Seu5q_hc6go&list=PL89TmjrkwpOfteQJRptqmK-y8pr6uJdlc).
 I also uploaded a video on my portuguese channel comparing it to Python and C, check it out [here](https://youtu.be/_8xtTyCTPXI).
 
+## Quickstart
+
+Download or clone (preferred) the repository where you want to install it. Execute the windowsInstaller.bat if you are in Windows or linuxInstaller.sh if you are in Linux. After the installation process, you should have photon installed in available in your PATH.
+Now you can write this simple Hello World, with any text editor of your choice.
+
+```
+print("Hello World!")
+```
+
+Save it as hello.w and then execute it in your cmd or powershell with
+
+```
+photon hello.w
+```
+
+And you should see the Hello World! output in your console!
+
+In the devlog 1, I show how to install and create your first hello world program. [Click here to see it.](https://www.youtube.com/watch?v=5QtISBpOlr0)
+
 ## ALPHA Stage
 
 Photon is currently in alpha and not available to the general public yet. Launching a language while it is in development is not a good idea at the moment because I can't focus on its development and bug track.
