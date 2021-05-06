@@ -8,6 +8,7 @@ Set-ItemProperty -Path HKLM:\Software\Microsoft\Windows\CurrentVersion\policies\
 Set-ExecutionPolicy Bypass -Scope Process -Force
 [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
 iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
+$env:Path = "$env:Path;$env:AllUsersProfile\chocolatey\bin"
 
 choco install python mingw git
 pip install pyreadline
