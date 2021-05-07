@@ -20,7 +20,7 @@ if __name__ == "__main__":
     if first == 'build':
         try:
             platform = sys.argv[2]
-            Builder(platform, standardLibs=os.path.join(PHOTON_INSTALL_PATH, 'Libs/'))
+            Builder(platform, standardLibs=os.path.join(PHOTON_INSTALL_PATH, 'libs/'))
         except IndexError:
             print('Welcome to Photon builder!')
             print('')
@@ -88,4 +88,4 @@ if __name__ == "__main__":
             #print(f'Error: {e} loading default lang. Using c')
             #print(f'You can change that using "photon set defaultLang=lang"')
             lang = 'c'
-        Interpreter(filename, lang=lang, standardLibs=os.path.join(PHOTON_INSTALL_PATH, 'Libs/')).run()
+        Interpreter(filename, lang=lang, standardLibs=os.path.join(PHOTON_INSTALL_PATH, 'libs/')).run()

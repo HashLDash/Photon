@@ -39,6 +39,12 @@ class BaseTranspiler():
         else:
             raise NotImplemented
 
+    def getType(self, name):
+        try:
+            return self.currentScope[name]['type']
+        except KeyError:
+            return 'unknown'
+
     def inferType(self, expr):
         if self.typeKnown(expr['type']):
             return expr['type']
@@ -75,8 +81,14 @@ class BaseTranspiler():
     def getValAndType(self, token):
         if 'value' in token and 'type' in token and self.typeKnown(token['type']):
             if token['type'] == 'str':
-                token['value'] = self.formatStr(token['value'])
-            # Already processed, return
+                string, variables = self.formatStr(token['value'])
+                if variables:
+                    # It's a format string
+                    token['variables'] = variables
+                    token['format'] = string
+                else:
+                    # Normal string
+                    token['value'] = string
             if 'modifier' in token:
                 token['value'] = token['modifier'] + token['value']
             return token

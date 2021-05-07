@@ -1,5 +1,6 @@
 from transpilers.baseTranspiler import BaseTranspiler
 import os
+from string import Formatter
 
 def debug(*args):
     #print(*args)
@@ -33,8 +34,21 @@ class Transpiler(BaseTranspiler):
         return f'{varType} {name};'
     
     def formatStr(self, string):
-        #TODO: handle format strings
-        return string
+        variables = []
+        if '{' in string:
+            self.imports.add('#include "asprintf.h"')
+            variables = [var for _,var,_,_ in Formatter().parse(string) if var]
+            for var in variables:
+                varType = self.getType(var)
+                if varType == 'str':
+                    string = string.replace(f'{{{var}}}','%s',1)
+                elif varType == 'int':
+                    string = string.replace(f'{{{var}}}','%d',1)
+                elif varType == 'float':
+                    string = string.replace(f'{{{var}}}','%f',1)
+                else:
+                    raise SyntaxError('Cannot format {varType} in formatStr')
+        return string, variables
 
     def formatAssign(self, target, expr):
         cast = None
@@ -55,6 +69,11 @@ class Transpiler(BaseTranspiler):
                     varType = self.nativeType(self.inferType(expr))
         else:
             raise SyntaxError(f'Format assign with variable {target} not implemented yet.')
+        if 'format' in expr:
+            # It's a format string
+            formatstr = expr['format']
+            variables = ','.join(expr['variables'])
+            return f'{varType} {variable}; asprintf(&{variable}, {formatstr}, {variables});'
         formattedExpr = self.formatExpr(expr, cast=cast)
         return f'{varType} {variable} = {formattedExpr};'
 
@@ -83,6 +102,11 @@ class Transpiler(BaseTranspiler):
         elif value['type'] == 'float':
             return f'printf("%f\\n", {value["value"]});'
         elif value['type'] == 'str':
+            if 'format' in value:
+                # It's a format string
+                formatstr = value['format'][:-1] + '\\n' + value['format'][-1:]
+                variables = ','.join(value['variables'])
+                return f'printf({formatstr}, {variables});'
             return f'printf("%s\\n", {value["value"]});'
         elif value['type'] == 'bool':
             return f'if ({value["value"]} == 0) {{printf("False\\n");}} else {{printf("True\\n");}}'
@@ -115,6 +139,9 @@ class Transpiler(BaseTranspiler):
             for imp in self.imports:
                 module = imp.split(' ')[-1].replace('.w','').replace('"','')
                 debug(f'Importing {module}')
+                if module in os.listdir(f'{self.standardLibs}/native/c'):
+                    from shutil import copyfile
+                    copyfile(f'{self.standardLibs}/native/c/{module}',f'Sources/{module}')
                 if f'{module}.c' in os.listdir('Sources'):
                     with open(f'Sources/{module}.c','r') as m:
                         for line in m:
