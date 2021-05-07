@@ -8,6 +8,7 @@ class BaseTranspiler():
         self.operators = ['**','*','%','/','-','+','andnot','and','or','==','!=','>','<','>=','<=','is','in','&', '<<', '>>'] # in order 
         self.instructions = {
             'printFunc': self.printFunc,
+            'inputFunc': self.processInputFunc,
             'expr': self.processVarInit,
             'assign': self.processAssign,
             'if': self.processIf,
@@ -59,6 +60,10 @@ class BaseTranspiler():
             return False
         return True
 
+    def processInputFunc(self, token):
+        expr = self.processExpr(token['expr'])
+        return {'token':'inputFunc', 'type':'str', 'value':self.formatInputFunc(expr)}
+
     def processVarInit(self, token):
         name = token['args'][0]['name']
         varType = token['args'][0]['type']
@@ -96,6 +101,8 @@ class BaseTranspiler():
             return self.processGroup(token)
         elif token['token'] == 'var':
             return self.processVar(token)
+        elif token['token'] == 'inputFunc':
+            return self.processInputFunc(token)
         else:
             raise ValueError(f'ValAndType with token {token} not implemented')
 

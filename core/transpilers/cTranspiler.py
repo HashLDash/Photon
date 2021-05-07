@@ -33,6 +33,12 @@ class Transpiler(BaseTranspiler):
     def formatVarInit(self, name, varType):
         return f'{varType} {name};'
     
+    def formatInputFunc(self, expr):
+        self.imports.add('#include <string.h>')
+        message = self.formatPrint(expr).replace('\\n','',1) if expr else ''
+        size = '__internalInputSize__'
+        return  f'{message}size_t {size} = 0; {self.nativeType("str")} {{var}}; getline(&{{var}}, &{size}, stdin); c[strlen(c)-1] = 0;'
+
     def formatStr(self, string):
         variables = []
         if '{' in string:
@@ -75,6 +81,11 @@ class Transpiler(BaseTranspiler):
             variables = ','.join(expr['variables'])
             return f'{varType} {variable}; asprintf(&{variable}, {formatstr}, {variables});'
         formattedExpr = self.formatExpr(expr, cast=cast)
+        try:
+            if expr['token'] == 'inputFunc':
+                return formattedExpr.format(var=variable)
+        except KeyError:
+            pass
         return f'{varType} {variable} = {formattedExpr};'
 
     def formatExpr(self, value, cast=None):

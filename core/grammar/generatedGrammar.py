@@ -39,4 +39,6 @@ patterns = {
   ('ifStatement', 'expr', 'beginBlock'): ifelif,
   ('elifStatement', 'expr', 'beginBlock'): ifelif,
   ('print', 'lparen', 'expr', 'rparen'): printFunc,
+  ('input', 'lparen', 'expr', 'rparen'): inputFunc,
+  ('input', 'lparen', 'rparen'): inputFunc,
 }

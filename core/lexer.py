@@ -206,10 +206,10 @@ def convertToExpr(token):
         else:
             varType = 'float'
         return {'token':'expr', 'type':varType, 'args':[token], 'ops':[]}
-    elif token['token'] in {'var','group'}:
+    elif token['token'] in {'var','group','inputFunc'}:
         return {'token':'expr', 'type':token['type'], 'args':[token], 'ops':[]}
     else:
-        raise SyntaxError('Cant convert token to expr')
+        raise SyntaxError(f'Cant convert token {token} to expr')
 
 def expr(i, t):
     if t[i]['token'] == 'operator':
@@ -254,7 +254,7 @@ def group(i, t):
         return 'continue'
         
 def printFunc(i, t):
-    ''' Return a printFunction token
+    ''' Return a printFunc token
     '''
     if t[i+2]['token'] == 'expr':
         t[i] = {'token':'printFunc', 'expr':t[i+2]}
@@ -262,6 +262,21 @@ def printFunc(i, t):
         t[i] = {'token':'printFunc', 'expr':convertToExpr(t[i+2])}
     del t[i+1] # lparen
     del t[i+1] # expr
+    del t[i+1] # rparen
+    return t
+
+def inputFunc(i, t):
+    ''' Return an inputFunc token
+    '''
+    if t[i+2]['token'] == 'rparen':
+        t[i] = convertToExpr({'token':'inputFunc', 'type':'str'})
+    elif t[i+2]['token'] == 'expr':
+        t[i] = convertToExpr({'token':'inputFunc', 'type':'str', 'expr':t[i+2]})
+        del t[i+1] # expr
+    else:
+        t[i] = convertToExpr({'token':'inputFunc', 'type':'str', 'expr':convertToExpr(t[i+2])})
+        del t[i+1] # expr
+    del t[i+1] # lparen
     del t[i+1] # rparen
     return t
 

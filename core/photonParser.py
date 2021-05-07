@@ -8,7 +8,7 @@ from lexer import *
 
 statements = ['if','else','elif','def','cdef','for','in','as','return','import','class','while','break','continue','try']
 operators = ['+','-','%','/','*','**','not','and','or','is', '&']
-builtins = ['print','sizeof','addr']
+builtins = ['print','input','sizeof','addr']
 types = ['str','cstr','const','struct','char','int','float','double','struct', 'func','uint','ulong','ubyte']
 symbols = {
     '.':'dot',
@@ -95,7 +95,7 @@ def token2word(tokens):
         elif 'symbol' in t:
             phrase += t['symbol']
         elif t['token'] in {'num', 'var', 'expr','print','printFunc',
-                'floatNumber', 'type', 'assign','operator','group','ifStatement','if','elifStatement', 'elif'}:
+                'floatNumber', 'type', 'assign','operator','group','ifStatement','if','elifStatement', 'elif','input','inputFunc'}:
             phrase += t['token']
         else:
             raise Exception(f'Cannot convert the token {t["token"]} to a word')
