@@ -86,17 +86,21 @@ class BaseTranspiler():
             token['name'] = token['modifier'] + token['name']
         return {'value':token['name'], 'type':varType}
 
+    def processFormatStr(self, token):
+        string, variables = self.formatStr(token['value'])
+        if variables:
+            # It's a format string
+            token['variables'] = variables
+            token['format'] = string
+        else:
+            # Normal string
+            token['value'] = string
+        return token
+
     def getValAndType(self, token):
         if 'value' in token and 'type' in token and self.typeKnown(token['type']):
             if token['type'] == 'str':
-                string, variables = self.formatStr(token['value'])
-                if variables:
-                    # It's a format string
-                    token['variables'] = variables
-                    token['format'] = string
-                else:
-                    # Normal string
-                    token['value'] = string
+                token = self.processFormatStr(token)
             if 'modifier' in token:
                 token['value'] = token['modifier'] + token['value']
             return token

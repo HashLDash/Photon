@@ -13,6 +13,8 @@ class Interpreter():
     def __init__(self, filename='', lang='c', target=sys.platform, module=False, standardLibs=''):
         if lang == 'c':
             from transpilers.cTranspiler import Transpiler
+        elif lang in {'py', 'python'}:
+            from transpilers.pyTranspiler import Transpiler
         elif lang == 'dart':
             from transpilers.dartTranspiler import Transpiler
         elif lang == 'js':

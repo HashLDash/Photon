@@ -52,7 +52,7 @@ if __name__ == "__main__":
             variable, value = sys.argv[2:]
         vairable, value = variable.strip(), value.strip()
         if variable in ['lang']:
-            if value in ['c', 'd', 'dart', 'haxe', 'js']:
+            if value in ['c', 'py', 'js', 'dart', 'haxe', 'd']:
                 print(f'Setting default lang to {value}')
                 if not haveDependencies(value, sys.platform):
                     resolveDependencies(value, sys.platform)

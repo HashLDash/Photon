@@ -203,6 +203,10 @@ def resolveCLinux():
     ''' Install gcc '''
     return linuxInstaller('gcc')
 
+def resolvePyLinux():
+    ''' Install python '''
+    return linuxInstaller('python')
+
 def resolveDLinux():
     ''' Install dmd '''
     return linuxInstaller('dmd')
@@ -224,6 +228,11 @@ def resolveCWin32():
     ''' Install gcc '''
     chocoInstaller("mingw")
     return printResultPostProgramInstaller("gcc")
+
+def resolvePyWin32():
+    ''' Install python '''
+    chocoInstaller("mingw")
+    return printResultPostProgramInstaller("python")
 
 def resolveDWin32():
     ''' Install dmd '''
@@ -247,6 +256,11 @@ def resolveDartWin32():
 
 # INIT - Darwin
 def resolveCDarwin():
+    ''' Install gcc '''
+    brewInstaller("gcc")
+    return printResultPostProgramInstaller("gcc")
+
+def resolvePyDarwin():
     ''' Install gcc '''
     brewInstaller("gcc")
     return printResultPostProgramInstaller("gcc")
@@ -275,6 +289,9 @@ solver = {
     ('c', 'linux'): resolveCLinux,
     ('c', 'win32'): resolveCWin32,
     ('c', 'darwin'): resolveCDarwin,
+    ('py', 'linux'): resolvePyLinux,
+    ('py', 'win32'): resolvePyWin32,
+    ('py', 'darwin'): resolvePyDarwin,
     ('d', 'linux'): resolveDLinux,
     ('d', 'win32'): resolveDWin32,
     ('d', 'darwin'): resolveDDarwin,
@@ -293,6 +310,9 @@ deps = {
     ('c', 'linux'): ['gcc'],
     ('c', 'win32'): ['gcc'],
     ('c', 'darwin'): ['gcc'],
+    ('py', 'linux'): ['python'],
+    ('py', 'win32'): ['python'],
+    ('py', 'darwin'): ['python'],
     ('d', 'linux'): ['dmd'],
     ('d', 'win32'): ['dmd'],
     ('d', 'darwin'): ['dmd'],

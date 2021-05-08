@@ -37,7 +37,7 @@ class Transpiler(BaseTranspiler):
 
     def formatStr(self, string):
         string = string[1:-1].replace('"','\"')
-        return [], f'f"{string}"'
+        return f'f"{string}"', []
     
     def formatAssign(self, target, expr):
         cast = None
