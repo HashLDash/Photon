@@ -25,7 +25,7 @@ if ((Get-Command "git.exe" -ErrorAction SilentlyContinue) -eq $null)
    $dependencies = "${dependencies}git "
 }
 
-if (Get-Variable 'dependencies' -ErrorAction 'Ignore') {
+if ($dependencies -ne "") {
   choco install $dependencies
 }
 
