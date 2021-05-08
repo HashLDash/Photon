@@ -61,13 +61,13 @@ def string(i, t):
             s += "'\"'"
         elif token['token'] == 'var':
             s += token['name']
-        elif 'num' in token:
+        elif token['token'] == 'num':
             s += str(token['value'])
         elif 'operator' in token:
             s += token['operator']
         elif 'symbol' in token:
             s += token['symbol']
-        elif 'type' in token:
+        elif token['token'] == 'type':
             s += token['type']
         else:
             tok = token['token']
