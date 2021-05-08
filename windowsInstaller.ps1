@@ -12,22 +12,22 @@ $env:Path = "$env:Path;$env:AllUsersProfile\chocolatey\bin"
 
 if ((Get-Command "python.exe" -ErrorAction SilentlyContinue) -eq $null) 
 { 
-   $dependencies = " python"
+   $dependencies = "python "
 }
 if ((Get-Command "gcc.exe" -ErrorAction SilentlyContinue) -eq $null) 
 { 
-   $dependencies = "$dependencies mingw"
+   $dependencies = "$($dependencies)mingw "
 }
 if ((Get-Command "git.exe" -ErrorAction SilentlyContinue) -eq $null) 
 { 
-   $dependencies = "$dependencies git"
+   $dependencies = "$($dependencies)git "
 }
 
 if (Get-Variable 'dependencies' -ErrorAction 'Ignore') {
   choco install $dependencies
 }
 
-python3 -m pip install pyreadline
+python -m pip install pyreadline
 
 $scriptPath = split-path -parent $MyInvocation.MyCommand.Definition
 python "$scriptPath\install.py"
