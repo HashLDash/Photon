@@ -10,9 +10,11 @@ Set-ExecutionPolicy Bypass -Scope Process -Force
 iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
 $env:Path = "$env:Path;$env:AllUsersProfile\chocolatey\bin"
 
+$dependencies = ""
+
 if ((Get-Command "python.exe" -ErrorAction SilentlyContinue) -eq $null) 
 { 
-   $dependencies = " python"
+   $dependencies = "python"
 }
 if ((Get-Command "gcc.exe" -ErrorAction SilentlyContinue) -eq $null) 
 { 
