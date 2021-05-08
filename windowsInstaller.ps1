@@ -27,7 +27,7 @@ if (Get-Variable 'dependencies' -ErrorAction 'Ignore') {
   choco install $dependencies
 }
 
-pip install pyreadline
+python3 -m pip install pyreadline
 
 $scriptPath = split-path -parent $MyInvocation.MyCommand.Definition
 python "$scriptPath\install.py"
