@@ -9,10 +9,9 @@ class BaseTranspiler():
         self.instructions = {
             'printFunc': self.printFunc,
             'inputFunc': self.processInput,
-            'expr': self.processVarInit,
+            'expr': self.processExpression,
             'assign': self.processAssign,
             'if': self.processIf,
-            'call': self.processCall,
             '+': self.add,
             '-': self.sub,
             '*': self.mul,
@@ -108,6 +107,8 @@ class BaseTranspiler():
             return token
         elif token['token'] == 'expr':
             return self.processExpr(token)
+        elif token['token'] == 'call':
+            return self.processCall(token)
         elif token['token'] == 'group':
             return self.processGroup(token)
         elif token['token'] == 'var':
@@ -117,8 +118,13 @@ class BaseTranspiler():
         else:
             raise ValueError(f'ValAndType with token {token} not implemented')
 
+    def processExpression(self, token):
+        ''' Process the expr token as a standalone code '''
+        expr = self.processExpr(token)
+        self.source.append(expr['value']+self.terminator)
+
     def processExpr(self, token):
-        #TODO: To be implemented
+        ''' Process expr tokens as values, returning its type and value '''
         args = token['args']
         ops = token['ops']
         if not ops:
@@ -188,8 +194,8 @@ class BaseTranspiler():
     def processCall(self, token):
         args = self.processArgs(token['args'])
         name = self.getValAndType(token['name'])
-        self.source.append(self.formatCall(name['value'], name['type'],
-        args)+self.terminator)
+        val = self.formatCall(name['value'], name['type'],args)
+        return {'value':val, 'type':name['type']}
 
     def printFunc(self, token):
         value = self.processExpr(token['expr'])

@@ -212,7 +212,7 @@ def convertToExpr(token):
         else:
             varType = 'float'
         return {'token':'expr', 'type':varType, 'args':[token], 'ops':[]}
-    elif token['token'] in {'var','group','inputFunc'}:
+    elif token['token'] in {'var','group','inputFunc','call'}:
         return {'token':'expr', 'type':token['type'], 'args':[token], 'ops':[]}
     else:
         raise SyntaxError(f'Cant convert token {token} to expr')
@@ -282,13 +282,14 @@ def call(i, t):
         del t[i+1] # expr
     else:
         raise SyntaxError('Call with arg {t[i+2]} not supported')
-    t[i] = {
+    callToken = {
         'token':'call',
-        'type':t[i]['type'],
-        'name':t[i],
+        'type':t[i]['args'][0]['type'],
+        'name':t[i]['args'][0],
         'args':arguments,
         'kwargs':[],
     }
+    t[i] = convertToExpr(callToken)
     del t[i+1] # rparen
     del t[i+1] # lparen
     return t
