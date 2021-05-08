@@ -57,6 +57,10 @@ class Transpiler(BaseTranspiler):
                     raise SyntaxError('Cannot format {varType} in formatStr')
         return string, variables
 
+    def formatCall(self, name, returnType, args):
+        arguments = ','.join([ f'{arg["value"]}' for arg in args ])
+        return f'{name}({arguments})'
+
     def formatAssign(self, target, expr):
         cast = None
         if target['token'] == 'var':

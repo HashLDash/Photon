@@ -21,6 +21,9 @@ group = lparen expr rparen
 
 operator = (equal operator) (equal operator)
 
+call = expr lparen rparen
+     | expr lparen (expr args) rparen
+
 expr = num
      | floatNumber
      | var
@@ -28,9 +31,11 @@ expr = num
      | (num var expr) operator (num var expr)
      | operator (expr)
 
-assign = expr equal expr
-
 ifelif = (ifStatement elifStatement) expr beginBlock
+
+args = expr comma expr
+
+assign = expr equal expr
 
 printFunc = print lparen (expr) rparen
 

@@ -12,6 +12,7 @@ class BaseTranspiler():
             'expr': self.processVarInit,
             'assign': self.processAssign,
             'if': self.processIf,
+            'call': self.processCall,
             '+': self.add,
             '-': self.sub,
             '*': self.mul,
@@ -22,6 +23,7 @@ class BaseTranspiler():
             '<=': self.lessEqual,
             '!=': self.notEqual,
         }
+        self.terminator = ';'
         self.currentScope = {}
         self.source = []
         self.outOfMain = []
@@ -104,6 +106,8 @@ class BaseTranspiler():
             if 'modifier' in token:
                 token['value'] = token['modifier'] + token['value']
             return token
+        elif token['token'] == 'expr':
+            return self.processExpr(token)
         elif token['token'] == 'group':
             return self.processGroup(token)
         elif token['token'] == 'var':
@@ -173,6 +177,19 @@ class BaseTranspiler():
             for c in token['else']:
                 self.process(c)
         self.source.append(self.formatEndIf())
+
+    def processArgs(self, tokens):
+        args = []
+        for tok in tokens:
+            arg = self.getValAndType(tok)
+            args.append( {'type':arg['type'], 'value':arg['value']} )
+        return args
+
+    def processCall(self, token):
+        args = self.processArgs(token['args'])
+        name = self.getValAndType(token['name'])
+        self.source.append(self.formatCall(name['value'], name['type'],
+        args)+self.terminator)
 
     def printFunc(self, token):
         value = self.processExpr(token['expr'])

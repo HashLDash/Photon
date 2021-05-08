@@ -63,6 +63,10 @@ class Transpiler(BaseTranspiler):
             return f'{variable}:{varType} = {formattedExpr}'
         return f'{variable} = {formattedExpr}'
 
+    def formatCall(self, name, returnType, args):
+        arguments = ','.join([ arg["value"] for arg in args])
+        return f'{name}({arguments})'
+
     def formatExpr(self, value, cast=None):
         #TODO: implement cast to type
         return value['value']

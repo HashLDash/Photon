@@ -18,8 +18,14 @@ def inference(value):
                 return {'token':'var', 'type':'unknown', 'name':value}
 
 def comment(i, t):
-    print('comment')
-    return []
+    ''' Remove comment from token list '''
+    for n, token in enumerate(t):
+        if token['token'] in {'singleQuote', 'doubleQuote'}:
+            # It is part of a string
+            return 'continue'
+        if token['token'] == 'hashtag':
+            # remove all tokens after the hashtag
+            return t[:n]
 
 def operator(i, t):
     ''' Combine operators that are compatible '''
@@ -253,6 +259,40 @@ def group(i, t):
         # Its a call, redirect
         return 'continue'
         
+def args(i, t):
+    ''' Return an args token '''
+    t[i] = {'token':'args','args':[t[i], t[i+2]]}
+    del t[i+1] # comma
+    del t[i+1] # arg
+    return t
+
+def call(i, t):
+    ''' Return a call token if valid '''
+    # Verify if it is a valid call
+    if not t[i]['args'][0]['token'] in {'var'}:
+        # Not a valid call
+        return 'continue'
+    if t[i+2]['token'] == 'rparen':
+        arguments = []
+    elif t[i+2]['token'] == 'args':
+        arguments = t[i+2]['args']
+        del t[i+1] # args
+    elif t[i+2]['token'] == 'expr':
+        arguments = [t[i+2]]
+        del t[i+1] # expr
+    else:
+        raise SyntaxError('Call with arg {t[i+2]} not supported')
+    t[i] = {
+        'token':'call',
+        'type':t[i]['type'],
+        'name':t[i],
+        'args':arguments,
+        'kwargs':[],
+    }
+    del t[i+1] # rparen
+    del t[i+1] # lparen
+    return t
+
 def printFunc(i, t):
     ''' Return a printFunc token
     '''
