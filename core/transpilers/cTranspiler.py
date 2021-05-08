@@ -33,7 +33,7 @@ class Transpiler(BaseTranspiler):
     def formatVarInit(self, name, varType):
         return f'{varType} {name};'
     
-    def formatInputFunc(self, expr):
+    def formatInput(self, expr):
         self.imports.add('#include <string.h>')
         message = self.formatPrint(expr).replace('\\n','',1) if expr else ''
         size = '__internalInputSize__'
