@@ -45,7 +45,18 @@ class BaseTranspiler():
         try:
             return self.currentScope[name]['type']
         except KeyError:
-            return 'unknown'
+            pass
+        try:
+            if '.' in name:
+                float(name)
+                return 'float'
+            else:
+                int(name)
+                return 'int'
+        except ValueError:
+            pass
+        return 'unknown'
+
 
     def inferType(self, expr):
         if self.typeKnown(expr['type']):

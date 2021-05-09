@@ -54,7 +54,7 @@ class Transpiler(BaseTranspiler):
                 elif varType == 'float':
                     string = string.replace(f'{{{var}}}','%f',1)
                 else:
-                    raise SyntaxError('Cannot format {varType} in formatStr')
+                    raise SyntaxError(f'Cannot format {varType} in formatStr')
         return string, variables
 
     def formatCall(self, name, returnType, args):
