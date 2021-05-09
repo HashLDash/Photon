@@ -81,14 +81,14 @@ class Transpiler(BaseTranspiler):
         return 'else:'
 
     def formatEndIf(self):
-        return '#end'
+        return ''
     
     def formatWhile(self, expr):
         formattedExpr = self.formatExpr(expr)
         return f'while {formattedExpr}:'
 
     def formatEndWhile(self):
-        return '#end'
+        return ''
 
     def div(self, arg1, arg2):
         return {'value':f'({arg1["value"]} / {arg2["value"]}', 'type':'float'}
