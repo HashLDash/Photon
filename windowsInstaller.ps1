@@ -2,13 +2,22 @@
 
 $host.UI.RawUI.WindowTitle = "Windows Installer - Photon"
 
-New-ItemProperty -Path HKLM:Software\Microsoft\Windows\CurrentVersion\policies\system -Name EnableLUA -PropertyType DWord -Value 0 -Force
-Set-ItemProperty -Path HKLM:\Software\Microsoft\Windows\CurrentVersion\policies\system -Name EnableLUA -Value 0 -Force
+if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) 
+{
+   echo "To install Photon, you need administrator privileges!"
+   timeout /t 3
+   exit
+}
 
-Set-ExecutionPolicy Bypass -Scope Process -Force
-[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
-iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
-$env:Path = "$env:Path;$env:AllUsersProfile\chocolatey\bin"
+while ((Get-Command "choco.exe" -ErrorAction SilentlyContinue) -eq $null) 
+{
+   echo "Chocolatey was not found! Do you want to install it?"
+   pause
+   Set-ExecutionPolicy Bypass -Scope Process -Force
+   [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
+   iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
+   $env:Path = "$env:Path;$env:AllUsersProfile\chocolatey\bin"
+}
 
 $dependencies = ""
 
@@ -16,22 +25,38 @@ if ((Get-Command "python.exe" -ErrorAction SilentlyContinue) -eq $null)
 {
    $dependencies = "python "
 }
+
 if ((Get-Command "gcc.exe" -ErrorAction SilentlyContinue) -eq $null) 
 {
    $dependencies = "${dependencies}mingw "
 }
+
 if ((Get-Command "git.exe" -ErrorAction SilentlyContinue) -eq $null) 
 {
    $dependencies = "${dependencies}git "
 }
 
-if ($dependencies -ne "") {
-  choco install $dependencies
+if ($dependencies -ne "") 
+{
+   echo "To use Photon, you need to install the following programs: ${dependencies}"
+   pause
+   choco install -y $dependencies
+} 
+else 
+{
+   echo "The programs Photon needs are already installed!"
 }
 
-python -m pip install pyreadline
+if ((Get-Command "python.exe" -ErrorAction SilentlyContinue) -ne $null) 
+{
+   python -m pip install pyreadline
+   $scriptPath = split-path -parent $MyInvocation.MyCommand.Definition
+   echo "Installing Photon . . ."
+   python "${scriptPath}\install.py"
+}
+else
+{
+   echo "Python was not found!"
+}
 
-$scriptPath = split-path -parent $MyInvocation.MyCommand.Definition
-python "$scriptPath\install.py"
-
-Pause
+pause
