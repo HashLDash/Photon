@@ -346,3 +346,13 @@ def ifelif(i, t):
     del t[i+1] # beginBlock
     return t
 
+def whileLoop(i, t):
+    ''' Create a while token '''
+    # token will have a block field
+
+    t[i]['token'] = 'while'
+    t[i]['expr'] = t[i+1]
+    del t[i+1] # expr
+    del t[i+1] # beginBlock
+    return t
+

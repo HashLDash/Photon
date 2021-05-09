@@ -12,6 +12,7 @@ class BaseTranspiler():
             'expr': self.processExpression,
             'assign': self.processAssign,
             'if': self.processIf,
+            'while': self.processWhile,
             '+': self.add,
             '-': self.sub,
             '*': self.mul,
@@ -194,6 +195,13 @@ class BaseTranspiler():
             for c in token['else']:
                 self.process(c)
         self.source.append(self.formatEndIf())
+
+    def processWhile(self, token):
+        expr = self.processExpr(token['expr'])
+        self.source.append(self.formatWhile(expr))
+        for c in token['block']:
+            self.process(c)
+        self.source.append(self.formatEndWhile())
 
     def processArgs(self, tokens):
         args = []

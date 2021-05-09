@@ -109,6 +109,13 @@ class Transpiler(BaseTranspiler):
     def formatEndIf(self):
         return '}'
     
+    def formatWhile(self, expr):
+        formattedExpr = self.formatExpr(expr)
+        return f'while ({formattedExpr}) {{'
+
+    def formatEndWhile(self):
+        return '}'
+    
     def div(self, arg1, arg2):
         return {'value':f'({self.nativeType("float")}){arg1["value"]} / {arg2["value"]}', 'type':'float'}
 

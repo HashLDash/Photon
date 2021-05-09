@@ -33,6 +33,8 @@ expr = num
 
 ifelif = (ifStatement elifStatement) expr beginBlock
 
+whileLoop = whileStatement expr beginBlock
+
 args = expr comma expr
 
 assign = expr equal expr

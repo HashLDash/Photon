@@ -40,6 +40,7 @@ patterns = {
   ('operator', 'expr'): expr,
   ('ifStatement', 'expr', 'beginBlock'): ifelif,
   ('elifStatement', 'expr', 'beginBlock'): ifelif,
+  ('whileStatement', 'expr', 'beginBlock'): whileLoop,
   ('expr', 'comma', 'expr'): args,
   ('expr', 'equal', 'expr'): assign,
   ('print', 'lparen', 'expr', 'rparen'): printFunc,
