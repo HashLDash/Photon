@@ -13,6 +13,7 @@ class BaseTranspiler():
             'assign': self.processAssign,
             'if': self.processIf,
             'while': self.processWhile,
+            'for': self.processFor,
             '+': self.add,
             '-': self.sub,
             '*': self.mul,
@@ -202,6 +203,32 @@ class BaseTranspiler():
         for c in token['block']:
             self.process(c)
         self.source.append(self.formatEndWhile())
+
+    def processRange(self, token):
+        rangeType = 'unknown'
+        fromVal = self.processExpr(token['from'])
+        if 'step' in token:
+            step = self.processExpr(token['from'])
+        else:
+            step = {'type':'int', 'value':'1'}
+        toVal = self.processExpr(token['to'])
+        types = {fromVal['type'], step['type'], toVal['type']}
+        if len(types) == 1:
+            rangeType = types.pop()
+        elif len(types) == 2 and 'float' in types and 'int' in types:
+            rangeType = 'float'
+        return {'type':rangeType, 'from':fromVal, 'step':step, 'to':toVal}
+
+    def processFor(self, token):
+        if token['iterable']['token'] == 'expr':
+            iterable = self.processExpr(token['iterable'])
+        else:
+            iterable = self.processRange(token['iterable'])
+        variables = [ self.processVar(v) for v in token['vars'] ]
+        self.source.append(self.formatFor(variables, iterable))
+        for c in token['block']:
+            self.process(c)
+        self.source.append(self.formatEndFor())
 
     def processArgs(self, tokens):
         args = []

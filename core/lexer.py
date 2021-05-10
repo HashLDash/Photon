@@ -188,8 +188,12 @@ def typeDeclaration(i, t):
     return t
 
 def floatNumber(i, t):
-    ''' Return a float number from the given tokenList '''
-
+    ''' Check if it is a floatNumber token and
+        Return a float number from the given tokenList
+    '''
+    if t[i+2]['token'] == 'dot':
+        # Its a range token
+        return 'continue'
     try:
         t[i] = {
             'token':'floatNumber',
@@ -343,6 +347,40 @@ def ifelif(i, t):
     t[i]['expr'] = t[i+1]
 
     del t[i+1] # expr
+    del t[i+1] # beginBlock
+    return t
+
+def rangeExpr(i, t):
+    ''' Return a range token '''
+
+    token = {'token':'range', 'from':t[i]}
+    if t[i+4]['token'] == 'dot' and t[i+5]['token'] == 'dot':
+        token['step'] = t[i+3]
+        token['to'] = t[i+6]
+        del t[i+1] # dot
+        del t[i+1] # dot
+        del t[i+1] # step
+    else:
+        token['to'] = t[i+3]
+    t[i] = token
+    del t[i+1] # dot
+    del t[i+1] # dot
+    del t[i+1] # to
+    return t
+
+def forLoop(i, t):
+    ''' Check if its a valid for token and return the token if it is '''
+    #token will have a block field
+    #TODO: include args for key val unpacking
+    if not t[i+1]['args'][0]['token'] == 'var':
+        # not valid for loop
+        return 'continue'
+    t[i]['token'] = 'for'
+    t[i]['vars'] = [t[i+1]['args'][0]]
+    t[i]['iterable'] = t[i+3]
+    del t[i+1] # var
+    del t[i+1] # in
+    del t[i+1] # iterable
     del t[i+1] # beginBlock
     return t
 

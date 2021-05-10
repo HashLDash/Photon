@@ -90,6 +90,17 @@ class Transpiler(BaseTranspiler):
     def formatEndWhile(self):
         return ''
 
+    def formatFor(self, variables, iterable):
+        if 'from' in iterable:
+            var = variables[0]['value']
+            fromVal = iterable['from']['value']
+            step = iterable['step']['value']
+            toVal = iterable['to']['value']
+            return f'for {var} in range({fromVal}, {toVal}, {step}):'
+
+    def formatEndFor(self):
+        return ''
+
     def div(self, arg1, arg2):
         return {'value':f'({arg1["value"]} / {arg2["value"]}', 'type':'float'}
 

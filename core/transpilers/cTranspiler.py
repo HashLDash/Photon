@@ -115,6 +115,21 @@ class Transpiler(BaseTranspiler):
 
     def formatEndWhile(self):
         return '}'
+
+    def formatFor(self, variables, iterable):
+        if 'from' in iterable:
+            # For with range
+            iterVar = variables[0]['value']
+            varType = iterable['type']
+            fromVal = iterable['from']['value']
+            step = iterable['step']['value']
+            toVal = iterable['to']['value']
+            return f'for ({varType} {iterVar}={fromVal};{iterVar}<{toVal}; i+={step}) {{'
+        else:
+            raise SyntaxError(f'Format for with unpacking not suported yet.')
+    
+    def formatEndFor(self):
+        return '}'
     
     def div(self, arg1, arg2):
         return {'value':f'({self.nativeType("float")}){arg1["value"]} / {arg2["value"]}', 'type':'float'}

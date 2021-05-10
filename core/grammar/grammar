@@ -31,7 +31,12 @@ expr = num
      | (num var expr) operator (num var expr)
      | operator (expr)
 
+rangeExpr = expr dot dot expr
+          | expr dot dot expr dot dot expr
+
 ifelif = (ifStatement elifStatement) expr beginBlock
+
+forLoop = forStatement expr inStatement (range expr) beginBlock
 
 whileLoop = whileStatement expr beginBlock
 
