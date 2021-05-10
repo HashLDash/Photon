@@ -27,6 +27,7 @@ class Transpiler(BaseTranspiler):
             'int':'long',
             'str':'char*',
             'bool':'int',
+            'void':'void',
             'unknown':'auto',
         }
 
@@ -130,6 +131,21 @@ class Transpiler(BaseTranspiler):
     
     def formatEndFor(self):
         return '}'
+
+    def formatArgs(self, args):
+        return ','.join([ f'{self.nativeType(arg["type"])} {arg["value"]}' for arg in args])
+
+    def formatFunc(self, name, returnType, args):
+        args = self.formatArgs(args)
+        return f'/*def*/{self.nativeType(returnType)} {name}({args}) {{'
+
+    def formatEndFunc(self):
+        return '}'
+
+    def formatReturn(self, expr):
+        if expr:
+            return f'return {expr["value"]};'
+        return 'return;'
     
     def div(self, arg1, arg2):
         return {'value':f'({self.nativeType("float")}){arg1["value"]} / {arg2["value"]}', 'type':'float'}
@@ -190,7 +206,7 @@ class Transpiler(BaseTranspiler):
                 if line:
                     if line[0] == '}':
                         indent -= 4
-                f.write(' '*indent+line+'\n')
+                f.write(' '*indent+line.replace('/*def*/','')+'\n')
                 if self.isBlock(line):
                     indent += 4
         debug('Generated '+self.filename)

@@ -4,6 +4,7 @@
 # Each target is handled by its Toolchain
 
 class Builder():
-    def __init__(self, **kwargs):
+    def __init__(self, platform, **kwargs):
         pass
+
 

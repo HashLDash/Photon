@@ -160,6 +160,8 @@ def typeDeclaration(i, t):
                 else:
                     varType.append(tok['type'])
             elif tok['token'] == 'var' and not last == 'var':
+                if not tok['type'] == 'unknown':
+                    varType.append(tok['type'])
                 name = tok['name']
                 last = 'var'
             elif tok['token'] == 'var' and last == 'var':
@@ -173,6 +175,7 @@ def typeDeclaration(i, t):
     if not name:
         raise SyntaxError('Type declaration error')
     t[i] = {'token':'var', 'name':name, 'type':' '.join(varType)} 
+    input(t[i])
     if arrayLen:
         # It's an array, include len and elementType
         t[i]['type'] = 'array'
@@ -273,7 +276,7 @@ def args(i, t):
 def call(i, t):
     ''' Return a call token if valid '''
     # Verify if it is a valid call
-    if not t[i]['args'][0]['token'] in {'var'}:
+    if not t[i]['args'][0]['token'] in {'var'} or t[i-1]['token'] == 'defStatement':
         # Not a valid call
         return 'continue'
     if t[i+2]['token'] == 'rparen':
@@ -392,5 +395,42 @@ def whileLoop(i, t):
     t[i]['expr'] = t[i+1]
     del t[i+1] # expr
     del t[i+1] # beginBlock
+    return t
+
+def function(i, t):
+    ''' Check if its a function definition and return a function token if it is '''
+    
+    # token will have a block field
+
+    if not t[i+1]['args'][0]['token'] == 'var':
+        # Invalid function definition
+        return 'continue'
+
+    t[i]['token'] = 'func'
+    if t[i+3]['token'] == 'args':
+        t[i]['args'] = t[i+3]['args']
+    elif t[i+3]['token'] == 'expr':
+        t[i]['args'] = [t[i+3]]
+    else:
+        raise SyntaxError(f'function arg with token {t[i+3]} not supported.')
+    t[i]['name'] = t[i+1]['args'][0]['name']
+    t[i]['type'] = t[i+1]['args'][0]['type']
+    del t[i+1] # var
+    del t[i+1] # lparen
+    del t[i+1] # expr or args
+    del t[i+1] # rparen
+    del t[i+1] # beginBlock
+    return t
+
+def funcReturn(i, t):
+    ''' Return a return token '''
+
+    if i == len(t)-1:
+        t[i]['token'] = 'return'
+        t[i]['type'] = 'void'
+    else:
+        t[i]['token'] = 'return'
+        t[i]['type'] = t[i+1]['type'],
+        t[i]['expr'] = t[i+1]
     return t
 

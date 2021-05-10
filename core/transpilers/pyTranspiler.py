@@ -11,9 +11,9 @@ class Transpiler(BaseTranspiler):
         self.filename = self.filename.replace('.w','.py')
         self.commentSymbol = '#'
         self.imports = set()
-        self.funcIdentifier = 'def'
+        self.funcIdentifier = 'def '
         self.constructorName = '__init__'
-        self.block = {'class ','def ', 'for ','while ','if ','else '}
+        self.block = {'class ','def ', 'for ','while ','if ','elif ','else '}
         self.true = 'True'
         self.false = 'False'
         self.null = 'None'
@@ -81,14 +81,14 @@ class Transpiler(BaseTranspiler):
         return 'else:'
 
     def formatEndIf(self):
-        return ''
+        return '#end'
     
     def formatWhile(self, expr):
         formattedExpr = self.formatExpr(expr)
         return f'while {formattedExpr}:'
 
     def formatEndWhile(self):
-        return ''
+        return '#end'
 
     def formatFor(self, variables, iterable):
         if 'from' in iterable:
@@ -99,7 +99,22 @@ class Transpiler(BaseTranspiler):
             return f'for {var} in range({fromVal}, {toVal}, {step}):'
 
     def formatEndFor(self):
-        return ''
+        return '#end'
+
+    def formatArgs(self, args):
+        return ','.join([ f'{arg["value"]}: {self.nativeType(arg["type"])}' for arg in args ])
+
+    def formatFunc(self, name, returnType, args):
+        args = self.formatArgs(args)
+        return f'def {name}({args}) -> {returnType}:'
+
+    def formatEndFunc(self):
+        return '#end'
+
+    def formatReturn(self, expr):
+        if expr:
+            return f'return {expr["value"]}'
+        return 'return'
 
     def div(self, arg1, arg2):
         return {'value':f'({arg1["value"]} / {arg2["value"]}', 'type':'float'}
@@ -139,7 +154,7 @@ class Transpiler(BaseTranspiler):
                 if line:
                     if line.startswith('#end'):
                         indent -= 4
-                f.write(' '*indent+line+'\n')
+                f.write(' '*indent+line.replace('#end','')+'\n')
                 if self.isBlock(line):
                     indent += 4
         debug('Generated '+self.filename)

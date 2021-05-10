@@ -14,6 +14,8 @@ class BaseTranspiler():
             'if': self.processIf,
             'while': self.processWhile,
             'for': self.processFor,
+            'func': self.processFunc,
+            'return': self.processReturn,
             '+': self.add,
             '-': self.sub,
             '*': self.mul,
@@ -26,13 +28,28 @@ class BaseTranspiler():
         }
         self.terminator = ';'
         self.currentScope = {}
+        self.inFunc = None
+        self.inClass = None
         self.source = []
         self.outOfMain = []
         self.nativeTypes = {
             'int':'int',
             'float':'float',
+            'void':'void',
             'unknown':'auto',
         }
+
+    def insertCode(self, line, index=None):
+        if self.inFunc or self.inClass:
+            if not index is None:
+                self.outOfMain.insert(index, line)
+            else:
+                self.outOfMain.append(line)
+        else:
+            if not index is None:
+                self.source.insert(index, line)
+            else:
+                self.source.append(line)
 
     def process(self, token):
         self.instructions[token['opcode']](token)
@@ -40,6 +57,8 @@ class BaseTranspiler():
     def nativeType(self, varType):
         if varType in self.nativeTypes:
             return self.nativeTypes[varType]
+        elif self.typeKnown(varType):
+            return varType
         else:
             raise NotImplemented
 
@@ -86,7 +105,7 @@ class BaseTranspiler():
         varType = token['args'][0]['type']
         if self.typeKnown(varType):
             self.currentScope[name] = {'type':varType}
-        self.source.append(self.formatVarInit(name, varType))
+        self.insertCode(self.formatVarInit(name, varType))
 
     def processVar(self, token):
         name = token['name']
@@ -134,7 +153,7 @@ class BaseTranspiler():
     def processExpression(self, token):
         ''' Process the expr token as a standalone code '''
         expr = self.processExpr(token)
-        self.source.append(expr['value']+self.terminator)
+        self.insertCode(expr['value']+self.terminator)
 
     def processExpr(self, token):
         ''' Process expr tokens as values, returning its type and value '''
@@ -172,7 +191,7 @@ class BaseTranspiler():
         else:
             raise SyntaxError(f'Assign with variable {target} no supported yet.')
         expr = self.processExpr(token['expr'])
-        self.source.append(self.formatAssign(target, expr))
+        self.insertCode(self.formatAssign(target, expr))
         if self.typeKnown(variable['type']):
             self.currentScope[variable['value']] = {'type':variable['type']}
         else:
@@ -182,27 +201,27 @@ class BaseTranspiler():
 
     def processIf(self, token):
         expr = self.processExpr(token['expr'])
-        self.source.append(self.formatIf(expr))
+        self.insertCode(self.formatIf(expr))
         for c in token['block']:
             self.process(c)
         if 'elifs' in token:
             for elifStatement in token['elifs']:
                 expr = self.processExpr(elifStatement['expr'])
-                self.source.append(self.formatElif(expr))
+                self.insertCode(self.formatElif(expr))
                 for c in elifStatement['elifBlock']:
                     self.process(c)
         if 'else' in token:
-            self.source.append(self.formatElse())
+            self.insertCode(self.formatElse())
             for c in token['else']:
                 self.process(c)
-        self.source.append(self.formatEndIf())
+        self.insertCode(self.formatEndIf())
 
     def processWhile(self, token):
         expr = self.processExpr(token['expr'])
-        self.source.append(self.formatWhile(expr))
+        self.insertCode(self.formatWhile(expr))
         for c in token['block']:
             self.process(c)
-        self.source.append(self.formatEndWhile())
+        self.insertCode(self.formatEndWhile())
 
     def processRange(self, token):
         rangeType = 'unknown'
@@ -225,10 +244,10 @@ class BaseTranspiler():
         else:
             iterable = self.processRange(token['iterable'])
         variables = [ self.processVar(v) for v in token['vars'] ]
-        self.source.append(self.formatFor(variables, iterable))
+        self.insertCode(self.formatFor(variables, iterable))
         for c in token['block']:
             self.process(c)
-        self.source.append(self.formatEndFor())
+        self.insertCode(self.formatEndFor())
 
     def processArgs(self, tokens):
         args = []
@@ -243,9 +262,58 @@ class BaseTranspiler():
         val = self.formatCall(name['value'], name['type'],args)
         return {'value':val, 'type':name['type']}
 
+    def startScope(self):
+        self.oldScope = self.currentScope
+        # refresh returnType
+        self.returnType = set()
+        self.currentScope = {}
+
+    def endScope(self):
+        scope = self.currentScope
+        self.currentScope = self.oldScope
+        return scope
+
+    def processFunc(self, token):
+        #TODO: add support for kwargs
+        args = self.processArgs(token['args'])
+        name = token['name']
+        returnType = token['type']
+        self.inFunc = name
+        index = len(self.outOfMain)
+        self.startScope()
+        # put args in scope
+        for arg in args:
+            argType = arg['type']
+            argVal = arg['value']
+            self.currentScope[argVal] = {'type':argType}
+        for c in token['block']:
+            self.process(c)
+        # infer return type if not known
+        if not self.typeKnown(returnType):
+            for rt in self.returnType:
+                if self.typeKnown(rt):
+                    returnType = rt
+                    break
+            else:
+                returnType = 'void'
+        self.insertCode(self.formatFunc(name, returnType, args),index)
+        self.insertCode(self.formatEndFunc())
+        self.inFunc = None
+        funcScope = self.endScope()
+        self.currentScope[name] = {'token':'func','args':args, 'type':returnType, 'scope':funcScope}
+
+    def processReturn(self, token):
+        if 'expr' in token:
+            expr = self.processExpr(token['expr'])
+            self.returnType.add(expr['type'])
+        else:
+            expr = None
+            self.returnType.add('void')
+        self.insertCode(self.formatReturn(expr))
+
     def printFunc(self, token):
         value = self.processExpr(token['expr'])
-        self.source.append(self.formatPrint(value))
+        self.insertCode(self.formatPrint(value))
 
     def add(self, arg1, arg2):
         t1 = arg1['type']

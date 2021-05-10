@@ -31,6 +31,9 @@ expr = num
      | (num var expr) operator (num var expr)
      | operator (expr)
 
+funcReturn = returnStatement
+           | returnStatement expr
+
 rangeExpr = expr dot dot expr
           | expr dot dot expr dot dot expr
 
@@ -43,6 +46,8 @@ whileLoop = whileStatement expr beginBlock
 args = expr comma expr
 
 assign = expr equal expr
+
+function = defStatement expr lparen (expr args) rparen beginBlock
 
 printFunc = print lparen (expr) rparen
 
