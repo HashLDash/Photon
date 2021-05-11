@@ -39,7 +39,7 @@ class Transpiler(BaseTranspiler):
         self.imports.add('#include <string.h>')
         message = self.formatPrint(expr).replace('\\n','',1) if expr else ''
         size = '__internalInputSize__'
-        return  f'{message}size_t {size} = 0; {self.nativeType("str")} {{var}}; getline(&{{var}}, &{size}, stdin); c[strlen(c)-1] = 0;'
+        return  f'{message}size_t {size} = 0; {self.nativeType("str")} {{var}}; getline(&{{var}}, &{size}, stdin); {{var}}[strlen({{var}})-1] = 0;'
 
     def formatStr(self, string):
         string = '"' + string[1:-1].replace('"','\\"') + '"'
