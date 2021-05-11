@@ -42,7 +42,7 @@ class Transpiler(BaseTranspiler):
         return  f'{message}size_t {size} = 0; {self.nativeType("str")} {{var}}; getline(&{{var}}, &{size}, stdin); {{var}}[strlen({{var}})-1] = 0;'
 
     def formatStr(self, string):
-        string = '"' + string[1:-1].replace('"','\\"') + '"'
+        string = '"' + string[1:-1].replace('"','\\"').replace('%','%%') + '"'
         variables = []
         if '{' in string:
             self.imports.add('#include "asprintf.h"')
