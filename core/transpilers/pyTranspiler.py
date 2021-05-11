@@ -13,7 +13,7 @@ class Transpiler(BaseTranspiler):
         self.imports = set()
         self.funcIdentifier = 'def '
         self.constructorName = '__init__'
-        self.block = {'class ','def ', 'for ','while ','if ','elif ','else '}
+        self.block = {'class ','def ', 'for ','while ','if ','elif ','else:'}
         self.true = 'True'
         self.false = 'False'
         self.null = 'None'
@@ -159,7 +159,7 @@ class Transpiler(BaseTranspiler):
                     f.write(imp+'\n')
             for line in [''] + self.outOfMain + [''] + boilerPlateStart + self.source + boilerPlateEnd:
                 if line:
-                    if line.startswith('#end'):
+                    if line.startswith('#end') or line.startswith('elif ') or line.startswith('else:'):
                         indent -= 4
                 f.write(' '*indent+line.replace('#end','')+'\n')
                 if self.isBlock(line):

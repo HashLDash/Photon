@@ -16,6 +16,7 @@ class BaseTranspiler():
             'for': self.processFor,
             'func': self.processFunc,
             'return': self.processReturn,
+            'breakStatement': self.processBreak,
             '+': self.add,
             '-': self.sub,
             '*': self.mul,
@@ -316,6 +317,9 @@ class BaseTranspiler():
             expr = None
             self.returnType.add('void')
         self.insertCode(self.formatReturn(expr))
+
+    def processBreak(self, token):
+        self.insertCode('break'+self.terminator)
 
     def printFunc(self, token):
         value = self.processExpr(token['expr'])
