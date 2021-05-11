@@ -151,6 +151,13 @@ class Transpiler(BaseTranspiler):
     def div(self, arg1, arg2):
         return {'value':f'({self.nativeType("float")}){arg1["value"]} / {arg2["value"]}', 'type':'float'}
 
+    def equals(self, arg1, arg2):
+        if arg1['type'] == 'str' or arg2['type'] == 'str':
+            self.imports.add('#include <string.h>')
+            return {'value':f'!strcmp({arg1["value"]}, {arg2["value"]})', 'type':'bool'}
+        else:
+            return {'value':f'{arg1["value"]} == {arg2["value"]}', 'type':'bool'}
+
     def formatPrint(self, value):
         if value['type'] == 'int':
             return f'printf("%d\\n", {value["value"]});'
