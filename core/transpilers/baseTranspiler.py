@@ -20,6 +20,7 @@ class BaseTranspiler():
             '-': self.sub,
             '*': self.mul,
             '/': self.div,
+            '%': self.mod,
             '**': self.exp,
             '==': self.equals,
             '>=': self.greaterEqual,
@@ -134,6 +135,11 @@ class BaseTranspiler():
         if 'value' in token and 'type' in token and self.typeKnown(token['type']):
             if token['type'] == 'str':
                 token = self.processFormatStr(token)
+            elif token['type'] == 'bool':
+                if token['value'] in {'false', 'False'}:
+                    token['value'] = self.false
+                else:
+                    token['value'] = self.true
             if 'modifier' in token:
                 token['value'] = token['modifier'] + token['value']
             return token
@@ -348,6 +354,9 @@ class BaseTranspiler():
         if t1 in {'float','int'} and t2 in {'float','int'}:
             varType = 'float'
         return {'value':f'{arg1["value"]} / {arg2["value"]}', 'type':varType}
+    
+    def mod(self, arg1, arg2):
+        return {'value':f'{arg1["value"]} % {arg2["value"]}', 'type':'int'}
 
     def exp(self, arg1, arg2):
         self.imports.add('#include <math.h>')
