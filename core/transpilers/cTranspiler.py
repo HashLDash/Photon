@@ -37,7 +37,7 @@ class Transpiler(BaseTranspiler):
     
     def formatInput(self, expr):
         self.imports.add('#include <string.h>')
-        message = self.formatPrint(expr).replace('\\n','',1) if expr else ''
+        message = self.formatPrint(expr).replace('\\n','',1) if expr['value'] else ''
         size = '__internalInputSize__'
         return  f'{message}size_t {size} = 0; {self.nativeType("str")} {{var}}; getline(&{{var}}, &{size}, stdin); {{var}}[strlen({{var}})-1] = 0;'
 
