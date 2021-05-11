@@ -116,7 +116,7 @@ class BaseTranspiler():
         else:
             varType = 'unknown'
         if 'modifier' in token:
-            token['name'] = token['modifier'] + token['name']
+            token['name'] = token['modifier'].replace('not',self.notOperator) + token['name']
         return {'value':token['name'], 'type':varType}
 
     def processFormatStr(self, token):

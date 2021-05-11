@@ -19,6 +19,7 @@ class Transpiler(BaseTranspiler):
         self.false = '0'
         self.null = 'NULL'
         self.self = 'self'
+        self.notOperator = '!'
         self.listTypes = set()
         self.dictTypes = set()
         self.instanceCounter = 0

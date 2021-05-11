@@ -18,13 +18,20 @@ class Transpiler(BaseTranspiler):
         self.false = 'False'
         self.null = 'None'
         self.self = 'self'
+        self.notOperator = 'not '
         self.nativeTypes = {
             'float':'float',
             'int':'int',
             'str':'str',
             'bool':'bool',
-            'unknown':'',
+            'unknown':'any',
         }
+    
+    def nativeType(self, varType):
+        try:
+            return self.nativeTypes[varType]
+        except KeyError:
+            return 'any'
 
     def formatVarInit(self, name, varType):
         if varType:
