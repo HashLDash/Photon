@@ -38,7 +38,7 @@ class Transpiler(BaseTranspiler):
         return f'{varType} {name};'
     
     def formatInput(self, expr):
-        self.imports.add('#include <string.h>')
+        self.imports.add('#include <string.h>') # strlen
         message = self.formatPrint(expr).replace('\\n','',1) if expr['value'] else ''
         size = '__internalInputSize__'
         if not self.initInternal:

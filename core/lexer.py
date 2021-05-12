@@ -225,7 +225,10 @@ def convertToExpr(token):
         raise SyntaxError(f'Cant convert token {token} to expr')
 
 def expr(i, t):
-    if t[i]['token'] == 'operator':
+    if t[i]['token'] == 'operator' and t[i-1]['token'] == 'rparen':
+        # its part of an expression. Not ready to parse this yet.
+        return 'continue'
+    elif t[i]['token'] == 'operator':
         # Modifier operator
         t2 = t[i+1].copy()
         t2['args'][0]['modifier'] = t[i]['operator']
@@ -256,7 +259,7 @@ def expr(i, t):
 def group(i, t):
     ''' Return a group token
     '''
-    if t[i-1]['token'] == 'operator' or 'symbol' in t[i-1]:
+    if t[i-1]['token'] in {'operator','returnStatement'} or 'symbol' in t[i-1]:
         # Its a group
         t[i] = {'token':'group', 'type':t[i+1]['type'], 'expr':t[i+1]}
         del t[i+1] # expr
@@ -433,7 +436,6 @@ def function(i, t):
 
 def funcReturn(i, t):
     ''' Return a return token '''
-
     if i == len(t)-1:
         t[i]['token'] = 'return'
         t[i]['type'] = 'void'
