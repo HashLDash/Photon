@@ -42,7 +42,10 @@ class Transpiler(BaseTranspiler):
         message = self.formatPrint(expr).replace('\\n','',1) if expr['value'] else ''
         size = '__internalInputSize__'
         if not self.initInternal:
-            initInternal = f'{message}size_t {size} = 0;'
+            initInternal = f'size_t {size} = 0;'
+            self.initInternal = True
+        else:
+            initInternal = ''
         return  f'{message}{initInternal}{self.nativeType("str")} {{var}}; getline(&{{var}}, &{size}, stdin); {{var}}[strlen({{var}})-1] = 0;'
 
     def formatStr(self, string):
