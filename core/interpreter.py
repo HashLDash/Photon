@@ -145,7 +145,11 @@ class Interpreter():
             if self.line == 'exit':
                 break
             tokenized = parse(self.line, filename=self.filename, no=self.lineNumber)
-            struct, nextLine = self.handleTokenized(tokenized)
+            try:
+                struct, nextLine = self.handleTokenized(tokenized)
+            except Exception as e:
+                print(f'ParserError: {e}')
+                sys.exit()
             self.engine.process(struct)
             self.processing = False
 

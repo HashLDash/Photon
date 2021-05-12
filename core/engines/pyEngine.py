@@ -22,5 +22,8 @@ class Engine():
             code += ' '*indent+line+'\n'
             if self.transpiler.isBlock(line):
                 indent += 4
-        exec(code, self.globals)
+        try:
+            exec(code, self.globals)
+        except Exception as e:
+            print(f'RuntimeError: {e}')
         self.transpiler.source = []
