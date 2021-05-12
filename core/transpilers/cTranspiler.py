@@ -40,7 +40,7 @@ class Transpiler(BaseTranspiler):
     def formatInput(self, expr):
         self.imports.add('#include <string.h>') # strlen
         if self.target in {'win32', 'cygwin', 'msys'}:
-            self.imports.add('#include <getline.h>') # getline
+            self.imports.add('#include "getline.h"') # getline
         message = self.formatPrint(expr).replace('\\n','',1) if expr['value'] else ''
         size = '__internalInputSize__'
         if not self.initInternal:
@@ -54,7 +54,8 @@ class Transpiler(BaseTranspiler):
         string = '"' + string[1:-1].replace('"','\\"').replace('%','%%') + '"'
         variables = []
         if '{' in string:
-            self.imports.add('#include "asprintf.h"')
+            if self.target in {'win32', 'cygwin', 'msys'}:
+                self.imports.add('#include "asprintf.h"')
             variables = [var for _,var,_,_ in Formatter().parse(string) if var]
             for var in variables:
                 varType = self.getType(var)
