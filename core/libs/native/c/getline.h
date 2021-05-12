@@ -1,79 +1,59 @@
-/* Copyright (C) 1991 Free Software Foundation, Inc.
-This file is part of the GNU C Library.
+/* The original code is public domain -- Will Hartung 4/9/09 */
+/* Modifications, public domain as well, by Antti Haapala, 11/10/17
+   - Switched to getc on 5/23/19 */
 
-The GNU C Library is free software; you can redistribute it and/or
-modify it under the terms of the GNU Library General Public License as
-published by the Free Software Foundation; either version 2 of the
-License, or (at your option) any later version.
-
-The GNU C Library is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-Library General Public License for more details.
-
-You should have received a copy of the GNU Library General Public
-License along with the GNU C Library; see the file COPYING.LIB.  If
-not, write to the Free Software Foundation, Inc., 675 Mass Ave,
-Cambridge, MA 02139, USA.  */
-
-/* CHANGED FOR VMS */
-
-/*
- * <getline.c>
-**
-** HISTORY:
-**	 8 Jul 94  FM	Include "HTUtils.h" for memory allocation and free()
-**			substitutions with VAXC on VMS.
-**
-*/
-
-#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
-#include "HTUtils.h"
+#include <stdint.h>
 
-/* Read up to (and including) a newline from STREAM into *LINEPTR
-   (and null-terminate it). *LINEPTR is a pointer returned from malloc (or
-   NULL), pointing to *N characters of space.  It is realloc'd as
-   necessary.  Returns the number of characters read (not including the
-   null terminator), or -1 on error or EOF.  */
+// if typedef doesn't exist (msvc, blah)
+typedef intptr_t ssize_t;
 
-int getline(char **lineptr, size_t *n, FILE *stream)
-{
-static char line[256];
-char *ptr;
-unsigned int len;
+ssize_t getline(char **lineptr, size_t *n, FILE *stream) {
+    size_t pos;
+    int c;
 
-   if (lineptr == NULL || n == NULL)
-   {
-      errno = EINVAL;
-      return -1;
-   }
+    if (lineptr == NULL || stream == NULL || n == NULL) {
+        errno = EINVAL;
+        return -1;
+    }
 
-   if (ferror (stream))
-      return -1;
+    c = getc(stream);
+    if (c == EOF) {
+        return -1;
+    }
 
-   if (feof(stream))
-      return -1;
-     
-   fgets(line,256,stream);
+    if (*lineptr == NULL) {
+        *lineptr = malloc(128);
+        if (*lineptr == NULL) {
+            return -1;
+        }
+        *n = 128;
+    }
 
-   ptr = strchr(line,'\n');   
-   if (ptr)
-      *ptr = '\0';
+    pos = 0;
+    while(c != EOF) {
+        if (pos + 1 >= *n) {
+            size_t new_size = *n + (*n >> 2);
+            if (new_size < 128) {
+                new_size = 128;
+            }
+            char *new_ptr = realloc(*lineptr, new_size);
+            if (new_ptr == NULL) {
+                return -1;
+            }
+            *n = new_size;
+            *lineptr = new_ptr;
+        }
 
-   len = strlen(line);
-   
-   if ((len+1) < 256)
-   {
-      ptr = realloc(*lineptr, 256);
-      if (ptr == NULL)
-         return(-1);
-      *lineptr = ptr;
-      *n = 256;
-   }
+        ((unsigned char *)(*lineptr))[pos ++] = c;
+        if (c == '\n') {
+            break;
+        }
+        c = getc(stream);
+    }
 
-   strcpy(*lineptr,line); 
-   return(len);
+    (*lineptr)[pos] = '\0';
+    return pos;
 }
