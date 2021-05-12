@@ -408,17 +408,20 @@ def function(i, t):
         return 'continue'
 
     t[i]['token'] = 'func'
-    if t[i+3]['token'] == 'args':
+    if t[i+3]['token'] == 'rparen':
+        t[i]['args'] = []
+    elif t[i+3]['token'] == 'args':
         t[i]['args'] = t[i+3]['args']
+        del t[i+1] # expr or args
     elif t[i+3]['token'] == 'expr':
         t[i]['args'] = [t[i+3]]
+        del t[i+1] # expr or args
     else:
         raise SyntaxError(f'function arg with token {t[i+3]} not supported.')
     t[i]['name'] = t[i+1]['args'][0]['name']
     t[i]['type'] = t[i+1]['args'][0]['type']
     del t[i+1] # var
     del t[i+1] # lparen
-    del t[i+1] # expr or args
     del t[i+1] # rparen
     del t[i+1] # beginBlock
     return t

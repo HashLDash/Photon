@@ -48,6 +48,7 @@ args = expr comma expr
 assign = expr equal expr
 
 function = defStatement expr lparen (expr args) rparen beginBlock
+         | defStatement expr lparen rparen beginBlock
 
 printFunc = print lparen (expr) rparen
 
