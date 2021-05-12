@@ -176,7 +176,6 @@ def typeDeclaration(i, t):
     if not name:
         raise SyntaxError('Type declaration error')
     t[i] = {'token':'var', 'name':name, 'type':' '.join(varType)} 
-    input(t[i])
     if arrayLen:
         # It's an array, include len and elementType
         t[i]['type'] = 'array'
@@ -408,6 +407,8 @@ def function(i, t):
         return 'continue'
 
     t[i]['token'] = 'func'
+    t[i]['name'] = t[i+1]['args'][0]['name']
+    t[i]['type'] = t[i+1]['args'][0]['type']
     if t[i+3]['token'] == 'rparen':
         t[i]['args'] = []
     elif t[i+3]['token'] == 'args':
@@ -418,8 +419,6 @@ def function(i, t):
         del t[i+1] # expr or args
     else:
         raise SyntaxError(f'function arg with token {t[i+3]} not supported.')
-    t[i]['name'] = t[i+1]['args'][0]['name']
-    t[i]['type'] = t[i+1]['args'][0]['type']
     del t[i+1] # var
     del t[i+1] # lparen
     del t[i+1] # rparen
