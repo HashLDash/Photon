@@ -268,9 +268,15 @@ def group(i, t):
         
 def args(i, t):
     ''' Return an args token '''
-    t[i] = {'token':'args','args':[t[i], t[i+2]]}
+    args = []
+    for tok in [t[i],t[i+2]]:
+        if tok['token'] == 'args':
+            args += tok['args']
+        elif tok['token'] == 'expr':
+            args.append(tok)
+    t[i] = {'token':'args','args':args}
     del t[i+1] # comma
-    del t[i+1] # arg
+    del t[i+1] # arg or expr
     return t
 
 def call(i, t):

@@ -43,7 +43,7 @@ forLoop = forStatement expr inStatement (range expr) beginBlock
 
 whileLoop = whileStatement expr beginBlock
 
-args = expr comma expr
+args = (args expr) comma (args expr)
 
 assign = expr equal expr
 
