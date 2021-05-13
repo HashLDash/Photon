@@ -198,6 +198,10 @@ class Transpiler(BaseTranspiler):
     def div(self, arg1, arg2):
         return {'value':f'({self.nativeType("float")}){arg1["value"]} / {arg2["value"]}', 'type':'float'}
 
+    def exp(self, arg1, arg2):
+        self.imports.add('#include <math.h>')
+        return {'value':f'pow((double){arg1["value"]}, (double){arg2["value"]})', 'type':'float'}
+    
     def equals(self, arg1, arg2):
         if arg1['type'] == 'str' or arg2['type'] == 'str':
             self.imports.add('#include <string.h>')
@@ -271,7 +275,10 @@ class Transpiler(BaseTranspiler):
         self.write()
         debug(f'Running {self.filename}')
         try:
-            check_call(['gcc', '-O3', f'Sources/{self.filename}', '-o',
+            links = []
+            if '#include <math.h>' in self.imports:
+                links.append('-lm')
+            check_call(['gcc', '-O3', f'Sources/{self.filename}'] + links + ['-o',
             'Sources/main'])
         except:
             print('Compilation error. Check errors above.')
