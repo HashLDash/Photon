@@ -44,7 +44,7 @@ In the devlog 1, I show how to install and create your first hello world program
 
 ## ALPHA Stage
 
-Photon is currently in alpha and not available to the general public yet. Launching a language while it is in development is not a good idea at the moment because I can't focus on its development and bug track.
+Photon is currently in early alpha.
 If you like this project and want to contribute, please consider donating or subscribing to my youtube [channel](https://www.youtube.com/channel/UChE5M9BAsdtlllOpfhIu8Tw), where I'll post a dev log of this language ([devlog](https://www.youtube.com/watch?v=Seu5q_hc6go&list=PL89TmjrkwpOfteQJRptqmK-y8pr6uJdlc)).
 Also, join the discussion here on github about the future and your thoughts on the language!
 
@@ -65,7 +65,7 @@ Também carreguei um vídeo no meu canal português comparando-o com Python e C,
 
 ## Estágio ALPHA
 
-Photon está atualmente em alfa e não está disponível para o público em geral ainda. Lançar uma linguagem enquanto ela está em desenvolvimento não é uma boa ideia no momento porque não posso me concentrar em seu desenvolvimento e rastreamento de bug.
+Photon está atualmente em alfa.
 Se você gosta deste projeto e deseja contribuir, considere doar ou se inscrever no meu [canal youtube](https://www.youtube.com/channel/UChE5M9BAsdtlllOpfhIu8Tw) , onde postarei um dev log desta linguagem ([devlog](https://www.youtube.com/watch?v=Seu5q_hc6go&list=PL89TmjrkwpOfteQJRptqmK-y8pr6uJdlc)).
 Além disso, participe da discussão aqui no github sobre o futuro e sua opinião sobre a linguagem!
 
@@ -88,7 +88,7 @@ También subí un video en mi canal portugués comparándolo con Python y C, com
 
 ## Etapa ALPHA
 
-Photon se encuentra actualmente en alfa y aún no está disponible para el público en general. Lanzar un lenguaje mientras está en desarrollo no es una buena idea en este momento porque no puedo concentrarme en su desarrollo y seguimiento de errores.
+Photon se encuentra actualmente en alfa.
 Si te gusta este proyecto y quieres contribuir, considera hacer una donación o suscribirte a mi [canal de youtube](https://www.youtube.com/channel/UChE5M9BAsdtlllOpfhIu8Tw), donde publicaré un registro de desarrollo de este idioma [devlog](https://www.youtube.com/watch?v=Your5q_hc6go&list=PL89TmjrkwpOfteQJRptqmK-y8pr6uJdlc)
 ¡Además, participa en la discusión aquí en github sobre el futuro y tu opinión sobre el lenguaje!
 
