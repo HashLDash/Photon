@@ -135,6 +135,13 @@ class Transpiler(BaseTranspiler):
             if cast == 'long':
                 if value['token'] == 'inputFunc':
                     return f'{value["value"]} {cast} {var} = strtol(__inputStr__,NULL,10);'
+                else:
+                    return f'strtol({value["value"]},NULL,10)'
+            elif cast == 'double':
+                if value['token'] == 'inputFunc':
+                    return f'{value["value"]} {cast} {var} = strtod(__inputStr__,NULL);'
+                else:
+                    return f'strtod({value["value"]},NULL'
             else:
                 raise SyntaxError(f'Cast not implemented for type {cast}')
         return value['value']
