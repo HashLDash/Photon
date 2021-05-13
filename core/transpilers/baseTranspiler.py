@@ -211,13 +211,14 @@ class BaseTranspiler():
         else:
             raise SyntaxError(f'Assign with variable {target} no supported yet.')
         expr = self.processExpr(token['expr'])
-        self.insertCode(self.formatAssign(target, expr))
         if self.typeKnown(variable['type']):
             self.currentScope[variable['value']] = {'type':variable['type']}
         else:
             varType = self.inferType(expr)
             if self.typeKnown(varType):
                 self.currentScope[variable['value']] = {'type':varType}
+                target['type'] = varType
+        self.insertCode(self.formatAssign(target, expr))
 
     def processIf(self, token):
         expr = self.processExpr(token['expr'])
@@ -283,12 +284,12 @@ class BaseTranspiler():
         return {'value':val, 'type':name['type']}
 
     def startScope(self):
-        self.oldScope = self.currentScope
+        self.oldScope = deepcopy(self.currentScope)
         # refresh returnType
         self.returnType = set()
 
     def endScope(self):
-        scope = self.currentScope
+        scope = deepcopy(self.currentScope)
         self.currentScope = self.oldScope
         return scope
 

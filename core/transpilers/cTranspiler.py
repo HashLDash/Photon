@@ -47,7 +47,7 @@ class Transpiler(BaseTranspiler):
             initInternal = f'size_t {size} = 0;'
             self.initInternal = True
         else:
-            initInternal = ''
+            initInternal = f'{size} = 0;'
         return  f'{message}{initInternal}{self.nativeType("str")} {{var}}; getline(&{{var}}, &{size}, stdin); {{var}}[strlen({{var}})-1] = 0;'
 
     def formatStr(self, string):
