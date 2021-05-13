@@ -15,8 +15,6 @@
 
 /* Written by Simon Josefsson. */
 
-#include "utils.h"
-
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
