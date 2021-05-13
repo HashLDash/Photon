@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 class BaseTranspiler():
     def __init__(self, filename, target='web', module=False, standardLibs=''):
         self.standardLibs = standardLibs
@@ -35,6 +37,7 @@ class BaseTranspiler():
         self.currentScope = {}
         self.inFunc = None
         self.inClass = None
+        self.insertMode = True
         self.source = []
         self.outOfMain = []
         self.nativeTypes = {
@@ -45,16 +48,17 @@ class BaseTranspiler():
         }
 
     def insertCode(self, line, index=None):
-        if self.inFunc or self.inClass:
-            if not index is None:
-                self.outOfMain.insert(index, line)
+        if self.insertMode:
+            if self.inFunc or self.inClass:
+                if not index is None:
+                    self.outOfMain.insert(index, line)
+                else:
+                    self.outOfMain.append(line)
             else:
-                self.outOfMain.append(line)
-        else:
-            if not index is None:
-                self.source.insert(index, line)
-            else:
-                self.source.append(line)
+                if not index is None:
+                    self.source.insert(index, line)
+                else:
+                    self.source.append(line)
 
     def process(self, token):
         self.instructions[token['opcode']](token)
@@ -118,6 +122,10 @@ class BaseTranspiler():
             varType = token['type']
         elif name in self.currentScope:
             varType = self.currentScope[name]['type']
+        elif name == self.inFunc and self.returnType:
+            for rt in self.returnType:
+                if self.typeKnown(rt):
+                    varType = rt
         else:
             varType = 'unknown'
         if 'modifier' in token:
@@ -136,7 +144,8 @@ class BaseTranspiler():
         return token
 
     def getValAndType(self, token):
-        if 'value' in token and 'type' in token and self.typeKnown(token['type']):
+        print(f'valtpye {token}')
+        if 'value' in token and 'type' in token and (self.typeKnown(token['type']) or not self.insertMode):
             if token['type'] == 'str':
                 token = self.processFormatStr(token)
             elif token['type'] == 'bool':
@@ -186,6 +195,7 @@ class BaseTranspiler():
                     arg2 = args[index+1]
                     arg1 = self.getValAndType(arg1)
                     arg2 = self.getValAndType(arg2)
+                    print(arg1, arg2)
                     result = self.instructions[op](arg1, arg2)
                     args[index] = result
                     del ops[index]
@@ -276,7 +286,6 @@ class BaseTranspiler():
         self.oldScope = self.currentScope
         # refresh returnType
         self.returnType = set()
-        self.currentScope = {}
 
     def endScope(self):
         scope = self.currentScope
@@ -288,9 +297,35 @@ class BaseTranspiler():
         args = self.processArgs(token['args'])
         name = token['name']
         returnType = token['type']
+        self.returnType = returnType
         self.inFunc = name
-        index = len(self.outOfMain)
+        # infer return type if not known
+        if not self.typeKnown(returnType):
+            # Pre process code and get returnType
+            # change mode to not insert code on processing
+            self.insertMode = False
+            self.startScope()
+            for arg in args:
+                argType = arg['type']
+                argVal = arg['value']
+                self.currentScope[argVal] = {'type':argType}
+            # get a deepcopy or it will corrupt the block
+            block = deepcopy(token['block'])
+            for c in block:
+                self.process(c)
+            for rt in self.returnType:
+                if self.typeKnown(rt):
+                    returnType = rt
+                    break
+            else:
+                returnType = 'void'
+            self.endScope()
+            # return to normal mode
+            self.insertMode = True
+            # End pre processing
         self.startScope()
+        self.currentScope[name] = {'type':returnType, 'token':'func'}
+        index = len(self.outOfMain)
         # put args in scope
         for arg in args:
             argType = arg['type']
@@ -298,14 +333,6 @@ class BaseTranspiler():
             self.currentScope[argVal] = {'type':argType}
         for c in token['block']:
             self.process(c)
-        # infer return type if not known
-        if not self.typeKnown(returnType):
-            for rt in self.returnType:
-                if self.typeKnown(rt):
-                    returnType = rt
-                    break
-            else:
-                returnType = 'void'
         self.insertCode(self.formatFunc(name, returnType, args),index)
         self.insertCode(self.formatEndFunc())
         self.inFunc = None
@@ -339,6 +366,8 @@ class BaseTranspiler():
             varType = 'int'
         elif t1 in {'float','int'} and t2 in {'float','int'}:
             varType = 'float'
+        else:
+            varType = 'unknown'
         return {'value':f'{arg1["value"]} + {arg2["value"]}', 'type':varType}
 
     def sub(self, arg1, arg2):
@@ -348,6 +377,8 @@ class BaseTranspiler():
             varType = 'int'
         elif t1 in {'float','int'} and t2 in {'float','int'}:
             varType = 'float'
+        else:
+            varType = 'unknown'
         return {'value':f'{arg1["value"]} - {arg2["value"]}', 'type':varType}
 
     def mul(self, arg1, arg2):
@@ -357,6 +388,8 @@ class BaseTranspiler():
             varType = 'int'
         elif t1 in {'float','int'} and t2 in {'float','int'}:
             varType = 'float'
+        else:
+            varType = 'unknown'
         return {'value':f'{arg1["value"]} * {arg2["value"]}', 'type':varType}
 
     def div(self, arg1, arg2):
@@ -364,6 +397,8 @@ class BaseTranspiler():
         t2 = arg2['type']
         if t1 in {'float','int'} and t2 in {'float','int'}:
             varType = 'float'
+        else:
+            varType = 'unknown'
         return {'value':f'{arg1["value"]} / {arg2["value"]}', 'type':varType}
     
     def mod(self, arg1, arg2):
