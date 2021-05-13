@@ -44,11 +44,12 @@ class Transpiler(BaseTranspiler):
         message = self.formatPrint(expr).replace('\\n','',1) if expr['value'] else ''
         size = '__internalInputSize__'
         if not self.initInternal:
-            initInternal = f'size_t {size} = 0;'
+            initInternal = f'size_t {size} = 0; char* __inputStr__;'
             self.initInternal = True
         else:
             initInternal = f'{size} = 0;'
-        return  f'{message}{initInternal}{self.nativeType("str")} {{var}}; getline(&{{var}}, &{size}, stdin); {{var}}[strlen({{var}})-1] = 0;'
+        #return  f'{message}{initInternal}{self.nativeType("str")} {{var}}; getline(&{{var}}, &{size}, stdin); {{var}}[strlen({{var}})-1] = 0;'
+        return  f'{message}{initInternal} getline(&__inputStr__, &{size}, stdin); __inputStr__[strlen(__inputStr__)-1] = 0;'
 
     def formatStr(self, string):
         string = '"' + string[1:-1].replace('"','\\"').replace('%','%%') + '"'
@@ -74,22 +75,33 @@ class Transpiler(BaseTranspiler):
         return f'{name}({arguments})'
 
     def formatAssign(self, target, expr):
-        cast = None
         if target['token'] == 'var':
             variable = target['name']
             if variable in self.currentScope:
-                if self.typeKnown(target['type']):
-                    # Casting to a different type
-                    varType = self.nativeType(target['type'])
-                    cast = varType
-                else:
-                    varType = ''
+                varType = self.currentScope[variable]['type']
+            elif self.typeKnown(target['type']):
+                # Type was explicit
+                varType = self.nativeType(target['type'])
             else:
-                if self.typeKnown(target['type']):
-                    # Type was explicit
-                    varType = self.nativeType(target['type'])
-                else:
-                    varType = self.nativeType(self.inferType(expr))
+                varType = self.nativeType(self.inferType(expr))
+
+            #if variable in self.currentScope:
+            #    if self.typeKnown(target['type']):
+            #        if not target['type'] == self.currentScope[variable]['type']:
+            #            # Casting to a different type
+            #            varType = self.nativeType(target['type'])
+            #        else:
+            #            # Doesnt need cast here
+            #            varType = self.nativeType(self.currentScope[variable]['type'])
+            #        cast = varType
+            #    else:
+            #        varType = ''
+            #else:
+            #    if self.typeKnown(target['type']):
+            #        # Type was explicit
+            #        varType = self.nativeType(target['type'])
+            #    else:
+            #        varType = self.nativeType(self.inferType(expr))
         else:
             raise SyntaxError(f'Format assign with variable {target} not implemented yet.')
         if 'format' in expr:
@@ -97,16 +109,30 @@ class Transpiler(BaseTranspiler):
             formatstr = expr['format']
             variables = ','.join(expr['variables'])
             return f'{varType} {variable}; asprintf(&{variable}, {formatstr}, {variables});'
-        formattedExpr = self.formatExpr(expr, cast=cast)
+        if expr['type'] != varType:
+            cast = self.nativeType(varType)
+        else:
+            cast = None
+        formattedExpr = self.formatExpr(expr, cast=cast, var=variable)
+        varType = self.nativeType(varType)
         try:
-            if expr['token'] == 'inputFunc':
-                return formattedExpr.format(var=variable)
+            if expr['token'] == 'inputFunc' and not cast is None:
+                return formattedExpr
+            elif expr['token'] == 'inputFunc':
+                input(cast)
+                return formattedExpr + f'{varType} {variable}; {variable} = __inputStr__;'
         except KeyError:
             pass
         return f'{varType} {variable} = {formattedExpr};'
 
-    def formatExpr(self, value, cast=None):
+    def formatExpr(self, value, cast=None, var=None):
         #TODO: implement cast to type
+        if not cast is None:
+            if cast == 'long':
+                if value['token'] == 'inputFunc':
+                    return f'{value["value"]} {cast} {var} = strtol(__inputStr__,NULL,10);'
+            else:
+                raise SyntaxError(f'Cast not implemented for type {cast}')
         return value['value']
     
     def formatIf(self, expr):
@@ -170,7 +196,7 @@ class Transpiler(BaseTranspiler):
 
     def formatPrint(self, value):
         if value['type'] == 'int':
-            return f'printf("%d\\n", {value["value"]});'
+            return f'printf("%ld\\n", {value["value"]});'
         elif value['type'] == 'float':
             return f'printf("%f\\n", {value["value"]});'
         elif value['type'] == 'str':
