@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Photon installer script
+''' Photon installer script. '''
 
 import os
 import sys
@@ -15,7 +15,7 @@ try:
         try:
             os.remove(p_path)
         except FileNotFoundError:
-            pass  # ensure the path does not exists
+            pass ''' Ensure the path does not exists. '''
         else:
             print('Removing and creating new symlink')
         os.symlink(PHOTON_PATH, p_path)

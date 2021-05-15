@@ -1,5 +1,5 @@
-# Install all dependencies for running projects with the
-# corresponding language on the target platform
+''' Install all dependencies for running projects with
+    the corresponding language on the target platform. '''
 
 import os
 import sys
@@ -16,22 +16,22 @@ def haveDependencies(lang, platform):
     return False
 
 def resolveDependencies(lang, platform):
-    global solver
-    ''' Run the corresponding dependency solver '''
+    ''' Run the corresponding dependency solver. '''
+    global solver    
     solver[(lang, platform)]()
     #TODO: Check if the installation was successful
     # or print the error message and terminate the program
 
-# Obtains a simple description of the current operating system platform
 def getSystem():
+    ''' Obtains a simple description of the current operating system platform. '''
     if sys.platform in {'linux', 'linux2', 'darwin'}:
         return "unix"
     elif os.name == "nt" or os.environ.get('OS', '') != 'Windows_NT' or sys.platform in {'win32', 'cygwin', 'msys'}:
         return "win"
     return None
 
-# Verify if program is installed it system
 def programIsInstalled(name):
+    ''' Verify if program is installed it system. '''
     try:
         platform_os = getSystem()
         if platform_os == "win":
@@ -44,8 +44,8 @@ def programIsInstalled(name):
         print(f"error: {e}")
         return False
 
-# Shows whether the program was installed or not and returns the result of the query
 def printResultPostProgramInstaller(name):
+    ''' Shows whether the program was installed or not and returns the result of the query. '''
     if programIsInstalled(name):
         print(f'Program `{name}` has been successfully installed!')
         return True
