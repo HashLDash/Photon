@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 ''' Photon command-line interface. '''
 
+import os
+import sys
+
 def lang(defineLang = None):
-    import os
     import json
     import pathlib
     home = pathlib.Path.home()
@@ -13,7 +15,8 @@ def lang(defineLang = None):
             defaultConfig = json.load(conf)
     else:
         defaultConfig = {}
-        defineLang = 'c'
+        if defineLang != '' and defineLang != None:
+            defineLang = 'c'
     if defineLang != '' and defineLang != None:
         defaultConfig['lang'] = defineLang
         with open(f'{home}/.photon/photon.conf', 'w') as conf:
@@ -21,9 +24,8 @@ def lang(defineLang = None):
     return defaultConfig['lang']
 
 if __name__ == "__main__":
-    import sys
-    import os
     langs = ['c', 'd', 'js', 'dart', 'haxe', 'py']
+    platforms = ['web', 'linux', 'flutter-android']
     PHOTON_INSTALL_PATH = getattr(sys, '_MEIPASS', os.path.dirname(os.path.realpath(__file__)))
     sys.path.insert(0, PHOTON_INSTALL_PATH)
     from interpreter import Interpreter
@@ -42,11 +44,7 @@ if __name__ == "__main__":
         try:
             Builder(platform = sys.argv[2], standardLibs = os.path.join(PHOTON_INSTALL_PATH, 'libs/'))
         except IndexError:
-            print('Welcome to Photon builder!')
-            print('')
-            print('Usage:')
-            print('  photon --build [platform]')
-            print('Available platforms: web, linux, flutter-android')
+            print(f'ERROR: Platform [{(", ".join(platforms))}] not informed.')
     elif first == '--lang' or first == '-l':
         command = ' '.join(sys.argv[2:])    
         command = command.lower()
@@ -65,13 +63,25 @@ if __name__ == "__main__":
             print(f'The current language is: {command.upper()}')
         else:
             print(f'ERROR: It was not possible to select the language ({command.upper()}).')
-    elif first == '--help' or first == '-h':
-        print('Available commands:')
-        print('    photon [file.w] Runs the script using the default lang')
-        print('    photon --build [platform] Builds and runs the project for the target platform')
-        print('    photon --lang Lists available languages')
-        print(f'    photon --lang [{(", ".join(langs))}] Sets the default language')
-        print('    photon --version Shows the the current version')
+    elif first == '--help' or first == '-h' or first == '-?':
+        print('Available commands:\r\n')
+        print('# Runs the script using the default lang')
+        print('>> photon [file.w]\r\n')
+        print('# Builds and runs the project for the target platform')
+        print(f'>> photon --build [{(", ".join(platforms))}]')
+        print(f'>> photon -b [{(", ".join(platforms))}]\r\n')
+        print('# Lists available languages')
+        print('>> photon --lang')
+        print('>> photon -l\r\n')
+        print('# Sets the default language')
+        print(f'>> photon --lang [{(", ".join(langs))}]')
+        print(f'>> photon -l [{(", ".join(langs))}]\r\n')
+        print('# Shows the the current version')
+        print('>> photon --version')
+        print('>> photon -v\r\n')
+        print('# Updates the version of Photon (Git is required)')
+        print('>> photon --update')
+        print('>> photon -u')
     elif first == '--update' or first == '-u':
         os.system(f'git -C {PHOTON_INSTALL_PATH} pull')
     elif first == '--android-logcat' or first == '-al':
@@ -79,7 +89,9 @@ if __name__ == "__main__":
             packageName = sys.argv[2]
             os.system(f"adb shell 'logcat --pid=$(pidof -s {packageName})'")
         except IndexError:
-            print('Please provide the package name. Ex:\n    photon logcat com.photon.example')
+            print('Please provide the package name. Example:')
+            print('>> photon --android-logcat com.photon.example')
+            print('>> photon -al com.photon.example')
     elif first == '--android-view' or first == '-av':
         os.system('adb exec-out screenrecord --output-format=h264 - | ffplay -framerate 60 -probesize 32 -sync video  -')
     else:

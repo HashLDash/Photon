@@ -6,7 +6,6 @@ import os
 import sys
 from core.dependencies import haveDependencies, resolveDependencies
 
-
 PHOTON_PATH = os.path.join(os.path.dirname(__file__), 'core', 'photon.py')
 
 try:
