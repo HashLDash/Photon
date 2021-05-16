@@ -14,7 +14,7 @@ try:
         try:
             os.remove(p_path)
         except FileNotFoundError:
-            pass ''' Ensure the path does not exists. '''
+            pass # Ensure the path does not exists.
         else:
             print('Removing and creating new symlink')
         os.symlink(PHOTON_PATH, p_path)
