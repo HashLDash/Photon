@@ -357,7 +357,10 @@ class BaseTranspiler():
         pass
 
     def printFunc(self, token):
-        value = self.processExpr(token['expr'])
+        if 'expr' in token:
+            value = self.processExpr(token['expr'])
+        else:
+            value = {'value':'','type':'null'}
         self.insertCode(self.formatPrint(value))
 
     def add(self, arg1, arg2):

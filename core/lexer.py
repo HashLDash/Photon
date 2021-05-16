@@ -313,12 +313,15 @@ def call(i, t):
 def printFunc(i, t):
     ''' Return a printFunc token
     '''
-    if t[i+2]['token'] == 'expr':
+    if t[i+2]['token'] == 'rparen':
+        t[i] = {'token':'printFunc'}
+    elif t[i+2]['token'] == 'expr':
         t[i] = {'token':'printFunc', 'expr':t[i+2]}
+        del t[i+1] # expr
     else:
         t[i] = {'token':'printFunc', 'expr':convertToExpr(t[i+2])}
+        del t[i+1] # expr
     del t[i+1] # lparen
-    del t[i+1] # expr
     del t[i+1] # rparen
     return t
 

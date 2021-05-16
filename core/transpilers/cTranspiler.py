@@ -223,6 +223,8 @@ class Transpiler(BaseTranspiler):
             return f'printf("%s\\n", {value["value"]});'
         elif value['type'] == 'bool':
             return f'if ({value["value"]} == 0) {{printf("False\\n");}} else {{printf("True\\n");}}'
+        elif value['type'] == 'null':
+            return 'printf("\\n");'
         else:
             raise SyntaxError(f'Print function with token {value} not supported yet.')
 

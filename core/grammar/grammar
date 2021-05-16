@@ -51,6 +51,7 @@ function = defStatement expr lparen (expr args) rparen beginBlock
          | defStatement expr lparen rparen beginBlock
 
 printFunc = print lparen (expr) rparen
+          | print lparen rparen
 
 inputFunc = input lparen (expr) rparen
           | input lparen rparen

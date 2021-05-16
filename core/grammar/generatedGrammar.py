@@ -56,6 +56,7 @@ patterns = {
   ('defStatement', 'expr', 'lparen', 'args', 'rparen', 'beginBlock'): function,
   ('defStatement', 'expr', 'lparen', 'rparen', 'beginBlock'): function,
   ('print', 'lparen', 'expr', 'rparen'): printFunc,
+  ('print', 'lparen', 'rparen'): printFunc,
   ('input', 'lparen', 'expr', 'rparen'): inputFunc,
   ('input', 'lparen', 'rparen'): inputFunc,
 }
