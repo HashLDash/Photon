@@ -133,10 +133,11 @@ class BaseTranspiler():
         return {'value':token['name'], 'type':varType}
 
     def processFormatStr(self, token):
-        string, variables = self.formatStr(token['value'])
-        if variables:
+        expressions = [self.processExpr(expr) for expr in token['expressions']]
+        string, expressions = self.formatStr(token['value'], expressions)
+        if expressions:
             # It's a format string
-            token['variables'] = variables
+            token['values'] = expressions
             token['format'] = string
         else:
             # Normal string

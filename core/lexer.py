@@ -1,3 +1,6 @@
+from copy import deepcopy
+import photonParser as parser
+
 def inference(value):
     ''' Return the token and infer its properties '''
 
@@ -59,8 +62,19 @@ def string(i, t):
         stringQuote = 'doubleQuote'
     s = ''
     n = 1
+    expressions = []
+    expression = []
+    inExpr = False
     for token in t[i+1:]:
-        if token['token'] == stringQuote:
+        if inExpr:
+            if 'symbol' in token and token['symbol'] == '}':
+                s += '}'
+                inExpr = False
+                expressions.append(deepcopy(expression))
+                expression = []
+            else:
+                expression.append(token)
+        elif token['token'] == stringQuote:
             break
         elif 'singleQuote' in token:
             s += '"\'"'
@@ -73,7 +87,11 @@ def string(i, t):
         elif 'operator' in token:
             s += token['operator']
         elif 'symbol' in token:
-            s += token['symbol']
+            if token['symbol'] == '{':
+                inExpr = True
+                s += '{'
+            else:
+                s += token['symbol']
         elif token['token'] == 'type':
             s += token['type']
         else:
@@ -84,9 +102,20 @@ def string(i, t):
                 s += tok
         n += 1
 
+    processedExpressions = []
+    for expression in expressions:
+        # process expression. Add a dummy token for index compatibility
+        expression = parser.reduceToken([{'token':'indent'}]+expression)[1:][0]
+        # verify its an expression
+        if not expression['token'] == 'expr':
+            raise SyntaxError(f'Expected expression in format string, but got {expression[0]["token"]} instead')
+        else:
+            processedExpressions.append(expression)
+
     t[i] = {
         'token':'expr',
-        'args':[{'token':'str', 'type':'str','value':f'{quote}{s}{quote}'}],
+        'args':[{'token':'str',
+        'type':'str','value':f'{quote}{s}{quote}','expressions':processedExpressions}],
         'ops':[]
     }
     for _ in range(n):

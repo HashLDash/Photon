@@ -55,24 +55,25 @@ class Transpiler(BaseTranspiler):
         #return  f'{message}{initInternal} getline(&__inputStr__, &{size}, stdin); __inputStr__[strlen(__inputStr__)-1] = 0;'
         return  f'{message}{initInternal} __inputStr__ = photonInput();'
 
-    def formatStr(self, string):
+    def formatStr(self, string, expressions):
         string = '"' + string[1:-1].replace('"','\\"').replace('%','%%') + '"'
-        variables = []
         if '{' in string:
             if self.target in {'win32', 'cygwin', 'msys'}:
                 self.imports.add('#include "asprintf.h"')
-            variables = [var for _,var,_,_ in Formatter().parse(string) if var]
-            for var in variables:
-                varType = self.getType(var)
-                if varType == 'str':
-                    string = string.replace(f'{{{var}}}','%s',1)
-                elif varType == 'int':
-                    string = string.replace(f'{{{var}}}','%d',1)
-                elif varType == 'float':
-                    string = string.replace(f'{{{var}}}','%f',1)
+            exprs = []
+            for expr in expressions:
+                valType = expr['type']
+                val = expr['value']
+                exprs.append(val)
+                if valType == 'str':
+                    string = string.replace('{}','%s',1)
+                elif valType == 'int':
+                    string = string.replace('{}','%d',1)
+                elif valType == 'float':
+                    string = string.replace('{}','%f',1)
                 else:
-                    raise SyntaxError(f'Cannot format {varType} in formatStr')
-        return string, variables
+                    raise SyntaxError(f'Cannot format {valType} in formatStr')
+        return string, exprs
 
     def formatCall(self, name, returnType, args):
         arguments = ','.join([ f'{arg["value"]}' for arg in args ])
@@ -111,8 +112,8 @@ class Transpiler(BaseTranspiler):
         if 'format' in expr:
             # It's a format string
             formatstr = expr['format']
-            variables = ','.join(expr['variables'])
-            return f'{varType} {variable}; asprintf(&{variable}, {formatstr}, {variables});'
+            values = ','.join(expr['values'])
+            return f'{varType} {variable}; asprintf(&{variable}, {formatstr},{values});'
         if expr['type'] != varType:
             cast = self.nativeType(varType)
         else:
@@ -218,8 +219,8 @@ class Transpiler(BaseTranspiler):
             if 'format' in value:
                 # It's a format string
                 formatstr = value['format'][:-1] + '\\n' + value['format'][-1:]
-                variables = ','.join(value['variables'])
-                return f'printf({formatstr}, {variables});'
+                values = ','.join(value['values'])
+                return f'printf({formatstr}, {values});'
             return f'printf("%s\\n", {value["value"]});'
         elif value['type'] == 'bool':
             return f'if ({value["value"]} == 0) {{printf("False\\n");}} else {{printf("True\\n");}}'

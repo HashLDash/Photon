@@ -42,8 +42,10 @@ class Transpiler(BaseTranspiler):
         message = expr['value']
         return f'input({message})'
 
-    def formatStr(self, string):
+    def formatStr(self, string, expressions):
         string = string[1:-1].replace('"','\"')
+        for expr in expressions:
+            string = string.replace('{}',f'{{{expr["value"]}}}',1)
         return f'f"{string}"', []
     
     def formatAssign(self, target, expr):
