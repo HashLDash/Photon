@@ -57,10 +57,10 @@ class Transpiler(BaseTranspiler):
 
     def formatStr(self, string, expressions):
         string = '"' + string[1:-1].replace('"','\\"').replace('%','%%') + '"'
+        exprs = []
         if '{' in string:
             if self.target in {'win32', 'cygwin', 'msys'}:
                 self.imports.add('#include "asprintf.h"')
-            exprs = []
             for expr in expressions:
                 valType = expr['type']
                 val = expr['value']
