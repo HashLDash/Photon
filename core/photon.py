@@ -4,7 +4,7 @@
 import os
 import sys
 
-def lang(defineLang = None):
+def photonConfigLang(defineLang = None):
     import json
     import pathlib
     home = pathlib.Path.home()
@@ -49,13 +49,13 @@ if __name__ == "__main__":
         command = ' '.join(sys.argv[2:])    
         command = command.lower()
         if command in langs:
-            command = lang(command)
+            command = photonConfigLang(command)
             print(f'Setting default lang to: {command.upper()}')
             if not haveDependencies(command, sys.platform):
                 resolveDependencies(command, sys.platform)
                 print('Dependencies successfuly installed.')
         elif command == '':
-            command = lang()
+            command = photonConfigLang()
             index = langs.index(command)
             langs[index] = f'({langs[index].upper()})'
             print(f'List of languages: {(", ".join(langs))}')
@@ -95,4 +95,4 @@ if __name__ == "__main__":
     elif first == '--android-view' or first == '-av':
         os.system('adb exec-out screenrecord --output-format=h264 - | ffplay -framerate 60 -probesize 32 -sync video  -')
     else:
-        Interpreter(filename = first, lang = lang(), standardLibs = os.path.join(PHOTON_INSTALL_PATH, 'libs/')).run()
+        Interpreter(filename=first, lang=photonConfigLang(), standardLibs=os.path.join(PHOTON_INSTALL_PATH, 'libs/')).run()
