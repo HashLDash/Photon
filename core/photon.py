@@ -17,6 +17,8 @@ def photonConfigLang(defineLang = None):
         defaultConfig = {}
         if defineLang != '' and defineLang != None:
             defineLang = 'c'
+    if not os.path.isfile(f'{home}/.photon/photon.conf'):
+        defineLang = 'c'
     if defineLang != '' and defineLang != None:
         defaultConfig['lang'] = defineLang
         with open(f'{home}/.photon/photon.conf', 'w') as conf:
@@ -95,4 +97,4 @@ if __name__ == "__main__":
     elif first == '--android-view' or first == '-av':
         os.system('adb exec-out screenrecord --output-format=h264 - | ffplay -framerate 60 -probesize 32 -sync video  -')
     else:
-        Interpreter(filename=first, lang=photonConfigLang(), standardLibs=os.path.join(PHOTON_INSTALL_PATH, 'libs/')).run()
+        Interpreter(filename = first, lang = photonConfigLang(), standardLibs = os.path.join(PHOTON_INSTALL_PATH, 'libs/')).run()
