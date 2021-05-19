@@ -112,7 +112,7 @@ class Transpiler(BaseTranspiler):
         return f'}} {self.var} -= {self.step};'
 
     def formatArgs(self, args):
-        return ','.join([ f'{arg["value"]}: {self.nativeType(arg["type"])}' for arg in args ])
+        return ','.join([ f'{arg["value"]}' for arg in args ])
 
     def formatFunc(self, name, returnType, args):
         args = self.formatArgs(args)
