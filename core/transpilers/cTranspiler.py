@@ -79,7 +79,7 @@ class Transpiler(BaseTranspiler):
         arguments = ','.join([ f'{arg["value"]}' for arg in args ])
         return f'{name}({arguments})'
 
-    def formatAssign(self, target, expr):
+    def formatAssign(self, target, expr, inMemory=False):
         if target['token'] == 'var':
             variable = target['name']
             if variable in self.currentScope:
@@ -114,32 +114,37 @@ class Transpiler(BaseTranspiler):
             formatstr = expr['format']
             values = ','.join(expr['values'])
             return f'{varType} {variable}; asprintf(&{variable}, {formatstr},{values});'
-        if expr['type'] != varType:
+        if self.typeKnown(expr['type']) and expr['type'] != varType:
             cast = self.nativeType(varType)
         else:
             cast = None
         formattedExpr = self.formatExpr(expr, cast=cast, var=variable)
-        varType = self.nativeType(varType)
+        # Check if type declaration is needed
+        if inMemory:
+            # Already defined, definition is not needed
+            varType = ''
+        else:
+            varType = self.nativeType(varType) + ' '
         try:
             if expr['token'] == 'inputFunc' and not cast is None:
                 return formattedExpr
             elif expr['token'] == 'inputFunc':
                 input(cast)
-                return formattedExpr + f'{varType} {variable}; {variable} = __inputStr__;'
+                return formattedExpr + f'{varType}{variable}; {variable} = __inputStr__;'
         except KeyError:
             pass
-        return f'{varType} {variable} = {formattedExpr};'
+        return f'{varType}{variable} = {formattedExpr};'
 
     def formatExpr(self, value, cast=None, var=None):
         #TODO: implement cast to type
         if not cast is None:
             if cast == 'long':
-                if value['token'] == 'inputFunc':
+                if 'token' in value and value['token'] == 'inputFunc':
                     return f'{value["value"]} {cast} {var} = strtol(__inputStr__,NULL,10);'
                 else:
                     return f'strtol({value["value"]},NULL,10)'
             elif cast == 'double':
-                if value['token'] == 'inputFunc':
+                if 'token' in value and value['token'] == 'inputFunc':
                     return f'{value["value"]} {cast} {var} = strtod(__inputStr__,NULL);'
                 else:
                     return f'strtod({value["value"]},NULL'
@@ -169,17 +174,21 @@ class Transpiler(BaseTranspiler):
     def formatFor(self, variables, iterable):
         if 'from' in iterable:
             # For with range
-            iterVar = variables[0]['value']
+            self.iterVar = variables[0]['value']
             varType = iterable['type']
             fromVal = iterable['from']['value']
-            step = iterable['step']['value']
+            self.step = iterable['step']['value']
             toVal = iterable['to']['value']
-            return f'for ({varType} {iterVar}={fromVal};{iterVar}<{toVal}; i+={step}) {{'
+            if self.iterVar in self.currentScope:
+                varType = ''
+            else:
+                varType = varType + ' '
+            return f'{varType}{self.iterVar}={fromVal}; for (;{self.iterVar}<{toVal}; {self.iterVar}+={self.step}) {{'
         else:
             raise SyntaxError(f'Format for with unpacking not suported yet.')
     
     def formatEndFor(self):
-        return '}'
+        return f'}} {self.iterVar} -= {self.step};'
 
     def formatArgs(self, args):
         return ','.join([ f'{self.nativeType(arg["type"])} {arg["value"]}' for arg in args])

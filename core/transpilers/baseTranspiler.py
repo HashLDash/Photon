@@ -212,14 +212,17 @@ class BaseTranspiler():
         else:
             raise SyntaxError(f'Assign with variable {target} no supported yet.')
         expr = self.processExpr(token['expr'])
-        if self.typeKnown(variable['type']):
+        inMemory = False
+        if variable['value'] in self.currentScope:
+            inMemory = True
+        elif self.typeKnown(variable['type']):
             self.currentScope[variable['value']] = {'type':variable['type']}
         else:
             varType = self.inferType(expr)
             if self.typeKnown(varType):
                 self.currentScope[variable['value']] = {'type':varType}
                 target['type'] = varType
-        self.insertCode(self.formatAssign(target, expr))
+        self.insertCode(self.formatAssign(target, expr, inMemory=inMemory))
 
     def processIf(self, token):
         expr = self.processExpr(token['expr'])
@@ -267,6 +270,8 @@ class BaseTranspiler():
             iterable = self.processRange(token['iterable'])
         variables = [ self.processVar(v) for v in token['vars'] ]
         self.insertCode(self.formatFor(variables, iterable))
+        #TODO: Handle dict iteration and multivar for loop
+        self.currentScope[variables[-1]['value']] = {'type':iterable['type']}
         for c in token['block']:
             self.process(c)
         self.insertCode(self.formatEndFor())

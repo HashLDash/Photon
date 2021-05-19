@@ -48,7 +48,7 @@ class Transpiler(BaseTranspiler):
             string = string.replace('{}',f'{{{expr["value"]}}}',1)
         return f'f"{string}"', []
     
-    def formatAssign(self, target, expr):
+    def formatAssign(self, target, expr, inMemory=False):
         cast = None
         if target['token'] == 'var':
             variable = target['name']
@@ -68,7 +68,7 @@ class Transpiler(BaseTranspiler):
         else:
             raise SyntaxError(f'Format assign with variable {target} not implemented yet.')
         formattedExpr = self.formatExpr(expr, cast=cast)
-        if varType:
+        if varType and not inMemory:
             return f'{variable}:{varType} = {formattedExpr}'
         return f'{variable} = {formattedExpr}'
 

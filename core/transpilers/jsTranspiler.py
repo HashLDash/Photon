@@ -51,7 +51,7 @@ class Transpiler(BaseTranspiler):
             string = string.replace(f'{{{var}}}',f'${{{var}}}',1)
         return f'`{string}`', []
     
-    def formatAssign(self, target, expr):
+    def formatAssign(self, target, expr, inMemory=False):
         cast = None
         if target['token'] == 'var':
             variable = target['name']
@@ -102,14 +102,14 @@ class Transpiler(BaseTranspiler):
 
     def formatFor(self, variables, iterable):
         if 'from' in iterable:
-            var = variables[0]['value']
+            self.var = variables[0]['value']
             fromVal = iterable['from']['value']
-            step = iterable['step']['value']
+            self.step = iterable['step']['value']
             toVal = iterable['to']['value']
-            return f'for ({var} {var}={fromVal};{var}<{toVal}; i+={step}) {{'
+            return f'for (var {self.var}={fromVal};{self.var}<{toVal}; {self.var}+={self.step}) {{'
 
     def formatEndFor(self):
-        return '}'
+        return f'}} {self.var} -= {self.step};'
 
     def formatArgs(self, args):
         return ','.join([ f'{arg["value"]}: {self.nativeType(arg["type"])}' for arg in args ])
