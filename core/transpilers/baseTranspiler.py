@@ -145,7 +145,6 @@ class BaseTranspiler():
         return token
 
     def getValAndType(self, token):
-        print(f'valtpye {token}')
         if 'value' in token and 'type' in token and (self.typeKnown(token['type']) or not self.insertMode):
             if token['type'] == 'str':
                 token = self.processFormatStr(token)
@@ -196,7 +195,6 @@ class BaseTranspiler():
                     arg2 = args[index+1]
                     arg1 = self.getValAndType(arg1)
                     arg2 = self.getValAndType(arg2)
-                    print(arg1, arg2)
                     result = self.instructions[op](arg1, arg2)
                     args[index] = result
                     del ops[index]

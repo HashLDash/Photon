@@ -39,7 +39,7 @@ currentLine = ''
 parsePhrase = ''
 
 def debug(*args):
-    print(*args)
+    #print(*args)
     pass
 
 def parse(line, filename='', no=-1):
