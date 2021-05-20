@@ -9,7 +9,7 @@ def debug(*args):
 class Transpiler(BaseTranspiler):
     def __init__(self, filename, **kwargs):
         super().__init__(filename, **kwargs)
-        self.filename = self.filename.replace('.w','.c')
+        self.filename = self.filename.replace('.w', '.c')
         self.commentSymbol = '//'
         self.imports = {'#include <stdio.h>', '#include <stdlib.h>', '#include <locale.h>'}
         self.funcIdentifier = '/*def*/'
@@ -24,14 +24,13 @@ class Transpiler(BaseTranspiler):
         self.dictTypes = set()
         self.instanceCounter = 0
         self.nativeTypes = {
-            'float':'double',
-            'int':'long',
-            'str':'char*',
-            'bool':'int',
-            'void':'void',
-            'unknown':'auto',
+            'float': 'double',
+            'int': 'long',
+            'str': 'char*',
+            'bool': 'int',
+            'void': 'void',
+            'unknown': 'auto',
         }
-
         self.initInternal = False
 
     def formatVarInit(self, name, varType):
@@ -39,8 +38,8 @@ class Transpiler(BaseTranspiler):
     
     def formatArray(self, elements, elementType, size):
         self.listTypes.add(elementType)
-        className = f'list_{elementType.replace("*","ptr")}'
-        if elementType in {'int','float','str'}:
+        className = f'list_{elementType.replace("*", "ptr")}'
+        if elementType in {'int', 'float', 'str'}:
             self.imports.add(f'#include "{className}.h"')
         else:
             raise SyntaxError(f'Array of type {elementType} not implemented yet.')
@@ -54,7 +53,7 @@ class Transpiler(BaseTranspiler):
         self.imports.add('#include "photonInput.h"') # getline
         #if self.target in {'win32', 'cygwin', 'msys'}:
         #    self.imports.add('#include "photonInput.h"') # getline
-        message = self.formatPrint(expr).replace('\\n','',1) if expr['value'] else ''
+        message = self.formatPrint(expr).replace('\\n', '', 1) if expr['value'] else ''
         #size = '__internalInputSize__'
         if not self.initInternal:
             #initInternal = f'size_t {size} = 0; char* __inputStr__;'
@@ -68,7 +67,7 @@ class Transpiler(BaseTranspiler):
         return  f'{message}{initInternal} __inputStr__ = photonInput();'
 
     def formatStr(self, string, expressions):
-        string = '"' + string[1:-1].replace('"','\\"').replace('%','%%') + '"'
+        string = '"' + string[1:-1].replace('"', '\\"').replace('%', '%%') + '"'
         exprs = []
         if '{' in string:
             if self.target in {'win32', 'cygwin', 'msys'}:
@@ -78,20 +77,20 @@ class Transpiler(BaseTranspiler):
                 val = expr['value']
                 exprs.append(val)
                 if valType == 'str':
-                    string = string.replace('{}','%s',1)
+                    string = string.replace('{}', '%s', 1)
                 elif valType == 'int':
-                    string = string.replace('{}','%d',1)
+                    string = string.replace('{}', '%d', 1)
                 elif valType == 'float':
-                    string = string.replace('{}','%f',1)
+                    string = string.replace('{}', '%f', 1)
                 else:
                     raise SyntaxError(f'Cannot format {valType} in formatStr')
         return string, exprs
 
     def formatCall(self, name, returnType, args):
-        arguments = ','.join([ f'{arg["value"]}' for arg in args ])
+        arguments = ', '.join([ f'{arg["value"]}' for arg in args ])
         return f'{name}({arguments})'
 
-    def formatAssign(self, target, expr, inMemory=False):
+    def formatAssign(self, target, expr, inMemory = False):
         if target['token'] == 'var':
             variable = target['name']
             if variable in self.currentScope:
@@ -112,7 +111,7 @@ class Transpiler(BaseTranspiler):
             cast = self.nativeType(varType)
         else:
             cast = None
-        formattedExpr = self.formatExpr(expr, cast=cast, var=variable)
+        formattedExpr = self.formatExpr(expr, cast = cast, var = variable)
         # Check if type declaration is needed
         if inMemory:
             # Already defined, definition is not needed
@@ -128,28 +127,28 @@ class Transpiler(BaseTranspiler):
         except KeyError:
             pass
         if expr['type'] == 'array':
-            return formattedExpr.format(var=variable)
+            return formattedExpr.format(var = variable)
         return f'{varType}{variable} = {formattedExpr};'
 
-    def formatExpr(self, value, cast=None, var=None):
+    def formatExpr(self, value, cast = None, var = None):
         #TODO: implement cast to type
         if not cast is None:
             if cast == 'long':
                 if 'token' in value and value['token'] == 'inputFunc':
-                    return f'{value["value"]} {cast} {var} = strtol(__inputStr__,NULL,10);'
+                    return f'{value["value"]} {cast} {var} = strtol(__inputStr__, NULL, 10);'
                 elif value['type'] == 'str':
-                    return f'strtol({value["value"]},NULL,10)'
+                    return f'strtol({value["value"]}, NULL, 10)'
                 elif value['type'] == 'float':
-                    return f'(long){value["value"]}'
+                    return f'(long) {value["value"]}'
                 else:
                     raise SyntaxError(f'Convert from type {value["type"]} to type {cast} not implemented')
             elif cast == 'double':
                 if 'token' in value and value['token'] == 'inputFunc':
-                    return f'{value["value"]} {cast} {var} = strtod(__inputStr__,NULL);'
+                    return f'{value["value"]} {cast} {var} = strtod(__inputStr__, NULL);'
                 elif value['type'] == 'str':
-                    return f'strtod({value["value"]},NULL)'
+                    return f'strtod({value["value"]}, NULL)'
                 elif value['type'] == 'int':
-                    return f'(double){value["value"]}'
+                    return f'(double) {value["value"]}'
                 else:
                     raise SyntaxError(f'Convert from type {value["type"]} to type {cast} not implemented')
             else:
@@ -187,7 +186,7 @@ class Transpiler(BaseTranspiler):
                 varType = ''
             else:
                 varType = varType + ' '
-            return f'{varType}{self.iterVar}={fromVal}; for (;{self.iterVar}<{toVal}; {self.iterVar}+={self.step}) {{'
+            return f'{varType}{self.iterVar} = {fromVal}; for (; {self.iterVar} < {toVal}; {self.iterVar} += {self.step}) {{'
         else:
             raise SyntaxError(f'Format for with unpacking not suported yet.')
     
@@ -195,14 +194,14 @@ class Transpiler(BaseTranspiler):
         return f'}} {self.iterVar} -= {self.step};'
 
     def formatArgs(self, args):
-        return ','.join([ f'{self.nativeType(arg["type"])} {arg["value"]}' for arg in args])
+        return ', '.join([ f'{self.nativeType(arg["type"])} {arg["value"]}' for arg in args])
 
     def formatFunc(self, name, returnType, args):
         args = self.formatArgs(args)
         return f'/*def*/{self.nativeType(returnType)} {name}({args}) {{'
 
     def formatEndFunc(self):
-        return '}'
+        return '}\n'
 
     def formatReturn(self, expr):
         if expr:
@@ -214,7 +213,7 @@ class Transpiler(BaseTranspiler):
 
     def exp(self, arg1, arg2):
         self.imports.add('#include <math.h>')
-        return {'value':f'pow((double){arg1["value"]}, (double){arg2["value"]})', 'type':'float'}
+        return {'value':f'pow((double) {arg1["value"]}, (double) {arg2["value"]})', 'type':'float'}
     
     def equals(self, arg1, arg2):
         if arg1['type'] == 'str' or arg2['type'] == 'str':
@@ -232,7 +231,7 @@ class Transpiler(BaseTranspiler):
             if 'format' in value:
                 # It's a format string
                 formatstr = value['format'][:-1] + '\\n' + value['format'][-1:]
-                values = ','.join(value['values'])
+                values = ', '.join(value['values'])
                 return f'printf({formatstr}, {values});'
             return f'printf("%s\\n", {value["value"]});'
         elif value['type'] == 'bool':
@@ -264,24 +263,24 @@ class Transpiler(BaseTranspiler):
             del self.imports[0]
             del self.imports[0]
             del self.imports[0]
-        with open(f'Sources/{self.filename}','w') as f:
+        with open(f'Sources/{self.filename}', 'w') as f:
             for imp in self.imports:
-                module = imp.split(' ')[-1].replace('.w','').replace('"','')
+                module = imp.split(' ')[-1].replace('.w', '').replace('"', '')
                 debug(f'Importing {module}')
                 if module in os.listdir(f'{self.standardLibs}/native/c'):
                     from shutil import copyfile
                     copyfile(f'{self.standardLibs}/native/c/{module}',f'Sources/{module}')
                 if f'{module}.c' in os.listdir('Sources'):
-                    with open(f'Sources/{module}.c','r') as m:
+                    with open(f'Sources/{module}.c', 'r') as m:
                         for line in m:
                             f.write(line)
                 else:
-                    f.write(imp+'\n')
+                    f.write(imp + '\n')
             for line in [''] + self.outOfMain + [''] + boilerPlateStart + self.source + boilerPlateEnd:
                 if line:
                     if line[0] == '}':
                         indent -= 4
-                f.write(' '*indent+line.replace('/*def*/','')+'\n')
+                f.write(' ' * indent + line.replace('/*def*/', '') + '\n')
                 if self.isBlock(line):
                     indent += 4
         debug('Generated '+self.filename)
