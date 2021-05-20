@@ -336,7 +336,9 @@ class BaseTranspiler():
         args = []
         for tok in tokens:
             arg = self.getValAndType(tok)
-            args.append( {'type':arg['type'], 'value':arg['value']} )
+            # ignore value becauso of the scope
+            # Function arguments need explicit type
+            args.append( {'type':tok['type'], 'value':arg['value']} )
         return args
 
     def processCall(self, token):
