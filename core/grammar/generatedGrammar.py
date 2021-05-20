@@ -38,6 +38,8 @@ patterns = {
   ('expr', 'operator', 'var'): expr,
   ('expr', 'operator', 'expr'): expr,
   ('operator', 'expr'): expr,
+  ('lbracket', 'args', 'rbracket'): array,
+  ('lbracket', 'rbracket'): array,
   ('returnStatement',): funcReturn,
   ('returnStatement', 'expr'): funcReturn,
   ('expr', 'dot', 'dot', 'expr'): rangeExpr,

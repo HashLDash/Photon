@@ -248,7 +248,7 @@ def convertToExpr(token):
         else:
             varType = 'float'
         return {'token':'expr', 'type':varType, 'args':[token], 'ops':[]}
-    elif token['token'] in {'var','group','inputFunc','call'}:
+    elif token['token'] in {'var','group','inputFunc','call', 'array'}:
         return {'token':'expr', 'type':token['type'], 'args':[token], 'ops':[]}
     else:
         raise SyntaxError(f'Cant convert token {token} to expr')
@@ -477,3 +477,18 @@ def funcReturn(i, t):
         t[i]['expr'] = t[i+1]
     return t
 
+def array(i, t):
+    ''' Verify if its an array and return an array token if it is'''
+    if t[i-1]['token'] in {'var','expr'}:
+        # Its an index access
+        return 'continue'
+    # Its an array
+    if t[i+1]['token'] == 'args':
+        elements = token[i+1]['args']
+        del t[i+1] # args
+    else:
+        elements = []
+    t[i] = convertToExpr({'token':'array','type':'array','elementType':'unknown',
+    'len':'unknown', 'elements':elements})
+    del t[i+1] # rbracket
+    return t

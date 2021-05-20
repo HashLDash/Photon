@@ -37,6 +37,18 @@ class Transpiler(BaseTranspiler):
     def formatVarInit(self, name, varType):
         return f'{varType} {name};'
     
+    def formatArray(self, elements, elementType, size):
+        self.listTypes.add(elementType)
+        className = f'list_{elementType.replace("*","ptr")}'
+        if elementType in {'int','float','str'}:
+            self.imports.add(f'#include "{className}.h"')
+        else:
+            raise SyntaxError(f'Array of type {elementType} not implemented yet.')
+        values = ','.join(e['value'] for e in elements)
+        if size == 'unknown':
+            size = 10
+        return f"{className} {{var}} = {{{{ {len(elements)}, {size}, malloc(sizeof({elementType})) }}}};"
+
     def formatInput(self, expr):
         self.imports.add('#include <string.h>') # strlen
         self.imports.add('#include "photonInput.h"') # getline
@@ -89,24 +101,6 @@ class Transpiler(BaseTranspiler):
                 varType = self.nativeType(target['type'])
             else:
                 varType = self.nativeType(self.inferType(expr))
-
-            #if variable in self.currentScope:
-            #    if self.typeKnown(target['type']):
-            #        if not target['type'] == self.currentScope[variable]['type']:
-            #            # Casting to a different type
-            #            varType = self.nativeType(target['type'])
-            #        else:
-            #            # Doesnt need cast here
-            #            varType = self.nativeType(self.currentScope[variable]['type'])
-            #        cast = varType
-            #    else:
-            #        varType = ''
-            #else:
-            #    if self.typeKnown(target['type']):
-            #        # Type was explicit
-            #        varType = self.nativeType(target['type'])
-            #    else:
-            #        varType = self.nativeType(self.inferType(expr))
         else:
             raise SyntaxError(f'Format assign with variable {target} not implemented yet.')
         if 'format' in expr:
@@ -133,6 +127,8 @@ class Transpiler(BaseTranspiler):
                 return formattedExpr + f'{varType}{variable}; {variable} = __inputStr__;'
         except KeyError:
             pass
+        if expr['type'] == 'array':
+            return formattedExpr.format(var=variable)
         return f'{varType}{variable} = {formattedExpr};'
 
     def formatExpr(self, value, cast=None, var=None):

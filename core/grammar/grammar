@@ -31,6 +31,9 @@ expr = num
      | (num var expr) operator (num var expr)
      | operator (expr)
 
+array = lbracket args rbracket
+      | lbracket rbracket
+
 funcReturn = returnStatement
            | returnStatement expr
 

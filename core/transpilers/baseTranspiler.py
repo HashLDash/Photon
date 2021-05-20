@@ -119,17 +119,32 @@ class BaseTranspiler():
     def processVar(self, token):
         name = token['name']
         if self.typeKnown(token['type']):
+            # Type was explicit
             varType = token['type']
+            if varType == 'array':
+                elementType = token['elementType']
+                length = token['len']
         elif name in self.currentScope:
+            # Already processed
             varType = self.currentScope[name]['type']
+            if varType == 'array':
+                elementType = self.currentScope[name]['elementType']
+                length = self.currentScope[name]['len']
         elif name == self.inFunc and self.returnType:
             for rt in self.returnType:
                 if self.typeKnown(rt):
                     varType = rt
+                    # If return is an array, get other info
+                    if varType == 'array':
+                        elementType = self.currentScope[name]['elementType']
+                        length = self.currentScope[name]['len']
         else:
             varType = 'unknown'
         if 'modifier' in token:
             token['name'] = token['modifier'].replace('not',self.notOperator) + token['name']
+        if varType == 'array':
+            return {'value':token['name'], 'type':varType,
+            'elementType':elementType, 'len':length}
         return {'value':token['name'], 'type':varType}
 
     def processFormatStr(self, token):
@@ -143,6 +158,35 @@ class BaseTranspiler():
             # Normal string
             token['value'] = string
         return token
+
+    def processArray(self, token):
+        # InferType
+        types = {}
+        elements = []
+        if self.typeKnown(token['elementType']):
+            # Type was explicit
+            varType = token['elementType']
+        else:
+            # Infer type
+            for tok in token['elements']:
+                element = self.getValAndType(tok)
+                types.add(element['type'])
+                elements.append(element)
+            if len(types) == 0:
+                varType = 'unknown'
+            elif len(types) == 1:
+                varType = types.pop()
+            elif len(types) == 2:
+                t1 = types.pop()
+                t2 = types.pop()
+                if t1 in {'int','float'} and t2 in {'int','float'}:
+                    varType = 'float'
+                else:
+                    raise SyntaxError(f'Type inference in array with types {t1} and {t2} not implemented yet.')
+            else:
+                raise SyntaxError(f'Type inference in array with types {types} not implemented yet.')
+        return {'value':self.formatArray(elements, varType, token['len']), 'type':'array',
+        'elements':elements, 'elementType':varType}
 
     def getValAndType(self, token):
         if 'value' in token and 'type' in token and (self.typeKnown(token['type']) or not self.insertMode):
@@ -166,6 +210,8 @@ class BaseTranspiler():
             return self.processVar(token)
         elif token['token'] == 'inputFunc':
             return self.processInput(token)
+        elif token['token'] == 'array':
+            return self.processArray(token)
         else:
             raise ValueError(f'ValAndType with token {token} not implemented')
 
@@ -205,16 +251,28 @@ class BaseTranspiler():
 
     def processAssign(self, token):
         target = token['target']
+        expr = token['expr']
         if target['token'] == 'var':
             variable = self.processVar(target)
+            if variable['type'] == 'array':
+                if not self.typeKnown(expr['args'][0]['elementType']):
+                    # Add array info into expression
+                    expr['args'][0]['elementType'] = variable['elementType']
+                    expr['args'][0]['len'] = variable['len']
         else:
             raise SyntaxError(f'Assign with variable {target} no supported yet.')
-        expr = self.processExpr(token['expr'])
+        expr = self.processExpr(expr)
         inMemory = False
         if variable['value'] in self.currentScope:
             inMemory = True
         elif self.typeKnown(variable['type']):
             self.currentScope[variable['value']] = {'type':variable['type']}
+            if variable['type'] == 'array':
+                self.currentScope[variable['value']]['elementType'] = variable['elementType']
+                self.currentScope[variable['value']]['len'] = variable['len']
+                #if not self.typeKnown(expr['elementType']):
+                #    expr['elementType'] = variable['elementType']
+                #    expr['len'] = variable['len']
         else:
             varType = self.inferType(expr)
             if self.typeKnown(varType):
