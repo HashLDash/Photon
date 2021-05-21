@@ -38,6 +38,9 @@ if __name__ == "__main__":
         if '-d' in sys.argv:
             sys.argv.remove('-d')
             DEBUG = True
+        elif '--debug' in sys.argv:
+            sys.argv.remove('--debug')
+            DEBUG = True
         else:
             DEBUG = False
         first = sys.argv[1]
