@@ -64,7 +64,7 @@ class Transpiler(BaseTranspiler):
             initInternal = ''
         #return  f'{message}{initInternal}{self.nativeType("str")} {{var}}; getline(&{{var}}, &{size}, stdin); {{var}}[strlen({{var}})-1] = 0;'
         #return  f'{message}{initInternal} getline(&__inputStr__, &{size}, stdin); __inputStr__[strlen(__inputStr__)-1] = 0;'
-        return  f'{message}{initInternal} __inputStr__ = photonInput()'
+        return  f'{message}{initInternal} __inputStr__ = photonInput();'
 
     def formatStr(self, string, expressions):
         string = '"' + string[1:-1].replace('"', '\\"').replace('%', '%%') + '"'
@@ -276,7 +276,7 @@ class Transpiler(BaseTranspiler):
                             f.write(line)
                 else:
                     f.write(imp + '\n')
-            for line in [''] + self.outOfMain + boilerPlateStart + self.source + boilerPlateEnd:
+            for line in [''] + self.outOfMain + [''] + boilerPlateStart + self.source + boilerPlateEnd:
                 if line:
                     if line[0] == '}':
                         indent -= 4
