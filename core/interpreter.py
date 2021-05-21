@@ -27,8 +27,13 @@ class Interpreter():
         if filename:
             self.engine = Transpiler(filename=filename,target=target, module=module, standardLibs=standardLibs)
             self.input = self.file
-            with open(filename,'r') as f:
-                self.source = [line for line in f]
+            try:
+                # Read utf8 but write as the default on the OS
+                with open(filename,'r',encoding='utf8') as f:
+                    self.source = [line for line in f]
+            except UnicodeDecodeError:
+                with open(filename,'r') as f:
+                    self.source = [line for line in f]
         else:
             try:
                 import readline
