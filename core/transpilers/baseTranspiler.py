@@ -44,6 +44,7 @@ class BaseTranspiler():
             'int':'int',
             'float':'float',
             'void':'void',
+            'array':'array',
             'unknown':'auto',
         }
 
@@ -186,7 +187,7 @@ class BaseTranspiler():
             else:
                 raise SyntaxError(f'Type inference in array with types {types} not implemented yet.')
         return {'value':self.formatArray(elements, varType, token['len']), 'type':'array',
-        'elements':elements, 'elementType':varType}
+        'elements':elements, 'elementType':varType, 'size':'unknown'}
 
     def getValAndType(self, token):
         if 'value' in token and 'type' in token and (self.typeKnown(token['type']) or not self.insertMode):
@@ -277,6 +278,9 @@ class BaseTranspiler():
             varType = self.inferType(expr)
             if self.typeKnown(varType):
                 self.currentScope[variable['value']] = {'type':varType}
+                if varType == 'array':
+                    self.currentScope[variable['value']]['elementType'] = expr['elementType']
+                    self.currentScope[variable['value']]['size'] = expr['size']
                 target['type'] = varType
         self.insertCode(self.formatAssign(target, expr, inMemory=inMemory))
 

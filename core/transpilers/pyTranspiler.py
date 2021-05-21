@@ -47,6 +47,10 @@ class Transpiler(BaseTranspiler):
         for expr in expressions:
             string = string.replace('{}',f'{{{expr["value"]}}}',1)
         return f'f"{string}"', []
+
+    def formatArray(self, elements, varType, size):
+        values = ', '.join(v['value'] for v in elements)
+        return f'[{values}]'
     
     def formatAssign(self, target, expr, inMemory=False):
         cast = None
@@ -106,6 +110,8 @@ class Transpiler(BaseTranspiler):
             step = iterable['step']['value']
             toVal = iterable['to']['value']
             return f'for {var} in range({fromVal}, {toVal}, {step}):'
+        else:
+            return f'for {var} in {iterable["value"]}:'
 
     def formatEndFor(self):
         return '#end'
