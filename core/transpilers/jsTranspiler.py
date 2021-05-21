@@ -50,6 +50,10 @@ class Transpiler(BaseTranspiler):
         for var in variables:
             string = string.replace(f'{{{var}}}',f'${{{var}}}',1)
         return f'`{string}`', []
+
+    def formatArray(self, elements, varType, size):
+        values = ', '.join(v['value'] for v in elements)
+        return f'[{values}]'
     
     def formatAssign(self, target, expr, inMemory=False):
         cast = None
@@ -101,15 +105,21 @@ class Transpiler(BaseTranspiler):
         return '}'
 
     def formatFor(self, variables, iterable):
+        self.step = 0
         if 'from' in iterable:
             self.var = variables[0]['value']
             fromVal = iterable['from']['value']
             self.step = iterable['step']['value']
             toVal = iterable['to']['value']
             return f'for (var {self.var}={fromVal};{self.var}<{toVal}; {self.var}+={self.step}) {{'
+        elif iterable['type'] == 'array':
+            self.var = variables[0]['value']
+            return f'for (var __iteration__=0; __iteration__<{iterable["value"]}.length; __iteration__++) {{ {self.var} = {iterable["value"]}[__iteration__];'
 
     def formatEndFor(self):
-        return f'}} {self.var} -= {self.step};'
+        if self.step:
+            return f'}} {self.var} -= {self.step};'
+        return '}'
 
     def formatArgs(self, args):
         return ','.join([ f'{arg["value"]}' for arg in args ])
