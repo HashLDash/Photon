@@ -122,7 +122,6 @@ class Transpiler(BaseTranspiler):
             if expr['token'] == 'inputFunc' and not cast is None:
                 return formattedExpr
             elif expr['token'] == 'inputFunc':
-                input(cast)
                 return formattedExpr + f'{varType}{variable}; {variable} = __inputStr__;'
         except KeyError:
             pass
