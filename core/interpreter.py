@@ -10,7 +10,8 @@ from photonParser import parse, assembly
 import sys
 
 class Interpreter():
-    def __init__(self, filename='', lang='c', target=sys.platform, module=False, standardLibs=''):
+    def __init__(self, filename='', lang='c', target=sys.platform, module=False, standardLibs='', debug=False):
+        self.debug = debug
         if lang == 'c':
             from transpilers.cTranspiler import Transpiler
         elif lang in {'py', 'python'}:
@@ -149,7 +150,7 @@ class Interpreter():
             self.processing = True
             if self.line == 'exit':
                 break
-            tokenized = parse(self.line, filename=self.filename, no=self.lineNumber)
+            tokenized = parse(self.line, filename=self.filename, no=self.lineNumber, debug=self.debug)
             struct, nextLine = self.handleTokenized(tokenized)
             self.engine.process(struct)
             self.processing = False

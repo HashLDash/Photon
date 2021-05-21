@@ -35,16 +35,21 @@ if __name__ == "__main__":
     from dependencies import haveDependencies, resolveDependencies
     __version__ = '0.0.1'
     try:
+        if '-d' in sys.argv:
+            sys.argv.remove('-d')
+            DEBUG = True
+        else:
+            DEBUG = False
         first = sys.argv[1]
     except IndexError:
         print(f'Photon - {__version__} - pyEngine')
-        Interpreter().run()
+        Interpreter(debug=DEBUG).run()
         sys.exit()
     if first == '--version' or first == '-v' :
         print(f'Photon Version {__version__}')
     elif first == '--build' or first == '-b':
         try:
-            Builder(platform = sys.argv[2], standardLibs = os.path.join(PHOTON_INSTALL_PATH, 'libs/'))
+            Builder(platform = sys.argv[2], standardLibs = os.path.join(PHOTON_INSTALL_PATH, 'libs/'), debug=DEBUG)
         except IndexError:
             print(f'ERROR: Platform [{(", ".join(platforms))}] not informed.')
     elif first == '--lang' or first == '-l':
@@ -97,4 +102,4 @@ if __name__ == "__main__":
     elif first == '--android-view' or first == '-av':
         os.system('adb exec-out screenrecord --output-format=h264 - | ffplay -framerate 60 -probesize 32 -sync video  -')
     else:
-        Interpreter(filename = first, lang = photonConfigLang(), standardLibs = os.path.join(PHOTON_INSTALL_PATH, 'libs/')).run()
+        Interpreter(filename = first, lang = photonConfigLang(), standardLibs = os.path.join(PHOTON_INSTALL_PATH, 'libs/'), debug=DEBUG).run()

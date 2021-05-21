@@ -484,7 +484,7 @@ def array(i, t):
         return 'continue'
     # Its an array
     if t[i+1]['token'] == 'args':
-        elements = token[i+1]['args']
+        elements = t[i+1]['args']
         del t[i+1] # args
     else:
         elements = []

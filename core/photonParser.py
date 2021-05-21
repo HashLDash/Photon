@@ -38,14 +38,16 @@ currentFilename = ''
 currentLine = ''
 parsePhrase = ''
 
+DEBUG = False
+
 def debug(*args):
-    #print(*args)
-    pass
+    if DEBUG:
+        print(*args)
 
-def parse(line, filename='', no=-1):
-    global currentLine, lineNumber, currentFilename
+def parse(line, filename='', no=-1, debug=False):
+    global currentLine, lineNumber, currentFilename, DEBUG
     ''' Return a list of tokens for the given line '''
-
+    DEBUG = debug
     lineNumber = no
     currentFilename = filename
     currentLine = line
@@ -108,13 +110,7 @@ def reduceToken(tokens):
     ''' Find patterns that can be reduced to a single token '''
     ''' and return the reduced list of tokens '''
     global parsePhrase
-
-    if tokens == 'continue':
-        return 'continue'
-    tokenList = [ token['token'] for token in tokens if not token['token'] == 'indent' ]
-    parsePhrase = token2word(tokens)
-    debug(parsePhrase)
-    try:
+    def reduce():
         for pattern in patterns:
             for i in range(len(tokenList)):
                 if pattern == tuple(tokenList[i:i+len(pattern)]):
@@ -124,8 +120,19 @@ def reduceToken(tokens):
                         continue
                     else:
                         return result
-    except Exception as e:
-        showError(f'LexerError: {e}')
+
+    if tokens == 'continue':
+        return 'continue'
+    tokenList = [ token['token'] for token in tokens if not token['token'] == 'indent' ]
+    parsePhrase = token2word(tokens)
+    debug(parsePhrase)
+    if not DEBUG:
+        try:
+            reduce()
+        except Exception as e:
+            showError(f'LexerError: {e}')
+    else:
+        reduce()
 
     # No patterns were found, reduced to maximum
     if len(tokens) > 3:
@@ -137,7 +144,6 @@ def reduceToken(tokens):
 def assembly(tokens, block=None, modifier=None):
     ''' Match the given list of tokens with the corresponding '''
     ''' grammar and return a struct with its properties '''
-
     if not block == None:
         if not 'block' in tokens[1]:
             tokens[1]['block'] = block
