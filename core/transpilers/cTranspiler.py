@@ -52,7 +52,7 @@ class Transpiler(BaseTranspiler):
         self.imports.add('#include "photonInput.h"')
         message = self.formatPrint(expr).replace('\\n', '', 1) if expr['value'] else ''
         if not self.initInternal:
-            initInternal = 'char* __inputStr__;'
+            initInternal = ' char* __inputStr__;'
             self.initInternal = True
         else:
             initInternal = ''
