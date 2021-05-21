@@ -50,7 +50,8 @@ class Transpiler(BaseTranspiler):
             initValues = ';'.join(f'{{var}}.values[{i}] = {v["value"]}' for i, v in enumerate(elements))
         else:
             initValues = ''
-        return f"{className} {{var}} = {{{{ {len(elements)}, {size}, malloc(sizeof({elementType})) }}}};{initValues};"
+        elementType = self.nativeType(elementType)
+        return f"{className} {{var}} = {{{{ {len(elements)}, {size}, malloc(sizeof({elementType})*{size}) }}}};{initValues};"
 
     def formatInput(self, expr):
         self.imports.add('#include "photonInput.h"')
