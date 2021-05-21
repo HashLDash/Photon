@@ -49,21 +49,13 @@ class Transpiler(BaseTranspiler):
         return f"{className} {{var}} = {{{{ {len(elements)}, {size}, malloc(sizeof({elementType})) }}}};"
 
     def formatInput(self, expr):
-        self.imports.add('#include <string.h>') # strlen
-        self.imports.add('#include "photonInput.h"') # getline
-        #if self.target in {'win32', 'cygwin', 'msys'}:
-        #    self.imports.add('#include "photonInput.h"') # getline
+        self.imports.add('#include "photonInput.h"')
         message = self.formatPrint(expr).replace('\\n', '', 1) if expr['value'] else ''
-        #size = '__internalInputSize__'
         if not self.initInternal:
-            #initInternal = f'size_t {size} = 0; char* __inputStr__;'
             initInternal = 'char* __inputStr__;'
             self.initInternal = True
         else:
-            #initInternal = f'{size} = 0;'
             initInternal = ''
-        #return  f'{message}{initInternal}{self.nativeType("str")} {{var}}; getline(&{{var}}, &{size}, stdin); {{var}}[strlen({{var}})-1] = 0;'
-        #return  f'{message}{initInternal} getline(&__inputStr__, &{size}, stdin); __inputStr__[strlen(__inputStr__)-1] = 0;'
         return  f'{message}{initInternal} __inputStr__ = photonInput();'
 
     def formatStr(self, string, expressions):
