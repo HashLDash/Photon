@@ -114,15 +114,18 @@ def reduceToken(tokens):
     tokenList = [ token['token'] for token in tokens if not token['token'] == 'indent' ]
     parsePhrase = token2word(tokens)
     debug(parsePhrase)
-    for pattern in patterns:
-        for i in range(len(tokenList)):
-            if pattern == tuple(tokenList[i:i+len(pattern)]):
-                debug(pattern)
-                result = reduceToken(patterns[pattern](i+1,tokens))
-                if result == 'continue':
-                    continue
-                else:
-                    return result
+    try:
+        for pattern in patterns:
+            for i in range(len(tokenList)):
+                if pattern == tuple(tokenList[i:i+len(pattern)]):
+                    debug(pattern)
+                    result = reduceToken(patterns[pattern](i+1,tokens))
+                    if result == 'continue':
+                        continue
+                    else:
+                        return result
+    except Exception as e:
+        showError(f'LexerError: {e}')
 
     # No patterns were found, reduced to maximum
     if len(tokens) > 3:
