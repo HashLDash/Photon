@@ -171,6 +171,7 @@ class Transpiler(BaseTranspiler):
 
     def formatFor(self, variables, iterable):
         self.step = 0
+        self.freeTempArray = ''
         if 'from' in iterable:
             # For with range
             self.iterVar = variables[0]['value']
@@ -190,15 +191,26 @@ class Transpiler(BaseTranspiler):
                 varType = ''
             else:
                 varType = varType + ' '
-            return f'{varType}{self.iterVar}; for (int __iteration__=0; __iteration__ < {iterable["value"]}.len; __iteration__++) {{ {self.iterVar}={iterable["value"]}.values[__iteration__];'
+            if '{var}' in iterable['value']:
+                # Temp array, must be initialized first
+                tempArray = iterable['value'].format(var="__tempArray__")
+                self.freeTempArray = 'free(__tempArray__.values);'
+                iterable["value"] = "__tempArray__"
+                self.listTypes.add(varType)
+            else:
+                tempArray = ''
+            # tempArray is inside a scope block, must end that when closing the loop
+            return f'{varType}{self.iterVar}; {{ {tempArray}; for (int __iteration__=0; __iteration__ < {iterable["value"]}.len; __iteration__++) {{ {self.iterVar}={iterable["value"]}.values[__iteration__];'
         else:
             raise SyntaxError(f'Format for with unpacking not suported yet.')
     
     def formatEndFor(self):
         if self.step:
-            return f'}} {self.iterVar} -= {self.step};'
+            # Must also close the tempArray scope block
+            return f'}} {self.iterVar} -= {self.step};{self.freeTempArray} }}'
         else:
-            return '}'
+            # Must also close the tempArray scope block
+            return f'}}{self.freeTempArray} }}'
 
     def formatArgs(self, args):
         return ', '.join([ f'{self.nativeType(arg["type"])} {arg["value"]}' for arg in args])
