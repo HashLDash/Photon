@@ -111,7 +111,7 @@ class Transpiler(BaseTranspiler):
             toVal = iterable['to']['value']
             return f'for {var} in range({fromVal}, {toVal}, {step}):'
         else:
-            return f'for {var} in {iterable["value"]}:'
+            return f'for {variables[0]["value"]} in {iterable["value"]}:'
 
     def formatEndFor(self):
         return '#end'
