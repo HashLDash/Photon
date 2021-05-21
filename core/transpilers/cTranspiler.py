@@ -46,7 +46,11 @@ class Transpiler(BaseTranspiler):
         values = ','.join(e['value'] for e in elements)
         if size == 'unknown':
             size = 10
-        return f"{className} {{var}} = {{{{ {len(elements)}, {size}, malloc(sizeof({elementType})) }}}};"
+        if elements:
+            initValues = ';'.join(f'{{var}}.values[{i}] = {v["value"]}' for i, v in enumerate(elements))
+        else:
+            initValues = ''
+        return f"{className} {{var}} = {{{{ {len(elements)}, {size}, malloc(sizeof({elementType})) }}}};{initValues};"
 
     def formatInput(self, expr):
         self.imports.add('#include "photonInput.h"')
@@ -166,6 +170,7 @@ class Transpiler(BaseTranspiler):
         return '}'
 
     def formatFor(self, variables, iterable):
+        self.step = 0
         if 'from' in iterable:
             # For with range
             self.iterVar = variables[0]['value']
@@ -178,11 +183,22 @@ class Transpiler(BaseTranspiler):
             else:
                 varType = varType + ' '
             return f'{varType}{self.iterVar} = {fromVal}; for (; {self.iterVar} < {toVal}; {self.iterVar} += {self.step}) {{'
+        elif iterable['type'] == 'array':
+            varType = iterable['elementType']
+            self.iterVar = variables[0]['value']
+            if self.iterVar in self.currentScope:
+                varType = ''
+            else:
+                varType = varType + ' '
+            return f'{varType}{self.iterVar}; for (int __iteration__=0; __iteration__ < {iterable["value"]}.len; __iteration__++) {{ {self.iterVar}={iterable["value"]}.values[__iteration__];'
         else:
             raise SyntaxError(f'Format for with unpacking not suported yet.')
     
     def formatEndFor(self):
-        return f'}} {self.iterVar} -= {self.step};'
+        if self.step:
+            return f'}} {self.iterVar} -= {self.step};'
+        else:
+            return '}'
 
     def formatArgs(self, args):
         return ', '.join([ f'{self.nativeType(arg["type"])} {arg["value"]}' for arg in args])

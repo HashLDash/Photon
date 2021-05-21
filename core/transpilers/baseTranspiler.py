@@ -123,13 +123,13 @@ class BaseTranspiler():
             varType = token['type']
             if varType == 'array':
                 elementType = token['elementType']
-                length = token['len']
+                size = token['size']
         elif name in self.currentScope:
             # Already processed
             varType = self.currentScope[name]['type']
             if varType == 'array':
                 elementType = self.currentScope[name]['elementType']
-                length = self.currentScope[name]['len']
+                size = self.currentScope[name]['size']
         elif name == self.inFunc and self.returnType:
             for rt in self.returnType:
                 if self.typeKnown(rt):
@@ -137,14 +137,14 @@ class BaseTranspiler():
                     # If return is an array, get other info
                     if varType == 'array':
                         elementType = self.currentScope[name]['elementType']
-                        length = self.currentScope[name]['len']
+                        size = self.currentScope[name]['size']
         else:
             varType = 'unknown'
         if 'modifier' in token:
             token['name'] = token['modifier'].replace('not',self.notOperator) + token['name']
         if varType == 'array':
             return {'value':token['name'], 'type':varType,
-            'elementType':elementType, 'len':length}
+            'elementType':elementType, 'size':size}
         return {'value':token['name'], 'type':varType}
 
     def processFormatStr(self, token):
@@ -161,17 +161,17 @@ class BaseTranspiler():
 
     def processArray(self, token):
         # InferType
-        types = {}
+        types = set()
         elements = []
+        for tok in token['elements']:
+            element = self.getValAndType(tok)
+            types.add(element['type'])
+            elements.append(element)
         if self.typeKnown(token['elementType']):
             # Type was explicit
             varType = token['elementType']
         else:
             # Infer type
-            for tok in token['elements']:
-                element = self.getValAndType(tok)
-                types.add(element['type'])
-                elements.append(element)
             if len(types) == 0:
                 varType = 'unknown'
             elif len(types) == 1:
@@ -258,7 +258,7 @@ class BaseTranspiler():
                 if not self.typeKnown(expr['args'][0]['elementType']):
                     # Add array info into expression
                     expr['args'][0]['elementType'] = variable['elementType']
-                    expr['args'][0]['len'] = variable['len']
+                    expr['args'][0]['size'] = variable['size']
         else:
             raise SyntaxError(f'Assign with variable {target} no supported yet.')
         expr = self.processExpr(expr)
@@ -269,7 +269,7 @@ class BaseTranspiler():
             self.currentScope[variable['value']] = {'type':variable['type']}
             if variable['type'] == 'array':
                 self.currentScope[variable['value']]['elementType'] = variable['elementType']
-                self.currentScope[variable['value']]['len'] = variable['len']
+                self.currentScope[variable['value']]['size'] = variable['size']
                 #if not self.typeKnown(expr['elementType']):
                 #    expr['elementType'] = variable['elementType']
                 #    expr['len'] = variable['len']
@@ -327,7 +327,10 @@ class BaseTranspiler():
         variables = [ self.processVar(v) for v in token['vars'] ]
         self.insertCode(self.formatFor(variables, iterable))
         #TODO: Handle dict iteration and multivar for loop
-        self.currentScope[variables[-1]['value']] = {'type':iterable['type']}
+        if iterable['type'] == 'array':
+            self.currentScope[variables[-1]['value']] = {'type':iterable['elementType']}
+        else:
+            self.currentScope[variables[-1]['value']] = {'type':iterable['type']}
         for c in token['block']:
             self.process(c)
         self.insertCode(self.formatEndFor())

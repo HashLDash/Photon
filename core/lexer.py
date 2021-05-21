@@ -139,7 +139,7 @@ def arrayType(i, t):
 
     arrayLen = t[i+2]['value']
 
-    t[i] = {'token':'type', 'type':'array', 'elementType':elementType, 'len':arrayLen}
+    t[i] = {'token':'type', 'type':'array', 'elementType':elementType, 'size':arrayLen}
 
     del t[i+1] #beginBlock
     del t[i+1] #num
@@ -175,7 +175,7 @@ def typeDeclaration(i, t):
     last = ''
     name = ''
     elementType = ''
-    arrayLen = ''
+    arraySize = ''
     keyType = ''
     valType = ''
     if t[i]['token'] in {'type', 'var'}:
@@ -183,7 +183,7 @@ def typeDeclaration(i, t):
             if tok['token'] == 'type':
                 if tok['type'] == 'array':
                     elementType = tok['elementType']
-                    arrayLen = tok['len']
+                    arraySize = tok['size']
                 elif tok['type'] == 'map':
                     keyType = tok['keyType']
                     valType = tok['valType']
@@ -205,10 +205,10 @@ def typeDeclaration(i, t):
     if not name:
         raise SyntaxError('Type declaration error')
     t[i] = {'token':'var', 'name':name, 'type':' '.join(varType)} 
-    if arrayLen:
+    if arraySize:
         # It's an array, include len and elementType
         t[i]['type'] = 'array'
-        t[i]['len'] = arrayLen
+        t[i]['size'] = arraySize
         t[i]['elementType'] = elementType
     elif valType:
         # It's a map, include keyType and valType
@@ -489,6 +489,6 @@ def array(i, t):
     else:
         elements = []
     t[i] = convertToExpr({'token':'array','type':'array','elementType':'unknown',
-    'len':'unknown', 'elements':elements})
+    'len':len(elements), 'elements':elements})
     del t[i+1] # rbracket
     return t
