@@ -196,12 +196,14 @@ class Transpiler(BaseTranspiler):
                 # Temp array, must be initialized first
                 tempArray = iterable['value'].format(var="__tempArray__")
                 self.freeTempArray = 'free(__tempArray__.values); }'
+                beginScope = '{{ '
                 iterable["value"] = "__tempArray__"
                 self.listTypes.add(varType)
             else:
                 tempArray = ''
+                beginScope = ''
             # tempArray is inside a scope block, must end that when closing the loop
-            return f'{varType}{self.iterVar}; {{ {tempArray}; for (int __iteration__=0; __iteration__ < {iterable["value"]}.len; __iteration__++) {{ {self.iterVar}={iterable["value"]}.values[__iteration__];'
+            return f'{varType}{self.iterVar}; {beginScope}{tempArray}; for (int __iteration__=0; __iteration__ < {iterable["value"]}.len; __iteration__++) {{ {self.iterVar}={iterable["value"]}.values[__iteration__];'
         else:
             raise SyntaxError(f'Format for with unpacking not suported yet.')
     
