@@ -492,3 +492,16 @@ def array(i, t):
     'len':len(elements), 'elements':elements})
     del t[i+1] # rbracket
     return t
+
+def indexAccess(i, t):
+    ''' Verify if its an indexAccess and return an indexAccess token
+        if it is
+    '''
+    if not t[i]['args'][-1]['token'] in {'var'}:
+        # Not a valid indexAccess
+        return 'continue'
+    t[i]['args'][-1]['indexAccess'] = t[i+2]
+    del t[i+1] # lbracket
+    del t[i+1] # expr
+    del t[i+1] # rbracket
+    return t

@@ -1,5 +1,20 @@
+#include <stdio.h>
+#include <stdlib.h>
+
 typedef struct list_int {
     int len;
     int size;
     int* values;
 } list_int;
+
+int list_int_get(list_int* list, int index) {
+    if (index < 0) {
+        // -1 is equivalent to the last element
+        index = list->len + index;
+    }
+    if (index < 0 || index > list->len) {
+        printf("IndexError: The array has %d elements, but you required the %d index\n", list->len, index);
+        exit(-1);
+    }
+    return list->values[index];
+}

@@ -195,7 +195,7 @@ class Transpiler(BaseTranspiler):
             if '{var}' in iterable['value']:
                 # Temp array, must be initialized first
                 tempArray = iterable['value'].format(var="__tempArray__")
-                self.freeTempArray = 'free(__tempArray__.values);'
+                self.freeTempArray = 'free(__tempArray__.values); }}'
                 iterable["value"] = "__tempArray__"
                 self.listTypes.add(varType)
             else:
@@ -208,10 +208,10 @@ class Transpiler(BaseTranspiler):
     def formatEndFor(self):
         if self.step:
             # Must also close the tempArray scope block
-            return f'}} {self.iterVar} -= {self.step};{self.freeTempArray} }}'
+            return f'}} {self.iterVar} -= {self.step};{self.freeTempArray}'
         else:
             # Must also close the tempArray scope block
-            return f'}}{self.freeTempArray} }}'
+            return f'}}{self.freeTempArray}'
 
     def formatArgs(self, args):
         return ', '.join([ f'{self.nativeType(arg["type"])} {arg["value"]}' for arg in args])

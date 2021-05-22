@@ -38,6 +38,7 @@ patterns = {
   ('expr', 'operator', 'var'): expr,
   ('expr', 'operator', 'expr'): expr,
   ('operator', 'expr'): expr,
+  ('expr', 'lbracket', 'expr', 'rbracket'): indexAccess,
   ('lbracket', 'args', 'rbracket'): array,
   ('lbracket', 'rbracket'): array,
   ('returnStatement',): funcReturn,

@@ -122,31 +122,45 @@ class BaseTranspiler():
         if self.typeKnown(token['type']):
             # Type was explicit
             varType = token['type']
-            if varType == 'array':
-                elementType = token['elementType']
-                size = token['size']
         elif name in self.currentScope:
             # Already processed
             varType = self.currentScope[name]['type']
             if varType == 'array':
-                elementType = self.currentScope[name]['elementType']
-                size = self.currentScope[name]['size']
+                token['elementType'] = self.currentScope[name]['elementType']
+                token['size'] = self.currentScope[name]['size']
         elif name == self.inFunc and self.returnType:
             for rt in self.returnType:
                 if self.typeKnown(rt):
                     varType = rt
                     # If return is an array, get other info
                     if varType == 'array':
-                        elementType = self.currentScope[name]['elementType']
-                        size = self.currentScope[name]['size']
+                        token['elementType'] = self.currentScope[name]['elementType']
+                        token['size'] = self.currentScope[name]['size']
         else:
             varType = 'unknown'
         if 'modifier' in token:
+            #TODO: This should go after indexAccess
             token['name'] = token['modifier'].replace('not',self.notOperator) + token['name']
         if varType == 'array':
+            if 'indexAccess' in token:
+                # Accessing an element of the array
+                token['type'] = varType
+                v = self.processIndexAccess(token)
+                return {'value':v['value'],
+                    'indexAccess':token['indexAccess'], 'type':v['type']}
             return {'value':token['name'], 'type':varType,
-            'elementType':elementType, 'size':size}
+                'elementType':token['elementType'], 'size':token['size']}
         return {'value':token['name'], 'type':varType}
+
+    def processIndexAccess(self, token):
+        if token['type'] == 'array':
+            varType = token['elementType']
+            indexAccess = self.processExpr(token['indexAccess'])['value']
+            name = token['name']
+            return {'value':f'list_{varType}_get(&{name}, {indexAccess})',
+                'type':varType}
+        else:
+            raise SyntaxError(f'IndexAccess with type {token["type"]} not implemented yet')
 
     def processFormatStr(self, token):
         expressions = [self.processExpr(expr) for expr in token['expressions']]
