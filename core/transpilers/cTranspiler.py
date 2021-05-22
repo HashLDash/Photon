@@ -195,7 +195,7 @@ class Transpiler(BaseTranspiler):
             if '{var}' in iterable['value']:
                 # Temp array, must be initialized first
                 tempArray = iterable['value'].format(var="__tempArray__")
-                self.freeTempArray = 'free(__tempArray__.values); }}'
+                self.freeTempArray = 'free(__tempArray__.values); }'
                 iterable["value"] = "__tempArray__"
                 self.listTypes.add(varType)
             else:
