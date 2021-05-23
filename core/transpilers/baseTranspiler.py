@@ -7,7 +7,7 @@ class BaseTranspiler():
         self.filename = filename.split('/')[-1].replace('.w','.d')
         self.module = module
 
-        self.operators = ['**','*','%','/','-','+','andnot','and','or','==','!=','>','<','>=','<=','is','in','&', '<<', '>>'] # in order 
+        self.operators = ['**','*','%','/','-','+','==','!=','>','<','>=','<=','is','in','andnot','and','or','&', '<<', '>>'] # in order 
         self.instructions = {
             'printFunc': self.printFunc,
             'inputFunc': self.processInput,
@@ -32,6 +32,8 @@ class BaseTranspiler():
             '>=': self.greaterEqual,
             '<=': self.lessEqual,
             '!=': self.notEqual,
+            'and': self.andOperator,
+            'or': self.orOperator,
         }
         self.terminator = ';'
         self.currentScope = {}
@@ -208,9 +210,9 @@ class BaseTranspiler():
             if token['type'] == 'str':
                 token = self.processFormatStr(token)
             elif token['type'] == 'bool':
-                if token['value'] in {'false', 'False'}:
+                if token['value'].lower() == 'false':
                     token['value'] = self.false
-                else:
+                elif token['value'].lower() == 'true':
                     token['value'] = self.true
             if 'modifier' in token:
                 token['value'] = token['modifier'] + token['value']
@@ -513,6 +515,12 @@ class BaseTranspiler():
 
     def notEqual(self, arg1, arg2):
         return {'value':f'{arg1["value"]} != {arg2["value"]}', 'type':'bool'}
+
+    def andOperator(self, arg1, arg2):
+        return {'value':f'{arg1["value"]} && {arg2["value"]}', 'type':'bool'}
+
+    def orOperator(self, arg1, arg2):
+        return {'value':f'{arg1["value"]} || {arg2["value"]}', 'type':'bool'}
 
     def processGroup(self, token):
         expr = self.processExpr(token['expr'])
