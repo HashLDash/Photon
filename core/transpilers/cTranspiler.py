@@ -96,6 +96,20 @@ class Transpiler(BaseTranspiler):
         else:
             raise SyntaxError(f'IndexAccess with type {token["type"]} not implemented yet')
 
+    def formatIndexAssign(self, target, expr, inMemory=False):
+        if target['type'] == 'array':
+            index = self.processExpr(target['indexAccess'])['value']
+            name = target['name']
+            varType = target['elementType']
+            if self.typeKnown(expr['type']) and expr['type'] != varType:
+                cast = self.nativeType(varType)
+            else:
+                cast = None
+            expr = self.formatExpr(expr, cast = cast, var = name)
+            return f'list_{varType}_set(&{name}, {index}, {expr});'
+        else:
+            raise SyntaxError(f'Index assign with type {target["type"]} not implemented in c target.')
+
     def formatAssign(self, target, expr, inMemory = False):
         if target['token'] == 'var':
             variable = target['name']

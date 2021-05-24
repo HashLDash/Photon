@@ -296,7 +296,10 @@ class BaseTranspiler():
                     self.currentScope[variable['value']]['elementType'] = expr['elementType']
                     self.currentScope[variable['value']]['size'] = expr['size']
                 target['type'] = varType
-        self.insertCode(self.formatAssign(target, expr, inMemory=inMemory))
+        if 'indexAccess' in target:
+            self.insertCode(self.formatIndexAssign(target, expr, inMemory=inMemory))
+        else:
+            self.insertCode(self.formatAssign(target, expr, inMemory=inMemory))
 
     def formatIndexAccess(self, token):
         if token['type'] == 'array':
