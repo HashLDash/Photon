@@ -158,7 +158,8 @@ class Transpiler(BaseTranspiler):
             del self.imports[0]
             del self.imports[0]
             del self.imports[0]
-        with open(f'Sources/{self.filename}','w') as f:
+        # Force utf8 on windows
+        with open(f'Sources/{self.filename}','w', encoding='utf8') as f:
             for imp in self.imports:
                 module = imp.split(' ')[-1].replace('.w','').replace('"','')
                 debug(f'Importing {module}')
