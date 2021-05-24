@@ -157,9 +157,7 @@ class BaseTranspiler():
     def processIndexAccess(self, token):
         if token['type'] == 'array':
             varType = token['elementType']
-            indexAccess = self.processExpr(token['indexAccess'])['value']
-            name = token['name']
-            return {'value':f'list_{varType}_get(&{name}, {indexAccess})',
+            return {'value':self.formatIndexAccess(token),
                 'type':varType}
         else:
             raise SyntaxError(f'IndexAccess with type {token["type"]} not implemented yet')
@@ -299,6 +297,14 @@ class BaseTranspiler():
                     self.currentScope[variable['value']]['size'] = expr['size']
                 target['type'] = varType
         self.insertCode(self.formatAssign(target, expr, inMemory=inMemory))
+
+    def formatIndexAccess(self, token):
+        if token['type'] == 'array':
+            indexAccess = self.processExpr(token['indexAccess'])['value']
+            name = token['name']
+            return f'{name}[{indexAccess}]'
+        else:
+            raise SyntaxError(f'IndexAccess with type {token["type"]} not implemented yet')
 
     def processIf(self, token):
         expr = self.processExpr(token['expr'])

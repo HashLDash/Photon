@@ -86,6 +86,15 @@ class Transpiler(BaseTranspiler):
     def formatCall(self, name, returnType, args):
         arguments = ', '.join([ f'{arg["value"]}' for arg in args ])
         return f'{name}({arguments})'
+    
+    def formatIndexAccess(self, token):
+        if token['type'] == 'array':
+            varType = token['elementType']
+            indexAccess = self.processExpr(token['indexAccess'])['value']
+            name = token['name']
+            return f'list_{varType}_get(&{name}, {indexAccess})'
+        else:
+            raise SyntaxError(f'IndexAccess with type {token["type"]} not implemented yet')
 
     def formatAssign(self, target, expr, inMemory = False):
         if target['token'] == 'var':
