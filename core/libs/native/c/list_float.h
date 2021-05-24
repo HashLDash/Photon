@@ -30,3 +30,24 @@ void list_float_set(list_float* list, int index, double value) {
     }
     list->values[index] = value;
 }
+
+void list_float_append(list_float* list, double value) {
+    if (list->len >= list->size) {
+        list->size = list->size * 2;
+        list->values = realloc(list->values, sizeof(double) * list->size);
+    }
+    list->values[list->len] = value;
+    list->len += 1;
+}
+
+void list_float_inc(list_float* list, int index, double value) {
+    if (index < 0) {
+        // -1 is equivalent to the last element
+        index = list->len + index;
+    }
+    if (index < 0 || index > list->len) {
+        printf("IndexError: The array has %d elements, but you required the %d index\n", list->len, index);
+        exit(-1);
+    }
+    list->values[index] += value;
+}
