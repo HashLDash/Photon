@@ -50,6 +50,8 @@ whileLoop = whileStatement expr beginBlock
 
 args = (args expr) comma (args expr)
 
+augAssign = expr operator equal expr
+
 assign = expr equal expr
 
 function = defStatement expr lparen (expr args) rparen beginBlock

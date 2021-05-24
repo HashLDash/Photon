@@ -35,12 +35,12 @@ def operator(i, t):
     ''' Combine operators that are compatible '''
 
     op1 = t[i]['operator'] if 'operator' in t[i] else t[i]['symbol']
-    op2 = t[i+1]['operator'] if 'operator' in t[i+1] else t[i]['symbol']
+    op2 = t[i+1]['operator'] if 'operator' in t[i+1] else t[i+1]['symbol']
     op = op1 + op2
     if op in {'**', '==', '>=', '<=','<<','>>','!='}:
         t[i] = {'token':'operator','operator':op}
-    elif op in {'+=','-=','*=','/='}:
-        t[i] = {'token':'augEqual','symbol':op}
+    #elif op in {'+=','-=','*=','/='}:
+    #    t[i] = {'token':'augEqual','symbol':op}
     else:
         return 'continue'
     del t[i+1] # operator or symbol
@@ -137,9 +137,9 @@ def arrayType(i, t):
     else:
         raise SyntaxError('Array type tok {t[i]["token"} not implemented.')
 
-    arrayLen = t[i+2]['value']
+    arraySize = t[i+2]['value']
 
-    t[i] = {'token':'type', 'type':'array', 'elementType':elementType, 'size':arrayLen}
+    t[i] = {'token':'type', 'type':'array', 'elementType':elementType, 'size':arraySize}
 
     del t[i+1] #beginBlock
     del t[i+1] #num
@@ -205,8 +205,8 @@ def typeDeclaration(i, t):
     if not name:
         raise SyntaxError('Type declaration error')
     t[i] = {'token':'var', 'name':name, 'type':' '.join(varType)} 
-    if arraySize:
-        # It's an array, include len and elementType
+    if elementType:
+        # It's an array, include size and elementType
         t[i]['type'] = 'array'
         t[i]['size'] = arraySize
         t[i]['elementType'] = elementType
@@ -369,6 +369,18 @@ def inputFunc(i, t):
     del t[i+1] # rparen
     return t
 
+def augAssign(i, t):
+    ''' expr operator equal expr
+    '''
+    if t[i]['args'][0]['token'] == 'var':
+        t[i] = {'token':'augAssign', 'target':t[i]['args'][0], 'operator': t[i+1]['operator'], 'expr':t[i+3]}
+        del t[i+1] # operator
+        del t[i+1] # equal
+        del t[i+1] # expr
+        return t
+    # Not a valid assign, continue
+    return 'continue'
+
 def assign(i, t):
     ''' expr equal expr
     '''
@@ -489,7 +501,7 @@ def array(i, t):
     else:
         elements = []
     t[i] = convertToExpr({'token':'array','type':'array','elementType':'unknown',
-    'len':len(elements), 'elements':elements})
+        'len':len(elements), 'size':'unknown', 'elements':elements})
     del t[i+1] # rbracket
     return t
 

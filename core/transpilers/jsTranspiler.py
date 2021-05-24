@@ -56,6 +56,16 @@ class Transpiler(BaseTranspiler):
         values = ', '.join(v['value'] for v in elements)
         return f'[{values}]'
     
+    def formatIndexAccess(self, token):
+        if token['type'] == 'array':
+            varType = token['elementType']
+            index = self.processExpr(token['indexAccess'])['value']
+            #TODO: Optimize for constants and remove the if else test. The same applies to C
+            name = token['name']
+            return f'{name}[{index} > 0 ? {index} : {name}.length + {index}]'
+        else:
+            raise SyntaxError(f'IndexAccess with type {token["type"]} not implemented yet')
+    
     def formatIndexAssign(self, target, expr, inMemory=False):
         if target['type'] == 'array':
             index = self.processExpr(target['indexAccess'])['value']
@@ -69,6 +79,11 @@ class Transpiler(BaseTranspiler):
             return f'{name}[{index}] = {expr}'
         else:
             raise SyntaxError(f'Index assign with type {target["type"]} not implemented in py target.')
+
+    def formatArrayAppend(self, target, expr):
+        name = target['value']
+        expr = self.formatExpr(expr)
+        return f'{name}.push({expr});'
 
     def formatAssign(self, target, expr, inMemory=False):
         cast = None

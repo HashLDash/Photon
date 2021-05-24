@@ -13,6 +13,7 @@ class BaseTranspiler():
             'inputFunc': self.processInput,
             'expr': self.processExpression,
             'assign': self.processAssign,
+            'augAssign': self.processAugAssign,
             'if': self.processIf,
             'while': self.processWhile,
             'for': self.processFor,
@@ -200,7 +201,7 @@ class BaseTranspiler():
                     raise SyntaxError(f'Type inference in array with types {t1} and {t2} not implemented yet.')
             else:
                 raise SyntaxError(f'Type inference in array with types {types} not implemented yet.')
-        return {'value':self.formatArray(elements, varType, token['len']), 'type':'array',
+        return {'value':self.formatArray(elements, varType, token['size']), 'type':'array',
         'elements':elements, 'elementType':varType, 'size':'unknown'}
 
     def getValAndType(self, token):
@@ -274,6 +275,9 @@ class BaseTranspiler():
                     # Add array info into expression
                     expr['args'][0]['elementType'] = variable['elementType']
                     expr['args'][0]['size'] = variable['size']
+            elif self.typeKnown(variable['type']) and expr['args'][0]['type'] == 'array':
+                # The type declaration is for the elementType
+                expr['args'][0]['elementType'] = variable['type']
         else:
             raise SyntaxError(f'Assign with variable {target} no supported yet.')
         expr = self.processExpr(expr)
@@ -288,18 +292,43 @@ class BaseTranspiler():
                 #if not self.typeKnown(expr['elementType']):
                 #    expr['elementType'] = variable['elementType']
                 #    expr['len'] = variable['len']
+            elif expr['type'] == 'array':
+                self.currentScope[variable['value']]['elementType'] = expr['elementType']
+                self.currentScope[variable['value']]['size'] = expr['size']
+                # We have to change the type to array because the type declaration was intended
+                # for the elementType
+                self.currentScope[variable['value']]['type'] = 'array'
+
         else:
             varType = self.inferType(expr)
             if self.typeKnown(varType):
                 self.currentScope[variable['value']] = {'type':varType}
                 if varType == 'array':
-                    self.currentScope[variable['value']]['elementType'] = expr['elementType']
+                    if self.typeKnown(expr['elementType']):
+                        self.currentScope[variable['value']]['elementType'] = expr['elementType']
+                    elif self.typeKnown(variable['type']):
+                        self.currentScope[variable['value']]['elementType'] = variable['type']
+                    else:
+                        raise SyntaxError(f'Array with unknown type not implemented yet.')
                     self.currentScope[variable['value']]['size'] = expr['size']
                 target['type'] = varType
         if 'indexAccess' in target:
             self.insertCode(self.formatIndexAssign(target, expr, inMemory=inMemory))
         else:
             self.insertCode(self.formatAssign(target, expr, inMemory=inMemory))
+
+    def processAugAssign(self, token):
+        op = token['operator']
+        expr = self.processExpr(token['expr'])
+        if token['target']['token'] == 'var':
+            variable = self.processVar(token['target'])
+            if op == '+':
+                if variable['type'] == 'array':
+                    self.insertCode(self.formatArrayAppend(variable, expr))
+                else:
+                    raise SyntaxError(f'AugAssign with type {variable["type"]} not implemented yet.')
+        else:
+            raise SyntaxError(f'AugAssign with variable {variable} not supported yet.')
 
     def formatIndexAccess(self, token):
         if token['type'] == 'array':

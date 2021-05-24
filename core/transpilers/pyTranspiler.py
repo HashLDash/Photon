@@ -68,6 +68,11 @@ class Transpiler(BaseTranspiler):
         else:
             raise SyntaxError(f'Index assign with type {target["type"]} not implemented in py target.')
 
+    def formatArrayAppend(self, target, expr):
+        name = target['value']
+        expr = self.formatExpr(expr)
+        return f'{name}.append({expr})'
+
     def formatAssign(self, target, expr, inMemory=False):
         cast = None
         if target['token'] == 'var':

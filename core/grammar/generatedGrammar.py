@@ -54,6 +54,7 @@ patterns = {
   ('args', 'comma', 'expr'): args,
   ('expr', 'comma', 'args'): args,
   ('expr', 'comma', 'expr'): args,
+  ('expr', 'operator', 'equal', 'expr'): augAssign,
   ('expr', 'equal', 'expr'): assign,
   ('defStatement', 'expr', 'lparen', 'expr', 'rparen', 'beginBlock'): function,
   ('defStatement', 'expr', 'lparen', 'args', 'rparen', 'beginBlock'): function,

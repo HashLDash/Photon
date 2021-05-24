@@ -110,6 +110,12 @@ class Transpiler(BaseTranspiler):
         else:
             raise SyntaxError(f'Index assign with type {target["type"]} not implemented in c target.')
 
+    def formatArrayAppend(self, target, expr):
+        name = target['value']
+        varType = target['elementType']
+        expr = self.formatExpr(expr)
+        return f'list_{varType}_append(&{name}, {expr});'
+
     def formatAssign(self, target, expr, inMemory = False):
         if target['token'] == 'var':
             variable = target['name']
@@ -127,7 +133,9 @@ class Transpiler(BaseTranspiler):
             formatstr = expr['format']
             values = ','.join(expr['values'])
             return f'{varType} {variable}; asprintf(&{variable}, {formatstr},{values});'
-        if self.typeKnown(expr['type']) and expr['type'] != varType:
+        if expr['type'] == 'array' and expr['elementType'] != self.currentScope[variable]['elementType']:
+            cast = self.nativeType(varType)
+        elif self.typeKnown(expr['type']) and expr['type'] != varType:
             cast = self.nativeType(varType)
         else:
             cast = None

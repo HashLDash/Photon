@@ -30,3 +30,12 @@ void list_int_set(list_int* list, int index, int value) {
     }
     list->values[index] = value;
 }
+
+void list_int_append(list_int* list, int value) {
+    if (list->len >= list->size) {
+        list->size = list->size * 2;
+        list->values = realloc(list->values, sizeof(int) * list->size);
+    }
+    list->values[list->len] = value;
+    list->len += 1;
+}
