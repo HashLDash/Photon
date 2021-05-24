@@ -43,6 +43,8 @@ class Transpiler(BaseTranspiler):
         return f'input({message})'
 
     def formatStr(self, string, expressions):
+        if not '{' in string:
+            return string, []
         string = string[1:-1].replace('"','\"')
         for expr in expressions:
             string = string.replace('{}',f'{{{expr["value"]}}}',1)
@@ -132,7 +134,13 @@ class Transpiler(BaseTranspiler):
         return 'return'
 
     def div(self, arg1, arg2):
-        return {'value':f'({arg1["value"]} / {arg2["value"]}', 'type':'float'}
+        return {'value':f'{arg1["value"]} / {arg2["value"]}', 'type':'float'}
+
+    def andOperator(self, arg1, arg2):
+        return {'value':f'{arg1["value"]} and {arg2["value"]}', 'type':'bool'}
+
+    def orOperator(self, arg1, arg2):
+        return {'value':f'{arg1["value"]} or {arg2["value"]}', 'type':'bool'}
 
     def formatPrint(self, value):
         return f'print({value["value"]})'

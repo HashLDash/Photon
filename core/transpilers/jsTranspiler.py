@@ -44,11 +44,12 @@ class Transpiler(BaseTranspiler):
         message = expr['value']
         return f'prompt({message})'
 
-    def formatStr(self, string):
+    def formatStr(self, string, expressions):
+        if not '{' in string:
+            return string, []
         string = string[1:-1].replace('"','\"')
-        variables = [var for _,var,_,_ in Formatter().parse(string) if var]
-        for var in variables:
-            string = string.replace(f'{{{var}}}',f'${{{var}}}',1)
+        for expr in expressions:
+            string = string.replace('{}',f'${{{expr["value"]}}}',1)
         return f'`{string}`', []
 
     def formatArray(self, elements, varType, size):
