@@ -327,6 +327,8 @@ class BaseTranspiler():
                     self.insertCode(self.formatArrayAppend(variable, expr))
                 elif token['target']['type'] == 'array':
                     self.insertCode(self.formatArrayIncrement(token['target'], variable['indexAccess']['args'][0]['value'], expr))
+                elif variable['type'] in {'int', 'float'}:
+                    self.insertCode(self.formatIncrement(variable, expr))
                 else:
                     raise SyntaxError(f'AugAssign with type {variable["type"]} not implemented yet.')
         else:

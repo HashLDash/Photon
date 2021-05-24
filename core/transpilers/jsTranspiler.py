@@ -92,6 +92,12 @@ class Transpiler(BaseTranspiler):
         index = f'{index} > 0 ? {index} : {name}.length + {index}'
         return f'{name}[{index}] += {expr};'
 
+    def formatIncrement(self, target, expr):
+        name = target['value']
+        varType = target['type']
+        expr = self.formatExpr(expr)
+        return f'{name} += {expr};'
+
     def formatAssign(self, target, expr, inMemory=False):
         cast = None
         if target['token'] == 'var':

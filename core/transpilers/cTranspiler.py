@@ -122,6 +122,12 @@ class Transpiler(BaseTranspiler):
         expr = self.formatExpr(expr)
         return f'list_{varType}_inc(&{name}, {index}, {expr});'
 
+    def formatIncrement(self, target, expr):
+        name = target['value']
+        varType = target['type']
+        expr = self.formatExpr(expr)
+        return f'{name} += {expr};'
+
     def formatAssign(self, target, expr, inMemory = False):
         if target['token'] == 'var':
             variable = target['name']
