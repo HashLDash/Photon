@@ -502,6 +502,10 @@ class BaseTranspiler():
         return {'value':f'{arg1["value"]} % {arg2["value"]}', 'type':'int'}
 
     def exp(self, arg1, arg2):
+        if t1 == 'int' and t2 == 'int':
+            varType = 'int'
+        else:
+            varType = 'float'
         return {'value':f'pow({arg1["value"]}, {arg2["value"]})', 'type':'float'}
 
     def lessThan(self, arg1, arg2):

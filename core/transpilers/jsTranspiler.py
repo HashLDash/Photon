@@ -137,6 +137,13 @@ class Transpiler(BaseTranspiler):
             return f'return {expr["value"]};'
         return 'return;'
 
+    def exp(self, arg1, arg2):
+        if arg1['type'] == 'int' and arg2['type'] == 'int':
+            varType = 'int'
+        else:
+            varType = 'float'
+        return {'value':f'Math.pow({arg1["value"]}, {arg2["value"]})', 'type':varType}
+
     def formatPrint(self, value):
         return f'console.log({value["value"]});'
 
