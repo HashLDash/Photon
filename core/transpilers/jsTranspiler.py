@@ -121,7 +121,7 @@ class Transpiler(BaseTranspiler):
         return f'var {variable} = {formattedExpr};'
 
     def formatCall(self, name, returnType, args):
-        arguments = ','.join([ arg["value"] for arg in args])
+        arguments = ', '.join([ arg["value"] for arg in args])
         return f'{name}({arguments})'
 
     def formatExpr(self, value, cast=None):
@@ -154,10 +154,10 @@ class Transpiler(BaseTranspiler):
             fromVal = iterable['from']['value']
             self.step = iterable['step']['value']
             toVal = iterable['to']['value']
-            return f'for (var {self.var}={fromVal};{self.var}<{toVal}; {self.var}+={self.step}) {{'
+            return f'for (var {self.var} = {fromVal}; {self.var} < {toVal}; {self.var} += {self.step}) {{'
         elif iterable['type'] == 'array':
             self.var = variables[0]['value']
-            return f'for (var __iteration__=0; __iteration__<{iterable["value"]}.length; __iteration__++) {{ {self.var} = {iterable["value"]}[__iteration__];'
+            return f'for (var __iteration__ = 0; __iteration__ < {iterable["value"]}.length; __iteration__++) {{ {self.var} = {iterable["value"]}[__iteration__];'
 
     def formatEndFor(self):
         if self.step:
@@ -165,7 +165,7 @@ class Transpiler(BaseTranspiler):
         return '}'
 
     def formatArgs(self, args):
-        return ','.join([ f'{arg["value"]}' for arg in args ])
+        return ', '.join([ f'{arg["value"]}' for arg in args ])
 
     def formatFunc(self, name, returnType, args):
         args = self.formatArgs(args)
