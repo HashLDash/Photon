@@ -62,7 +62,7 @@ class Transpiler(BaseTranspiler):
             index = self.processExpr(token['indexAccess'])['value']
             #TODO: Optimize for constants and remove the if else test. The same applies to C
             name = token['name']
-            return f'{name}[{index} > 0 ? {index} : {name}.length + {index}]'
+            return f'{name}[{index} >= 0 ? {index} : {name}.length + {index}]'
         else:
             raise SyntaxError(f'IndexAccess with type {token["type"]} not implemented yet')
     
@@ -89,7 +89,7 @@ class Transpiler(BaseTranspiler):
         name = target['name']
         varType = target['elementType']
         expr = self.formatExpr(expr)
-        index = f'{index} > 0 ? {index} : {name}.length + {index}'
+        index = f'{index} >= 0 ? {index} : {name}.length + {index}'
         return f'{name}[{index}] += {expr};'
 
     def formatIncrement(self, target, expr):
