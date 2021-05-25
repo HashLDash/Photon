@@ -53,15 +53,6 @@ def programIsInstalled(name):
         print(f"error: {e}")
         return False
 
-def printResultPostProgramInstaller(name):
-    ''' Shows whether the program was installed or not and returns the result of the query. '''
-    if programIsInstalled(name):
-        print(f'Program `{name}` has been successfully installed!')
-        return True
-    else:
-        print(f'Program `{name}` was not found.')
-        return False
-
 # INIT - Installer for Win32/Windows (Chocolatey)
 def powershellIsInstalled():
     if programIsInstalled("powershell"):
@@ -102,26 +93,11 @@ def chocoInstaller(name):
     return True
 
 # INIT - Installer for Darwin/macOS (HomeBrew)
-def bashIsInstalled():
-    if programIsInstalled("/bin/bash"):
-        print("# `/bin/bash` is installed!")
-        return True
-    else:
-        print("# `/bin/bash` was not found!")
-        return False
-
-def brewIsInstalled():
-    if programIsInstalled("brew"):
-        print("# HomeBrew is installed!")
-        return True
-    else:
-        print("# HomeBrew was not found!")
-        return False
 
 def brewInstall():
-    if not bashIsInstalled():
+    if not programIsInstalled('bash'):
         return False
-    if brewIsInstalled():
+    if programIsInstalled('brew'):
         return True
     shell_exec_cmd = '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'
     print('# Installing HomeBrew - Command: \r\n')
@@ -239,64 +215,66 @@ def resolveDartLinux():
 def resolveCWin32():
     ''' Install gcc '''
     chocoInstaller("mingw")
-    return printResultPostProgramInstaller("gcc")
+    return programIsInstalled("gcc")
 
 def resolvePyWin32():
     ''' Install python '''
-    chocoInstaller("mingw")
-    return printResultPostProgramInstaller("python")
+    chocoInstaller("python")
+    return programIsInstalled("python")
 
 def resolveDWin32():
     ''' Install dmd '''
     chocoInstaller("dmd")
-    return printResultPostProgramInstaller("dmd")
+    return programIsInstalled("dmd")
 
 def resolveHaxeWin32():
     ''' Install haxe '''
     chocoInstaller("haxe")
-    return printResultPostProgramInstaller("haxe")
+    return programIsInstalled("haxe")
 
 def resolveJsWin32():
     ''' Install nodejs '''
     chocoInstaller("nodejs")
     chocoInstaller("npm")
-    return printResultPostProgramInstaller("node")
+    return programIsInstalled("node") and programIsInstalled("npm")
 
 def resolveDartWin32():
     ''' Install dart '''
     chocoInstaller("dart-sdk")
-    return printResultPostProgramInstaller("dart")
+    return programIsInstalled("dart")
 
 # INIT - Darwin
 def resolveCDarwin():
     ''' Install gcc '''
     brewInstaller("gcc")
-    return printResultPostProgramInstaller("gcc")
+    return programIsInstalled("gcc")
 
 def resolvePyDarwin():
     ''' Install gcc '''
     brewInstaller("gcc")
-    return printResultPostProgramInstaller("gcc")
+    return programIsInstalled("gcc")
 
 def resolveDDarwin():
     ''' Install dmd '''
     brewInstaller("dmd")
-    return printResultPostProgramInstaller("dmd")
+    return programIsInstalled("dmd")
 
 def resolveHaxeDarwin():
     ''' Install haxe '''
     brewInstaller("haxe")
-    return printResultPostProgramInstaller("haxe")
+    return programIsInstalled("haxe")
 
 def resolveJsDarwin():
     ''' Install nodejs '''
     brewInstaller("nodejs")
-    return printResultPostProgramInstaller("node")
+    brewInstaller("npm")
+    linuxInstaller("node prompt-sync")
+    return programIsInstalled("node") and programIsInstalled("npm")
 
 def resolveDartDarwin():
     ''' Install dart '''
     brewInstaller("dart")
-    return printResultPostProgramInstaller("dart")
+    return programIsInstalled("dart")
 
 solver = {
     ('c', 'linux'): resolveCLinux,
