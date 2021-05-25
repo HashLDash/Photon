@@ -448,6 +448,7 @@ class BaseTranspiler():
         args = self.processArgs(token['args'])
         self.insertCode(self.formatClass(name, args), index)
         self.insertCode(self.formatEndClass())
+        self.inClass = None
 
     def processFunc(self, token):
         #TODO: add support for kwargs

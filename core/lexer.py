@@ -526,7 +526,6 @@ def classDefinition(i, t):
         # Invalid function definition
         return 'continue'
 
-    input('here')
     t[i]['token'] = 'class'
     t[i]['name'] = t[i+1]['args'][0]['name']
     if t[i+3]['token'] == 'rparen':

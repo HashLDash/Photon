@@ -371,7 +371,7 @@ class Transpiler(BaseTranspiler):
             links = []
             if '#include <math.h>' in self.imports:
                 links.append('-lm')
-            check_call(['gcc', '-O2', f'Sources/{self.filename}'] + links + ['-o',
+            check_call(['gcc', '-O2', '-std=c99', f'Sources/{self.filename}'] + links + ['-o',
             'Sources/main'])
         except:
             print('Compilation error. Check errors above.')
