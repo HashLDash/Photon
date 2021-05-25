@@ -4,6 +4,8 @@
 import os
 import sys
 
+UPDATED_REPO = False
+
 def commandName(package):
     ''' Return the command line name of the given package '''
     if package == 'nodejs':
@@ -19,6 +21,7 @@ def haveDependencies(lang, platform):
             break
     else:
         return True
+    print('Some dependencies must be installed for this target language.')
     return False
 
 def resolveDependencies(lang, platform):
@@ -185,9 +188,11 @@ elif os.path.exists('/etc/redhat-release'):  # red hat, centos, fedora
     linux_cmds['nodejs'] = 'sudo dnf module install nodejs:12'
 
 def linuxInstaller(package):
+    global UPDATED_REPO
     if package in linux_cmds:
-        if 'before' in linux_cmds:
+        if 'before' in linux_cmds and not UPDATED_REPO:
             os.system(f'sh -c "{linux_cmds["before"]}"')
+            UPDATED_REPO = True
 
         shell_exec_cmd = f'sh -c "{linux_cmds[package]}"'
         print('# Installing dependency - Command: \r\n')
