@@ -4,6 +4,12 @@
 import os
 import sys
 
+def commandName(package):
+    ''' Return the command line name of the given package '''
+    if package == 'nodejs':
+        return 'node'
+    return package
+
 def haveDependencies(lang, platform):
     ''' Return True if all dependencies are installed
         for the corresponding lang and platform or
@@ -138,7 +144,7 @@ def brewInstaller(name):
 linux_cmds = {'dmd': 'curl https://dlang.org/install.sh | bash -s || (mkdir -p ~/dlang && wget '
                      'https://dlang.org/install.sh -O ~/dlang/install.sh && chmod +x ~/dlang/install.sh && '
                      '~/dlang/install.sh)'}
-
+linux_cmds['node prompt-sync'] = 'npm install prompt-sync'
 if os.path.exists('/etc/debian_version'):  # debian, ubuntu, pop!_os, zorin os
     linux_cmds['before'] = 'sudo apt-get update'
     linux_cmds['gcc'] = 'sudo apt install build-essential'
@@ -159,6 +165,7 @@ elif os.path.exists('/etc/arch-release'):  # arch, manjaro
     linux_cmds['dmd'] = 'sudo pacman -S dmd'
     linux_cmds['haxe'] = 'sudo pacman -S haxe'
     linux_cmds['nodejs'] = 'sudo pacman -S nodejs'
+    linux_cmds['npm'] = 'sudo pacman -S npm'
     linux_cmds['dart'] = 'sudo pacman -S dart'
 elif os.path.exists('/etc/gentoo-release'):  # gentoo
     linux_cmds['before'] = 'sudo emerge --sync'
@@ -191,7 +198,7 @@ def linuxInstaller(package):
         print(f"We couldn't try to automatically install `{package}`, please install it manually.")
         return False
 
-    if programIsInstalled(package):
+    if programIsInstalled(commandName(package)):
         print(f'Dependency `{package}` has been successfully installed!')
         return True
     else:
@@ -216,8 +223,8 @@ def resolveHaxeLinux():
     return linuxInstaller('haxe')
 
 def resolveJsLinux():
-    ''' Install nodejs '''
-    return linuxInstaller('nodejs')
+    ''' Install nodejs and deps '''
+    return linuxInstaller('nodejs') and linuxInstaller('npm') and linuxInstaller('node prompt-sync')
 
 def resolveDartLinux():
     ''' Install dart '''
@@ -247,6 +254,7 @@ def resolveHaxeWin32():
 def resolveJsWin32():
     ''' Install nodejs '''
     chocoInstaller("nodejs")
+    chocoInstaller("npm")
     return printResultPostProgramInstaller("node")
 
 def resolveDartWin32():
@@ -319,9 +327,9 @@ deps = {
     ('haxe', 'linux'): ['haxe'],
     ('haxe', 'win32'): ['haxe'],
     ('haxe', 'darwin'): ['haxe'],
-    ('js', 'linux'): ['node'],
-    ('js', 'win32'): ['node'],
-    ('js', 'darwin'): ['node'],
+    ('js', 'linux'): ['node','npm'],
+    ('js', 'win32'): ['node','npm'],
+    ('js', 'darwin'): ['node','npm'],
     ('dart', 'linux'): ['dart'],
     ('dart', 'win32'): ['dart'],
     ('dart', 'darwin'): ['dart'],
