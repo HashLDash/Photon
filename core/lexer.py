@@ -314,7 +314,7 @@ def args(i, t):
 def call(i, t):
     ''' Return a call token if valid '''
     # Verify if it is a valid call
-    if not t[i]['args'][0]['token'] in {'var'} or t[i-1]['token'] == 'defStatement':
+    if not t[i]['args'][0]['token'] in {'var'} or t[i-1]['token'] in {'defStatement','classStatement'}:
         # Not a valid call
         return 'continue'
     if t[i+2]['token'] == 'rparen':
@@ -516,4 +516,31 @@ def indexAccess(i, t):
     del t[i+1] # lbracket
     del t[i+1] # expr
     del t[i+1] # rbracket
+    return t
+
+def classDefinition(i, t):
+    ''' Return a class token '''
+    # token will have a block field
+
+    if not t[i+1]['args'][0]['token'] == 'var':
+        # Invalid function definition
+        return 'continue'
+
+    input('here')
+    t[i]['token'] = 'class'
+    t[i]['name'] = t[i+1]['args'][0]['name']
+    if t[i+3]['token'] == 'rparen':
+        t[i]['args'] = []
+    elif t[i+3]['token'] == 'args':
+        t[i]['args'] = t[i+3]['args']
+        del t[i+1] # expr or args
+    elif t[i+3]['token'] == 'expr':
+        t[i]['args'] = [t[i+3]]
+        del t[i+1] # expr or args
+    else:
+        raise SyntaxError(f'Class arg with token {t[i+3]} not supported.')
+    del t[i+1] # var
+    del t[i+1] # lparen
+    del t[i+1] # rparen
+    del t[i+1] # beginBlock
     return t

@@ -248,7 +248,7 @@ class Transpiler(BaseTranspiler):
             # tempArray is inside a scope block, must end that when closing the loop
             return f'{varType}{self.iterVar}; {beginScope}{tempArray}; for (int __iteration__=0; __iteration__ < {iterable["value"]}.len; __iteration__++) {{ {self.iterVar}={iterable["value"]}.values[__iteration__];'
         else:
-            raise SyntaxError(f'Format for with unpacking not suported yet.')
+            raise SyntaxError(f'Format for with iterable {iterable["type"]} not suported yet.')
     
     def formatEndFor(self):
         if self.step:
@@ -267,6 +267,19 @@ class Transpiler(BaseTranspiler):
 
     def formatEndFunc(self):
         return '}\n'
+
+    def formatClass(self, name, args):
+        self.className = name
+        return f'typedef struct {self.className} {{'
+
+    def formatEndClass(self):
+        return f'}} {self.className};'
+
+    def formatClassAttribute(self, variable, expr):
+        varType = variable['type']
+        name = variable['value']
+        expr = self.formatExpr(expr)
+        return f'{varType} {name};'
 
     def formatReturn(self, expr):
         if expr:

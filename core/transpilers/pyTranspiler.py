@@ -159,6 +159,19 @@ class Transpiler(BaseTranspiler):
     def formatEndFunc(self):
         return '#end'
 
+    def formatClass(self, name, args):
+        self.className = name
+        return f'class {self.className}():'
+
+    def formatEndClass(self):
+        return f'#end'
+
+    def formatClassAttribute(self, variable, expr):
+        varType = variable['type']
+        name = variable['value']
+        expr = self.formatExpr(expr)
+        return f'{name}:{varType} = {expr}'
+
     def formatReturn(self, expr):
         if expr:
             return f'return {expr["value"]}'

@@ -18,6 +18,7 @@ class BaseTranspiler():
             'while': self.processWhile,
             'for': self.processFor,
             'func': self.processFunc,
+            'class': self.processClass,
             'return': self.processReturn,
             'breakStatement': self.processBreak,
             'comment': self.processComment,
@@ -265,6 +266,15 @@ class BaseTranspiler():
 
         return token['args'][0]
 
+    def processClassAttribute(self, token):
+        #TODO: Handle array types
+        variable = self.processVar(token['target'])
+        expr = self.processExpr(token['expr'])
+        if not self.typeKnown(variable['type']):
+            variable['type'] = expr['type']
+        self.currentScope[variable['value']] = {'type': variable['type']}
+        self.insertCode(self.formatClassAttribute(variable, expr))
+
     def processAssign(self, token):
         target = token['target']
         expr = token['expr']
@@ -421,6 +431,23 @@ class BaseTranspiler():
         scope = deepcopy(self.currentScope)
         self.currentScope = self.oldScope
         return scope
+
+    def processClass(self, token):
+        name = token['name']
+        self.inClass = name
+        self.startScope()
+        index = len(self.outOfMain)
+        for c in token['block']:
+            if c['token'] == 'assign':
+                self.processClassAttribute(c)
+            elif c['token'] == 'func':
+                raise SyntaxError('Class methods not implemented yet.')
+            else:
+                raise SyntaxError(f'Cannot use {c["token"]} inside a class')
+        classScope = self.endScope()
+        args = self.processArgs(token['args'])
+        self.insertCode(self.formatClass(name, args), index)
+        self.insertCode(self.formatEndClass())
 
     def processFunc(self, token):
         #TODO: add support for kwargs
