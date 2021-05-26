@@ -332,6 +332,8 @@ class Transpiler(BaseTranspiler):
         count = 0
         if not 'Sources' in os.listdir():
             os.mkdir('Sources')
+        if not 'c' in os.listdir('Sources'):
+           os.mkdir('Sources/c')
         if not self.module:
             self.filename = 'main.c'
         else:
@@ -341,15 +343,15 @@ class Transpiler(BaseTranspiler):
             del self.imports[0]
             del self.imports[0]
             del self.imports[0]
-        with open(f'Sources/{self.filename}', 'w') as f:
+        with open(f'Sources/c/{self.filename}', 'w') as f:
             for imp in self.imports:
                 module = imp.split(' ')[-1].replace('.w', '').replace('"', '')
                 debug(f'Importing {module}')
                 if module in os.listdir(f'{self.standardLibs}/native/c'):
                     from shutil import copyfile
-                    copyfile(f'{self.standardLibs}/native/c/{module}',f'Sources/{module}')
-                if f'{module}.c' in os.listdir('Sources'):
-                    with open(f'Sources/{module}.c', 'r') as m:
+                    copyfile(f'{self.standardLibs}/native/c/{module}', f'Sources/c/{module}')
+                if f'{module}.c' in os.listdir('Sources/c'):
+                    with open(f'Sources/c/{module}.c', 'r') as m:
                         for line in m:
                             f.write(line)
                 else:
@@ -361,7 +363,7 @@ class Transpiler(BaseTranspiler):
                 f.write(' ' * indent + line.replace('/*def*/', '') + '\n')
                 if self.isBlock(line):
                     indent += 4
-        debug('Generated '+self.filename)
+        debug('Generated ' + self.filename)
 
     def run(self):
         from subprocess import call, check_call
@@ -371,9 +373,8 @@ class Transpiler(BaseTranspiler):
             links = []
             if '#include <math.h>' in self.imports:
                 links.append('-lm')
-            check_call(['gcc', '-O2', '-std=c99', f'Sources/{self.filename}'] + links + ['-o',
-            'Sources/main'])
+            check_call(['gcc', '-O2', '-std=c99', f'Sources/c/{self.filename}'] + links + ['-o', 'Sources/c/main'])
         except:
             print('Compilation error. Check errors above.')
         else:
-            call(['./Sources/main'])
+            call(['./Sources/c/main'])

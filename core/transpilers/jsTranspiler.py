@@ -211,6 +211,8 @@ class Transpiler(BaseTranspiler):
         count = 0
         if not 'Sources' in os.listdir():
             os.mkdir('Sources')
+        if not 'js' in os.listdir('Sources'):
+           os.mkdir('Sources/js')
         if not self.module:
             self.filename = 'main.js'
         else:
@@ -221,30 +223,30 @@ class Transpiler(BaseTranspiler):
             del self.imports[0]
             del self.imports[0]
         # Force utf8 on windows
-        with open(f'Sources/{self.filename}','w', encoding='utf8') as f:
+        with open(f'Sources/js/{self.filename}', 'w', encoding='utf8') as f:
             for imp in self.imports:
-                module = imp.split(' ')[-1].replace('.w','').replace('"','')
+                module = imp.split(' ')[-1].replace('.w', '').replace('"',  '')
                 debug(f'Importing {module}')
-                if f'{module}.js' in os.listdir('Sources'):
-                    with open(f'Sources/{module}.js','r') as m:
+                if f'{module}.js' in os.listdir('Sources/js'):
+                    with open(f'Sources/js/{module}.js', 'r') as m:
                         for line in m:
                             f.write(line)
                 else:
-                    f.write(imp+'\n')
+                    f.write(imp + '\n')
             for line in [''] + self.outOfMain + [''] + boilerPlateStart + self.source + boilerPlateEnd:
                 if line:
                     if line.startswith('}'):
                         indent -= 4
-                f.write(' '*indent+line+'\n')
+                f.write(' ' * indent + line + '\n')
                 if self.isBlock(line):
                     indent += 4
-        debug('Generated '+self.filename)
+        debug('Generated ' + self.filename)
 
     def run(self):
         from subprocess import call, check_call
         self.write()
         debug(f'Running {self.filename}')
         try:
-            check_call(['node', f'Sources/{self.filename}'])
+            check_call(['node', f'Sources/js/{self.filename}'])
         except:
             print('Compilation error. Check errors above.')

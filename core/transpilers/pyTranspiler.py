@@ -198,6 +198,8 @@ class Transpiler(BaseTranspiler):
         count = 0
         if not 'Sources' in os.listdir():
             os.mkdir('Sources')
+        if not 'py' in os.listdir('Sources'):
+           os.mkdir('Sources/py')
         if not self.module:
             self.filename = 'main.py'
         else:
@@ -207,30 +209,30 @@ class Transpiler(BaseTranspiler):
             del self.imports[0]
             del self.imports[0]
             del self.imports[0]
-        with open(f'Sources/{self.filename}','w') as f:
+        with open(f'Sources/py/{self.filename}', 'w') as f:
             for imp in self.imports:
-                module = imp.split(' ')[-1].replace('.w','').replace('"','')
+                module = imp.split(' ')[-1].replace('.w', '').replace('"', '')
                 debug(f'Importing {module}')
-                if f'{module}.c' in os.listdir('Sources'):
-                    with open(f'Sources/{module}.py','r') as m:
+                if f'{module}.c' in os.listdir('Sources/py'):
+                    with open(f'Sources/py/{module}.py', 'r') as m:
                         for line in m:
                             f.write(line)
                 else:
-                    f.write(imp+'\n')
+                    f.write(imp + '\n')
             for line in [''] + self.outOfMain + [''] + boilerPlateStart + self.source + boilerPlateEnd:
                 if line:
                     if line.startswith('#end') or line.startswith('elif ') or line.startswith('else:'):
                         indent -= 4
-                f.write(' '*indent+line.replace('#end','')+'\n')
+                f.write(' ' * indent + line.replace('#end', '') + '\n')
                 if self.isBlock(line):
                     indent += 4
-        debug('Generated '+self.filename)
+        debug('Generated ' + self.filename)
 
     def run(self):
         from subprocess import call, check_call
         self.write()
         debug(f'Running {self.filename}')
         try:
-            check_call(['python', f'Sources/{self.filename}'])
+            check_call(['python', f'Sources/py/{self.filename}'])
         except:
             print('Compilation error. Check errors above.')
