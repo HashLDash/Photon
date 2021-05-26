@@ -22,7 +22,8 @@ class ParserTest(unittest.TestCase):
     def test_printStr(self):
         struct = self.runFile('printFunc/printStr.w')
         self.assertEqual(struct['token'], 'printFunc')
-        self.assertEqual(struct['expr']['args'][0], {'token':'str', 'type':'str', 'value':'"Hello World"'})
+        self.assertEqual(struct['expr']['args'][0], {'token':'str',
+        'type':'str', 'value':'"Hello World"', 'expressions':[]})
 
     def test_printInt(self):
         struct = self.runFile('printFunc/printInt.w')
@@ -73,7 +74,7 @@ class ParserTest(unittest.TestCase):
         self.assertEqual(struct['token'], 'expr')
         self.assertEqual(struct['args'][0]['name'], 'array')
         self.assertEqual(struct['args'][0]['elementType'], 'str')
-        self.assertEqual(struct['args'][0]['len'], '10')
+        self.assertEqual(struct['args'][0]['size'], '10')
 
     def test_varInitClassArray(self):
         struct = self.runFile('varInit/initClassArray.w')
@@ -81,7 +82,7 @@ class ParserTest(unittest.TestCase):
         self.assertEqual(struct['args'][0]['name'], 'array')
         self.assertEqual(struct['args'][0]['type'], 'array')
         self.assertEqual(struct['args'][0]['elementType'], 'SomeClass')
-        self.assertEqual(struct['args'][0]['len'], '10')
+        self.assertEqual(struct['args'][0]['size'], '10')
 
     def test_varInitStrStrMap(self):
         struct = self.runFile('varInit/initStrStrMap.w')

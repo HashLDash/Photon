@@ -1,11 +1,11 @@
+#include <stdio.h>
 #include <locale.h>
 #include <stdlib.h>
-#include <stdio.h>
 
 
 int main() {
     setlocale(LC_ALL, "");
     long var = 2;
-    printf("%d\n", var);
+    printf("%ld\n", var);
     return 0;
 }

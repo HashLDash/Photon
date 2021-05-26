@@ -445,6 +445,8 @@ class BaseTranspiler():
             else:
                 raise SyntaxError(f'Cannot use {c["token"]} inside a class')
         classScope = self.endScope()
+        # Include methods, args/kwargs
+        self.classes[name] = {'scope':classScope}
         args = self.processArgs(token['args'])
         self.insertCode(self.formatClass(name, args), index)
         self.insertCode(self.formatEndClass())

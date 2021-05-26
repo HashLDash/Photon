@@ -157,7 +157,7 @@ class Transpiler(BaseTranspiler):
             return f'for (var {self.var} = {fromVal}; {self.var} < {toVal}; {self.var} += {self.step}) {{'
         elif iterable['type'] == 'array':
             self.var = variables[0]['value']
-            return f'for (var __iteration__ = 0; __iteration__ < {iterable["value"]}.length; __iteration__++) {{ {self.var} = {iterable["value"]}[__iteration__];'
+            return f'var {self.var}; for (var __iteration__ = 0; __iteration__ < {iterable["value"]}.length; __iteration__++) {{ {self.var} = {iterable["value"]}[__iteration__];'
 
     def formatEndFor(self):
         if self.step:
