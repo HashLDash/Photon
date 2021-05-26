@@ -277,7 +277,7 @@ class BaseTranspiler():
         self.classes[self.inClass]['attributes'].append(
             {'name':variable['value'],
             'type':variable['type'],
-            'value':expr['value']}
+            'value':expr['value']} # This should be the initialization e.g. {1, malloc}
         )
         self.insertCode(self.formatClassAttribute(variable, expr))
 
