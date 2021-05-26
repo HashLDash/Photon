@@ -38,6 +38,9 @@ class Transpiler(BaseTranspiler):
     def formatVarInit(self, name, varType):
         return f'var {name} = {self.null}'
 
+    def formatDotAccess(self, tokens):
+        return '.'.join(v['name'] for v in tokens)
+    
     def formatInput(self, expr):
         if not self.target == 'web':
             self.imports.add("prompt = require('prompt-sync')()")
@@ -126,6 +129,8 @@ class Transpiler(BaseTranspiler):
 
     def formatExpr(self, value, cast=None):
         #TODO: implement cast to type
+        if value['type'] in self.classes:
+            return f'new {value["value"]}'
         return value['value']
     
     def formatIf(self, expr):

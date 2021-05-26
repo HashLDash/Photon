@@ -248,7 +248,7 @@ def convertToExpr(token):
         else:
             varType = 'float'
         return {'token':'expr', 'type':varType, 'args':[token], 'ops':[]}
-    elif token['token'] in {'var','group','inputFunc','call', 'array'}:
+    elif token['token'] in {'var','group','inputFunc','call', 'array', 'dotAccess'}:
         return {'token':'expr', 'type':token['type'], 'args':[token], 'ops':[]}
     else:
         raise SyntaxError(f'Cant convert token {token} to expr')
@@ -279,7 +279,7 @@ def expr(i, t):
         t[i] = {'token':'expr', 'type':'unknown', 'args':args, 'ops':ops}
         del t[i+1] # operator
         del t[i+1] # var or num
-    elif t[i]['token'] in {'num', 'floatNumber', 'var', 'group'}:
+    elif t[i]['token'] in {'num', 'floatNumber', 'var', 'group', 'dotAccess'}:
         t[i] = convertToExpr(t[i])
     else:
         raise SyntaxError(f'Expression of token {t[i]["token"]} not implemented.')
@@ -542,4 +542,28 @@ def classDefinition(i, t):
     del t[i+1] # lparen
     del t[i+1] # rparen
     del t[i+1] # beginBlock
+    return t
+
+def dotAccess(i, t):
+    ''' Verify if its a dotAccess and return a dotAccess token
+        if it is.
+    '''
+    #if not t[i]['args'][-1]['token'] in {'var','dotAccess'}:
+    #    # Not a valid dotAccess
+    #    return 'continue'
+    #t[i]['args'][-1]['dotAccess'] = t[i+2]
+    if t[i]['token'] == 'dotAccess':
+        names = t[i]['dotAccess']
+    elif t[i]['token'] == 'var':
+        names = [t[i]]
+
+    if t[i+2]['token'] == 'dotAccess':
+        names += t[i+2]['dotAccess']
+    elif t[i+2]['token'] == 'var':
+        names += [t[i+2]]
+
+    t[i] = {'token':'dotAccess', 'type':'unknown', 'dotAccess':names}
+    
+    del t[i+1] # dot
+    del t[i+1] # var or dotAccess
     return t

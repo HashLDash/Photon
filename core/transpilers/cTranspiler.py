@@ -35,6 +35,9 @@ class Transpiler(BaseTranspiler):
 
     def formatVarInit(self, name, varType):
         return f'{varType} {name};'
+
+    def formatDotAccess(self, tokens):
+        return '.'.join(v['name'] for v in tokens)
     
     def formatArray(self, elements, elementType, size):
         self.listTypes.add(elementType)
@@ -308,7 +311,7 @@ class Transpiler(BaseTranspiler):
         if expr:
             return f'return {expr["value"]};'
         return 'return;'
-    
+
     def div(self, arg1, arg2):
         return {'value':f'({self.nativeType("float")}){arg1["value"]} / {arg2["value"]}', 'type':'float'}
 

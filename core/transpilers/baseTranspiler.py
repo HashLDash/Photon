@@ -226,6 +226,8 @@ class BaseTranspiler():
             return self.processGroup(token)
         elif token['token'] == 'var':
             return self.processVar(token)
+        elif token['token'] == 'dotAccess':
+            return self.processDotAccess(token)
         elif token['token'] == 'inputFunc':
             return self.processInput(token)
         elif token['token'] == 'array':
@@ -431,6 +433,17 @@ class BaseTranspiler():
             callType = name['type']
         val = self.formatCall(name['value'], name['type'],args)
         return {'value':val, 'type':callType}
+
+    def processDotAccess(self, token):
+        tokens = token['dotAccess']
+        value = self.formatDotAccess(tokens)
+        #TODO: Infer type
+        varType = self.processVar(tokens[0])['type']
+        for v in tokens[0:]:
+            if varType in self.classes:
+                if v['name'] in self.classes[varType]['scope']:
+                    varType = self.classes[varType]['scope'][v['name']]['type']
+        return {'value':value, 'type':varType}
 
     def startScope(self):
         self.oldScope = deepcopy(self.currentScope)

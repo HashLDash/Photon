@@ -17,6 +17,8 @@ var = var underline var
 floatNumber = num dot num
             | num dot
 
+dotAccess = (var dotAccess) dot (var dotAccess)
+
 group = lparen expr rparen
 
 operator = (equal operator) (equal operator)
@@ -27,6 +29,7 @@ call = expr lparen rparen
 expr = num
      | floatNumber
      | var
+     | dotAccess
      | group
      | (num var expr) operator (num var expr)
      | operator (expr)

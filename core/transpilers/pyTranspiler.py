@@ -38,6 +38,9 @@ class Transpiler(BaseTranspiler):
             return f'{name}:{varType} = None'
         return f'{name} = None'
 
+    def formatDotAccess(self, tokens):
+        return '.'.join(v['name'] for v in tokens)
+
     def formatInput(self, expr):
         message = expr['value']
         return f'input({message})'
