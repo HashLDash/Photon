@@ -168,8 +168,10 @@ class Transpiler(BaseTranspiler):
         if expr['type'] == 'array':
             return formattedExpr.format(var=variable)
         elif expr['type'] in self.classes:
+            #TODO: Handle value initialization for arrays
             className = expr["type"]
-            return f'{className} {variable} = {className}_default;'
+            classInit = self.formatClassInit(className)
+            return f'{className} {variable} = {classInit};'
         return f'{varType}{variable} = {formattedExpr};'
 
     def formatExpr(self, value, cast=None, var=None):
@@ -273,15 +275,31 @@ class Transpiler(BaseTranspiler):
 
     def formatClass(self, name, args):
         self.className = name
-        return f'struct {self.className} {{'
+        return f'typedef struct {self.className} {{'
 
     def formatEndClass(self):
-        attrs = self.classes[self.className]['attributes']
-        defaultValues = ','.join(a['value'] for a in attrs)
-        return f'}} {self.className}_default = {{ {defaultValues} }}; typedef struct {self.className} {self.className};'
+        return f'}} {self.className};'
+
+    def formatArrayInit(self, array):
+        elements = array['elements']
+        elementType = array['elementType']
+        size = array['size']
+        if size == 'unknown':
+            size = 10
+        return f"{{ {len(elements)}, {size}, malloc(sizeof({elementType})*{size}) }}"
+
+    def formatClassInit(self, className):
+        attrs = self.classes[className]['attributes']
+        defaultValues = ', '.join(
+            a['value']['value'] if a['value']['type'] != 'array' else
+            self.formatArrayInit(a['value']) for a in attrs)
+        return f'{{ {defaultValues} }}'
 
     def formatClassAttribute(self, variable, expr):
         varType = variable['type']
+        if varType == 'array':
+            elementType = expr['elementType']
+            varType = f'list_{elementType}'
         name = variable['value']
         expr = self.formatExpr(expr)
         return f'{varType} {name};'
@@ -366,7 +384,7 @@ class Transpiler(BaseTranspiler):
                     if line[0] == '}':
                         indent -= 4
                 f.write(' ' * indent + line.replace('/*def*/', '') + '\n')
-                if self.isBlock(line) and not ' typedef' in line:
+                if self.isBlock(line):
                     indent += 4
         debug('Generated ' + self.filename)
 
