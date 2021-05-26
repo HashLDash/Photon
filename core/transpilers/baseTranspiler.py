@@ -39,6 +39,7 @@ class BaseTranspiler():
         }
         self.terminator = ';'
         self.currentScope = {}
+        self.classes = {}
         self.inFunc = None
         self.inClass = None
         self.insertMode = True
@@ -273,6 +274,11 @@ class BaseTranspiler():
         if not self.typeKnown(variable['type']):
             variable['type'] = expr['type']
         self.currentScope[variable['value']] = {'type': variable['type']}
+        self.classes[self.inClass]['attributes'].append(
+            {'name':variable['value'],
+            'type':variable['type'],
+            'value':expr['value']}
+        )
         self.insertCode(self.formatClassAttribute(variable, expr))
 
     def processAssign(self, token):
@@ -419,8 +425,12 @@ class BaseTranspiler():
     def processCall(self, token):
         args = self.processArgs(token['args'])
         name = self.getValAndType(token['name'])
+        if name['value'] in self.classes:
+            callType = name['value']
+        else:
+            callType = name['type']
         val = self.formatCall(name['value'], name['type'],args)
-        return {'value':val, 'type':name['type']}
+        return {'value':val, 'type':callType}
 
     def startScope(self):
         self.oldScope = deepcopy(self.currentScope)
@@ -435,6 +445,7 @@ class BaseTranspiler():
     def processClass(self, token):
         name = token['name']
         self.inClass = name
+        self.classes[name] = {'attributes':[]}
         self.startScope()
         index = len(self.outOfMain)
         for c in token['block']:
@@ -446,7 +457,7 @@ class BaseTranspiler():
                 raise SyntaxError(f'Cannot use {c["token"]} inside a class')
         classScope = self.endScope()
         # Include methods, args/kwargs
-        self.classes[name] = {'scope':classScope}
+        self.classes[name]['scope'] = classScope
         args = self.processArgs(token['args'])
         self.insertCode(self.formatClass(name, args), index)
         self.insertCode(self.formatEndClass())

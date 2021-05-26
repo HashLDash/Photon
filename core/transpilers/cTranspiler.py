@@ -14,7 +14,7 @@ class Transpiler(BaseTranspiler):
         self.imports = {'#include <stdio.h>', '#include <stdlib.h>', '#include <locale.h>'}
         self.funcIdentifier = '/*def*/'
         self.constructorName = 'new'
-        self.block = {'typedef ','/*def*/', 'for ','while ','if ','else ', 'int main('}
+        self.block = {'struct ','/*def*/', 'for ','while ','if ','else ', 'int main('}
         self.true = '1'
         self.false = '0'
         self.null = 'NULL'
@@ -166,10 +166,13 @@ class Transpiler(BaseTranspiler):
         except KeyError:
             pass
         if expr['type'] == 'array':
-            return formattedExpr.format(var = variable)
+            return formattedExpr.format(var=variable)
+        elif expr['type'] in self.classes:
+            className = expr["type"]
+            return f'{className} {variable} = {className}_default;'
         return f'{varType}{variable} = {formattedExpr};'
 
-    def formatExpr(self, value, cast = None, var = None):
+    def formatExpr(self, value, cast=None, var=None):
         #TODO: implement cast to type
         if not cast is None:
             if cast == 'long':
@@ -270,10 +273,12 @@ class Transpiler(BaseTranspiler):
 
     def formatClass(self, name, args):
         self.className = name
-        return f'typedef struct {self.className} {{'
+        return f'struct {self.className} {{'
 
     def formatEndClass(self):
-        return f'}} {self.className};'
+        attrs = self.classes[self.className]['attributes']
+        defaultValues = ','.join(a['value'] for a in attrs)
+        return f'}} {self.className}_default = {{ {defaultValues} }}; typedef struct {self.className} {self.className};'
 
     def formatClassAttribute(self, variable, expr):
         varType = variable['type']
@@ -361,7 +366,7 @@ class Transpiler(BaseTranspiler):
                     if line[0] == '}':
                         indent -= 4
                 f.write(' ' * indent + line.replace('/*def*/', '') + '\n')
-                if self.isBlock(line):
+                if self.isBlock(line) and not ' typedef' in line:
                     indent += 4
         debug('Generated ' + self.filename)
 
