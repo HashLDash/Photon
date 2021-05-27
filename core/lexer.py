@@ -509,10 +509,13 @@ def indexAccess(i, t):
     ''' Verify if its an indexAccess and return an indexAccess token
         if it is
     '''
-    if not t[i]['args'][-1]['token'] in {'var'}:
+    if not t[i]['args'][-1]['token'] in {'var','dotAccess'}:
         # Not a valid indexAccess
         return 'continue'
-    t[i]['args'][-1]['indexAccess'] = t[i+2]
+    if t[i]['args'][-1]['token'] == 'var':
+        t[i]['args'][-1]['indexAccess'] = t[i+2]
+    elif t[i]['args'][-1]['token'] == 'dotAccess':
+        t[i]['args'][-1]['dotAccess'][-1]['indexAccess'] = t[i+2]
     del t[i+1] # lbracket
     del t[i+1] # expr
     del t[i+1] # rbracket

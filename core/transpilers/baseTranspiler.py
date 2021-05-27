@@ -270,7 +270,7 @@ class BaseTranspiler():
         return token['args'][0]
 
     def processClassAttribute(self, token):
-        #TODO: Handle array types
+        #TODO: Handle dict types
         variable = self.processVar(token['target'])
         expr = self.processExpr(token['expr'])
         if not self.typeKnown(variable['type']):
@@ -281,6 +281,14 @@ class BaseTranspiler():
             'type':variable['type'],
             'value':expr}
         )
+        if variable['type'] == 'array':
+            if not 'elementType' in variable:
+                variable['elementType'] = expr['elementType']
+                variable['size'] = expr['size']
+            self.currentScope[variable['value']]['elementType'] = variable['elementType']
+            self.currentScope[variable['value']]['size'] = variable['size']
+            self.classes[self.inClass]['attributes'][-1]['elementType'] = variable['elementType']
+            self.classes[self.inClass]['attributes'][-1]['size'] = variable['size']
         self.insertCode(self.formatClassAttribute(variable, expr))
 
     def processAssign(self, token):
@@ -436,13 +444,20 @@ class BaseTranspiler():
 
     def processDotAccess(self, token):
         tokens = token['dotAccess']
-        value = self.formatDotAccess(tokens)
-        #TODO: Infer type
         varType = self.processVar(tokens[0])['type']
-        for v in tokens[0:]:
+        tokens[0]['type'] = varType
+        for n, v in enumerate(tokens[0:], 1):
             if varType in self.classes:
                 if v['name'] in self.classes[varType]['scope']:
-                    varType = self.classes[varType]['scope'][v['name']]['type']
+                    currentType = self.classes[varType]['scope'][v['name']]['type']
+                    if currentType == 'array':
+                        varType = self.classes[varType]['scope'][v['name']]['elementType']
+                        tokens[n]['type'] = currentType
+                        tokens[n]['elementType'] = varType
+                    else:
+                        varType = currentType
+                        tokens[n]['type'] = varType
+        value = self.formatDotAccess(tokens)
         return {'value':value, 'type':varType}
 
     def startScope(self):

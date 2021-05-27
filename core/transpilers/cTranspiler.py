@@ -37,7 +37,17 @@ class Transpiler(BaseTranspiler):
         return f'{varType} {name};'
 
     def formatDotAccess(self, tokens):
-        return '.'.join(v['name'] for v in tokens)
+        dotAccess = []
+        for v in tokens:
+            if 'indexAccess' in v:
+                # The value should be the dotAccess up to now
+                v['name'] = '.'.join(dotAccess + [v['name']])
+                value = self.processIndexAccess(v)
+                # Now the result is just this dotAccess
+                dotAccess = [value['value']]
+            elif 'name' in v:
+                dotAccess.append(v['name'])
+        return '.'.join(dotAccess)
     
     def formatArray(self, elements, elementType, size):
         self.listTypes.add(elementType)
@@ -286,6 +296,7 @@ class Transpiler(BaseTranspiler):
     def formatArrayInit(self, array):
         elements = array['elements']
         elementType = array['elementType']
+        elementType = self.nativeType(elementType)
         size = array['size']
         if size == 'unknown':
             size = 10

@@ -24,6 +24,7 @@ class Transpiler(BaseTranspiler):
             'int':'int',
             'str':'str',
             'bool':'bool',
+            'array':'list',
             'unknown':'any',
         }
     
@@ -39,7 +40,9 @@ class Transpiler(BaseTranspiler):
         return f'{name} = None'
 
     def formatDotAccess(self, tokens):
-        return '.'.join(v['name'] for v in tokens)
+        return '.'.join(
+            v['name'] if not 'indexAccess' in v
+            else self.formatIndexAccess(v) for v in tokens)
 
     def formatInput(self, expr):
         message = expr['value']
@@ -109,6 +112,7 @@ class Transpiler(BaseTranspiler):
             raise SyntaxError(f'Format assign with variable {target} not implemented yet.')
         formattedExpr = self.formatExpr(expr, cast=cast)
         if varType and not inMemory:
+            varType = self.nativeType(varType)
             return f'{variable}:{varType} = {formattedExpr}'
         return f'{variable} = {formattedExpr}'
 
@@ -170,7 +174,7 @@ class Transpiler(BaseTranspiler):
         return f'#end'
 
     def formatClassAttribute(self, variable, expr):
-        varType = variable['type']
+        varType = self.nativeType(variable['type'])
         name = variable['value']
         expr = self.formatExpr(expr)
         return f'{name}:{varType} = {expr}'
