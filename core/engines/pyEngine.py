@@ -12,7 +12,7 @@ class Engine():
 
     def process(self, token):
         self.transpiler.process(token)
-        source = self.transpiler.source
+        source = self.transpiler.outOfMain + self.transpiler.source
         code = ''
         indent = 0
         for line in source:
@@ -23,7 +23,15 @@ class Engine():
             if self.transpiler.isBlock(line):
                 indent += 4
         try:
-            exec(code, self.globals)
+            if token['token'] in {'expr'}:
+                if code[-2] == ';':
+                    code = code[:-2]
+                bytecode = compile(f'print({code})','<string>','exec')
+                exec(bytecode, self.globals, self.globals)
+            else:
+                bytecode = compile(code,'<string>','exec')
+                exec(code, self.globals, self.globals)
         except Exception as e:
             print(f'RuntimeError: {e}')
         self.transpiler.source = []
+        self.transpiler.outOfMain = []
