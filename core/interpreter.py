@@ -10,8 +10,11 @@ from photonParser import parse, assembly
 import sys
 
 class Interpreter():
-    def __init__(self, filename='', lang='c', target=sys.platform, module=False, standardLibs='', debug=False):
+
+    def __init__(self, filename = '', lang = 'c', target = sys.platform, module = False, standardLibs = '', debug = False):
         self.debug = debug
+        self.lang = lang
+        self.target = target
         if lang == 'c':
             from transpilers.cTranspiler import Transpiler
         elif lang in {'py', 'python'}:
@@ -26,14 +29,17 @@ class Interpreter():
             from transpilers.dTranspiler import Transpiler
         self.filename = filename
         if filename:
-            self.engine = Transpiler(filename=filename,target=target, module=module, standardLibs=standardLibs)
+            if (self.debug):
+                print('-' * 60)
+                print('# DEBUG')
+            self.engine = Transpiler(filename = filename, target = target, module = module, standardLibs = standardLibs)
             self.input = self.file
             try:
                 # Read utf8 but write as the default on the OS
-                with open(filename,'r',encoding='utf8') as f:
+                with open(filename, 'r', encoding = 'utf8') as f:
                     self.source = [line for line in f]
             except UnicodeDecodeError:
-                with open(filename,'r') as f:
+                with open(filename, 'r') as f:
                     self.source = [line for line in f]
         else:
             try:
@@ -53,7 +59,7 @@ class Interpreter():
         self.transpileOnly = False
         self.lineNumber = 0
 
-    def console(self, glyph='>>> '):
+    def console(self, glyph = '>>> '):
         return input(glyph)
 
     def file(self, *args):
@@ -84,6 +90,11 @@ class Interpreter():
             if self.processing:
                 return ''
             else:
+                if self.debug:
+                    print('-' * 60)
+                    print(f'# The code is being transpiled into the ({self.lang.upper()}) language')
+                    print(f'# The operating system in use is ({self.target})')
+                    print('-' * 60)
                 if not self.transpileOnly:
                     self.engine.run()
                     sys.exit()
@@ -150,7 +161,7 @@ class Interpreter():
             self.processing = True
             if self.line == 'exit':
                 break
-            tokenized = parse(self.line, filename=self.filename, no=self.lineNumber, debug=self.debug)
+            tokenized = parse(self.line, filename = self.filename, no = self.lineNumber, debug = self.debug)
             struct, nextLine = self.handleTokenized(tokenized)
             self.engine.process(struct)
             self.processing = False
