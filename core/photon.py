@@ -105,4 +105,13 @@ if __name__ == "__main__":
     elif first == '--android-view' or first == '-av':
         os.system('adb exec-out screenrecord --output-format=h264 - | ffplay -framerate 60 -probesize 32 -sync video  -')
     else:
-        Interpreter(filename = first, lang = photonConfigLang(), standardLibs = os.path.join(PHOTON_INSTALL_PATH, 'libs/'), debug=DEBUG).run()
+        lang = photonConfigLang()
+        """ Performs the transpilation process for the language provided;
+            without changing the language defined in the photon.conf file
+        """
+        otherParams = sys.argv[2:]
+        if len(otherParams) > 1 and \
+            (otherParams[0] == '-l' or otherParams[0] == '--lang') and \
+            (otherParams[1].lower() in langs):
+            lang = otherParams[1].lower()
+        Interpreter(filename = first, lang = lang, standardLibs = os.path.join(PHOTON_INSTALL_PATH, 'libs/'), debug = DEBUG).run()
