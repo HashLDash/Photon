@@ -26,6 +26,7 @@ class Transpiler(BaseTranspiler):
             'bool':'bool',
             'array':'list',
             'unknown':'any',
+            'void':'None',
         }
     
     def nativeType(self, varType):
@@ -40,9 +41,7 @@ class Transpiler(BaseTranspiler):
         return f'{name} = None'
 
     def formatDotAccess(self, tokens):
-        return '.'.join(
-            v['name'] if not 'indexAccess' in v
-            else self.formatIndexAccess(v) for v in tokens)
+        return '.'.join(self.getValAndType(v)['value'] for v in tokens)
 
     def formatInput(self, expr):
         message = expr['value']
@@ -161,6 +160,7 @@ class Transpiler(BaseTranspiler):
 
     def formatFunc(self, name, returnType, args):
         args = self.formatArgs(args)
+        returnType = self.nativeType(returnType)
         return f'def {name}({args}) -> {returnType}:'
 
     def formatEndFunc(self):

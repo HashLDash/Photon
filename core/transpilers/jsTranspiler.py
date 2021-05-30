@@ -39,9 +39,7 @@ class Transpiler(BaseTranspiler):
         return f'var {name} = {self.null}'
 
     def formatDotAccess(self, tokens):
-        return '.'.join(
-            v['name'] if not 'indexAccess' in v
-            else self.formatIndexAccess(v) for v in tokens)
+        return '.'.join(self.getValAndType(v)['value'] for v in tokens)
     
     def formatInput(self, expr):
         if not self.target == 'web':
@@ -176,7 +174,11 @@ class Transpiler(BaseTranspiler):
 
     def formatFunc(self, name, returnType, args):
         args = self.formatArgs(args)
-        return f'function {name}({args}) {{'
+        if self.inClass:
+            func = ''
+        else:
+            func = 'function '
+        return f'{func}{name}({args}) {{'
 
     def formatEndFunc(self):
         return '}'

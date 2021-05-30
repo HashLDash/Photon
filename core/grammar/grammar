@@ -17,7 +17,7 @@ var = var underline var
 floatNumber = num dot num
             | num dot
 
-dotAccess = (var dotAccess) dot (var dotAccess)
+dotAccess = expr dot expr
 
 group = lparen expr rparen
 
