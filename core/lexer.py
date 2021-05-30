@@ -114,6 +114,7 @@ def string(i, t):
 
     t[i] = {
         'token':'expr',
+        'type':'str',
         'args':[{'token':'str',
         'type':'str','value':f'{quote}{s}{quote}','expressions':processedExpressions}],
         'ops':[]
