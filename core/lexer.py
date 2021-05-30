@@ -314,7 +314,7 @@ def args(i, t):
 def call(i, t):
     ''' Return a call token if valid '''
     # Verify if it is a valid call
-    if not t[i]['args'][0]['token'] in {'var'} or t[i-1]['token'] in {'defStatement','classStatement'}:
+    if not t[i]['args'][0]['token'] in {'var','dotAccess'} or t[i-1]['token'] in {'defStatement','classStatement'}:
         # Not a valid call
         return 'continue'
     if t[i+2]['token'] == 'rparen':
@@ -327,14 +327,23 @@ def call(i, t):
         del t[i+1] # expr
     else:
         raise SyntaxError('Call with arg {t[i+2]} not supported')
-    callToken = {
-        'token':'call',
-        'type':t[i]['args'][0]['type'],
-        'name':t[i]['args'][0],
-        'args':arguments,
-        'kwargs':[],
-    }
-    t[i] = convertToExpr(callToken)
+    if t[i]['args'][0]['token'] == 'dotAccess':
+        t[i]['args'][0]['dotAccess'][-1] = {
+            'token':'call',
+            'type':t[i]['args'][0]['dotAccess'][-1]['type'],
+            'name':t[i]['args'][0]['dotAccess'][-1],
+            'args':arguments,
+            'kwargs':[],
+        }
+    else:
+        callToken = {
+            'token':'call',
+            'type':t[i]['args'][0]['type'],
+            'name':t[i]['args'][0],
+            'args':arguments,
+            'kwargs':[],
+        }
+        t[i] = convertToExpr(callToken)
     del t[i+1] # rparen
     del t[i+1] # lparen
     return t
@@ -551,21 +560,21 @@ def dotAccess(i, t):
     ''' Verify if its a dotAccess and return a dotAccess token
         if it is.
     '''
-    #if not t[i]['args'][-1]['token'] in {'var','dotAccess'}:
-    #    # Not a valid dotAccess
-    #    return 'continue'
-    #t[i]['args'][-1]['dotAccess'] = t[i+2]
-    if t[i]['token'] == 'dotAccess':
-        names = t[i]['dotAccess']
-    elif t[i]['token'] == 'var':
-        names = [t[i]]
+    if not t[i]['args'][-1]['token'] in {'var','dotAccess'}\
+        or not t[i+2]['args'][-1]['token'] in {'var', 'dotAccess'}:
+        # Not a valid dotAccess
+        return 'continue'
+    if t[i]['args'][-1]['token'] == 'dotAccess':
+        names = t[i]['args'][-1]['dotAccess']
+    elif t[i]['args'][-1]['token'] == 'var':
+        names = [t[i]['args'][-1]]
 
-    if t[i+2]['token'] == 'dotAccess':
-        names += t[i+2]['dotAccess']
-    elif t[i+2]['token'] == 'var':
-        names += [t[i+2]]
+    if t[i+2]['args'][0]['token'] == 'dotAccess':
+        names += t[i+2]['args'][0]['dotAccess']
+    elif t[i+2]['args'][0]['token'] == 'var':
+        names += [t[i+2]['args'][0]]
 
-    t[i] = {'token':'dotAccess', 'type':'unknown', 'dotAccess':names}
+    t[i] = convertToExpr({'token':'dotAccess', 'type':'unknown', 'dotAccess':names})
     
     del t[i+1] # dot
     del t[i+1] # var or dotAccess

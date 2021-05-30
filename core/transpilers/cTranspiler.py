@@ -19,6 +19,7 @@ class Transpiler(BaseTranspiler):
         self.false = '0'
         self.null = 'NULL'
         self.self = 'self'
+        self.methodsInsideClass = False
         self.notOperator = '!'
         self.listTypes = set()
         self.dictTypes = set()
@@ -38,14 +39,26 @@ class Transpiler(BaseTranspiler):
 
     def formatDotAccess(self, tokens):
         dotAccess = []
+        currentType = None
         for v in tokens:
             if 'indexAccess' in v:
                 # The value should be the dotAccess up to now
                 v['name'] = '.'.join(dotAccess + [v['name']])
                 value = self.processIndexAccess(v)
+                currentType = value['type']
                 # Now the result is just this dotAccess
                 dotAccess = [value['value']]
+            elif v['token'] == 'call':
+                if currentType in self.classes:
+                    instance = dotAccess.pop()
+                    v['args'] = [{'value':instance, 'type':currentType, 'pointer':True}] + v['args']
+                    value = self.processCall(v)
+                    dotAccess.append(f'{currentType}_{value["value"]}')
+                else:
+                    value = self.processCall(v)
+                    dotAccess.append(value['value'])
             elif 'name' in v:
+                currentType = v['type']
                 dotAccess.append(v['name'])
         return '.'.join(dotAccess)
     
@@ -97,7 +110,9 @@ class Transpiler(BaseTranspiler):
         return string, exprs
 
     def formatCall(self, name, returnType, args):
-        arguments = ', '.join([ f'{arg["value"]}' for arg in args ])
+        # Handle function arguments
+        arguments = ', '.join(f'{arg["value"]}' if not arg['type'] in self.classes
+            else f'&{arg["value"]}' for arg in args)
         return f'{name}({arguments})'
     
     def formatIndexAccess(self, token):
@@ -181,9 +196,8 @@ class Transpiler(BaseTranspiler):
         if expr['type'] == 'array':
             return formattedExpr.format(var=variable)
         elif expr['type'] in self.classes:
-            #TODO: Handle value initialization for arrays
             className = expr["type"]
-            classInit = self.formatClassInit(className)
+            classInit = self.formatClassInit(className).format(var=variable)
             return f'{className} {variable} = {classInit};'
         return f'{varType}{variable} = {formattedExpr};'
 
@@ -277,11 +291,17 @@ class Transpiler(BaseTranspiler):
             return f'}}{self.freeTempArray}'
 
     def formatArgs(self, args):
-        return ', '.join([ f'{self.nativeType(arg["type"])} {arg["value"]}' for arg in args])
+        return ', '.join([ 
+            f'{self.nativeType(arg["type"])} {arg["value"]}' if not arg['type'] in self.classes
+            else f'{self.nativeType(arg["type"])}* {arg["value"]}' for arg in args])
 
     def formatFunc(self, name, returnType, args):
         args = self.formatArgs(args)
-        return f'/*def*/{self.nativeType(returnType)} {name}({args}) {{'
+        if self.inClass:
+            # Its a method
+            return f'/*def*/{self.nativeType(returnType)} {self.inClass}_{name}({args}) {{'
+        else:
+            return f'/*def*/{self.nativeType(returnType)} {name}({args}) {{'
 
     def formatEndFunc(self):
         return '}\n'
@@ -306,8 +326,14 @@ class Transpiler(BaseTranspiler):
         attrs = self.classes[className]['attributes']
         defaultValues = ', '.join(
             a['value']['value'] if a['value']['type'] != 'array' else
-            self.formatArrayInit(a['value']) for a in attrs)
-        return f'{{ {defaultValues} }}'
+            self.formatArrayInit(a['value']).replace('{','{{').replace('}','}}') for a in attrs)
+        # Initialize array values
+        # TODO: Initialize dict values
+        initVals = ''
+        for attr in self.classes[className]['attributes']:
+            if attr['type'] == 'array':
+                initVals += ';'.join(v.format(var=f"{{var}}.{attr['name']}") for v in attr['value']['value'].split(';')[1:]) + ';'
+        return f'{{{{ {defaultValues} }}}}; {initVals}'
 
     def formatClassAttribute(self, variable, expr):
         varType = variable['type']

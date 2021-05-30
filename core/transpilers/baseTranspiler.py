@@ -39,9 +39,13 @@ class BaseTranspiler():
         }
         self.terminator = ';'
         self.currentScope = {}
+        # Old scope is a list because of nested scopes.
+        # E.g. methods of a class have the classScope and the method scope
+        self.oldScope = []
         self.classes = {}
         self.inFunc = None
         self.inClass = None
+        self.methodsInsideClass = True
         self.insertMode = True
         self.source = []
         self.outOfMain = []
@@ -446,12 +450,16 @@ class BaseTranspiler():
         tokens = token['dotAccess']
         varType = self.processVar(tokens[0])['type']
         tokens[0]['type'] = varType
-        for n, v in enumerate(tokens[0:], 1):
+        for n, v in enumerate(tokens[1:], 1):
             if varType in self.classes:
-                if v['name'] in self.classes[varType]['scope']:
-                    currentType = self.classes[varType]['scope'][v['name']]['type']
+                if v['token'] == 'call':
+                    name = v['name']['name']
+                else:
+                    name = v['name']
+                if name in self.classes[varType]['scope']:
+                    currentType = self.classes[varType]['scope'][name]['type']
                     if currentType == 'array':
-                        varType = self.classes[varType]['scope'][v['name']]['elementType']
+                        varType = self.classes[varType]['scope'][name]['elementType']
                         tokens[n]['type'] = currentType
                         tokens[n]['elementType'] = varType
                     else:
@@ -461,26 +469,27 @@ class BaseTranspiler():
         return {'value':value, 'type':varType}
 
     def startScope(self):
-        self.oldScope = deepcopy(self.currentScope)
+        self.oldScope.append(deepcopy(self.currentScope))
         # refresh returnType
         self.returnType = set()
 
     def endScope(self):
         scope = deepcopy(self.currentScope)
-        self.currentScope = self.oldScope
+        self.currentScope = self.oldScope.pop()
         return scope
 
     def processClass(self, token):
         name = token['name']
         self.inClass = name
-        self.classes[name] = {'attributes':[]}
+        self.classes[name] = {'attributes':[],'methods':{}}
         self.startScope()
         index = len(self.outOfMain)
         for c in token['block']:
             if c['token'] == 'assign':
                 self.processClassAttribute(c)
             elif c['token'] == 'func':
-                raise SyntaxError('Class methods not implemented yet.')
+                self.processClassMethods(c)
+                #raise SyntaxError('Class methods not implemented yet.')
             else:
                 raise SyntaxError(f'Cannot use {c["token"]} inside a class')
         classScope = self.endScope()
@@ -488,8 +497,33 @@ class BaseTranspiler():
         self.classes[name]['scope'] = classScope
         args = self.processArgs(token['args'])
         self.insertCode(self.formatClass(name, args), index)
-        self.insertCode(self.formatEndClass())
+        if not self.methodsInsideClass:
+            # Close class definition before writing methods
+            self.insertCode(self.formatEndClass())
+        # Write methods code
+        for methodName, info in self.classes[self.inClass]['methods'].items():
+            self.insertCode('')
+            self.classes[name]['scope'][methodName] = info['scope'][methodName]
+            for c in info['code']:
+                self.insertCode(c)
+        if self.methodsInsideClass:
+            # Close class definition after writing methods
+            self.insertCode(self.formatEndClass())
         self.inClass = None
+
+    def processClassMethods(self, token):
+        selfArg = {
+            'token': 'expr',
+            'type': self.inClass,
+            'args': [{'token': 'var', 'name': 'self', 'type': self.inClass}], 'ops': []}
+        token['args'] = [selfArg] + token['args']
+        index = len(self.outOfMain)
+        self.processFunc(token)
+        methodCode = self.outOfMain[index:]
+        del self.outOfMain[index:]
+        self.classes[self.inClass]['methods'][token['name']] = deepcopy(self.currentScope[token['name']])
+        self.classes[self.inClass]['methods'][token['name']]['code'] = methodCode
+        del self.currentScope[token['name']]
 
     def processFunc(self, token):
         #TODO: add support for kwargs
