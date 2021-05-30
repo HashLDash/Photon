@@ -1,12 +1,14 @@
 from copy import deepcopy
 
 class BaseTranspiler():
-    def __init__(self, filename, target='web', module=False, standardLibs=''):
-        self.standardLibs = standardLibs
+
+    def __init__(self, filename, lang, target = 'web', module = False, standardLibs = '', debug = False):
+        self.debug = debug
+        self.lang = lang
         self.target = target
+        self.standardLibs = standardLibs
         self.filename = filename.split('/')[-1].replace('.w','.d')
         self.module = module
-
         self.operators = ['**','*','%','/','-','+','==','!=','>','<','>=','<=','is','in','andnot','and','or','&', '<<', '>>'] # in order 
         self.instructions = {
             'printFunc': self.printFunc,
@@ -56,6 +58,11 @@ class BaseTranspiler():
             'array':'array',
             'unknown':'auto',
         }
+        if self.debug:
+            print(f'# INFORMATIONS')
+            print(f"- Transpiling the 'Photon' code to the language '{self.lang.upper()}'")
+            print(f"- The operating system in use is '{self.target}'")
+            print(f'- Grammar/Transpiler:')
 
     def insertCode(self, line, index=None):
         if self.insertMode:
@@ -96,7 +103,6 @@ class BaseTranspiler():
         except ValueError:
             pass
         return 'unknown'
-
 
     def inferType(self, expr):
         if self.typeKnown(expr['type']):
@@ -270,7 +276,6 @@ class BaseTranspiler():
                     del ops[index]
                     del args[index+1]
             return args[0]
-
         return token['args'][0]
 
     def processClassAttribute(self, token):
@@ -328,7 +333,6 @@ class BaseTranspiler():
                 # We have to change the type to array because the type declaration was intended
                 # for the elementType
                 self.currentScope[variable['value']]['type'] = 'array'
-
         else:
             varType = self.inferType(expr)
             if self.typeKnown(varType):

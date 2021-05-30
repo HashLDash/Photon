@@ -29,10 +29,7 @@ class Interpreter():
             from transpilers.dTranspiler import Transpiler
         self.filename = filename
         if filename:
-            if (self.debug):
-                print('-' * 60)
-                print('# DEBUG')
-            self.engine = Transpiler(filename = filename, target = target, module = module, standardLibs = standardLibs)
+            self.engine = Transpiler(filename = filename, lang = lang, target = target, module = module, standardLibs = standardLibs, debug = debug)
             self.input = self.file
             try:
                 # Read utf8 but write as the default on the OS
@@ -90,11 +87,6 @@ class Interpreter():
             if self.processing:
                 return ''
             else:
-                if self.debug:
-                    print('-' * 60)
-                    print(f'# The code is being transpiled into the ({self.lang.upper()}) language')
-                    print(f'# The operating system in use is ({self.target})')
-                    print('-' * 60)
                 if not self.transpileOnly:
                     self.engine.run()
                     sys.exit()
@@ -172,4 +164,3 @@ if __name__ == "__main__":
     except IndexError:
         filename = ''
     Interpreter(filename).run()
-
