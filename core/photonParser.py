@@ -126,13 +126,7 @@ def reduceToken(tokens):
     tokenList = [ token['token'] for token in tokens if not token['token'] == 'indent' ]
     parsePhrase = token2word(tokens)
     debug(parsePhrase)
-    if not DEBUG:
-        try:
-            reduce()
-        except Exception as e:
-            showError(f'LexerError: {e}')
-    else:
-        reduce()
+    reduce()
 
     # No patterns were found, reduced to maximum
     if len(tokens) > 3:

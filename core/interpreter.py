@@ -6,7 +6,7 @@
 #   - Call the engine to Process the struct
 #   - Run the processed struct
 
-from photonParser import parse, assembly
+from photonParser import parse, assembly, showError
 import sys
 
 class Interpreter():
@@ -150,8 +150,11 @@ class Interpreter():
             self.processing = True
             if self.line == 'exit':
                 break
-            tokenized = parse(self.line, filename=self.filename, no=self.lineNumber, debug=self.debug)
-            struct, nextLine = self.handleTokenized(tokenized)
+            try:
+                tokenized = parse(self.line, filename=self.filename, no=self.lineNumber, debug=self.debug)
+                struct, nextLine = self.handleTokenized(tokenized)
+            except Exception as e:
+                showError(e)
             self.engine.process(struct)
             self.processing = False
 
