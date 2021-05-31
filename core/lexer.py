@@ -271,7 +271,7 @@ def expr(i, t):
             if token['token'] == 'expr':
                 args = args + token['args']
                 ops = ops + token['ops']
-            elif token['token'] in {'num','var','group'}:
+            elif token['token'] in {'floatNumber', 'num','var','group'}:
                 args.append(token)
             elif token['token'] == 'operator':
                 ops.append(token['operator'])
