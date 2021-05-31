@@ -487,7 +487,7 @@ class BaseTranspiler():
     def processClass(self, token):
         name = token['name']
         self.inClass = name
-        self.classes[name] = {'attributes':[],'methods':{}}
+        self.classes[name] = {'scope':{}, 'attributes':[],'methods':{}}
         self.startScope()
         index = len(self.outOfMain)
         for c in token['block']:

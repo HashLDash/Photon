@@ -69,8 +69,12 @@ class Transpiler(BaseTranspiler):
                     dotAccess.append(value['value'])
             elif 'name' in v:
                 currentType = v['type']
-                dotAccess.append(v['name'])
-        return '.'.join(dotAccess)
+                if v['name'] == 'self' and self.inClass:
+                    # self is always a pointer
+                    dotAccess.append('self->')
+                else:
+                    dotAccess.append(v['name'])
+        return '.'.join(dotAccess).replace('->.','->')
     
     def formatArray(self, elements, elementType, size):
         self.listTypes.add(elementType)
@@ -352,6 +356,7 @@ class Transpiler(BaseTranspiler):
             varType = f'list_{elementType}'
         name = variable['value']
         expr = self.formatExpr(expr)
+        varType = self.nativeType(varType)
         return f'{varType} {name};'
 
     def formatReturn(self, expr):
