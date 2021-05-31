@@ -269,7 +269,7 @@ def resolveJsDarwin():
     ''' Install nodejs '''
     brewInstaller("nodejs")
     brewInstaller("npm")
-    linuxInstaller("node prompt-sync")
+    os.system(linux_cmds["node prompt-sync"])
     return programIsInstalled("node") and programIsInstalled("npm")
 
 def resolveDartDarwin():
