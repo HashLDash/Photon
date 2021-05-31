@@ -1,10 +1,13 @@
 from copy import deepcopy
+import os
 
 class BaseTranspiler():
     def __init__(self, filename, target='web', module=False, standardLibs=''):
         self.standardLibs = standardLibs
         self.target = target
-        self.filename = filename.split('/')[-1].replace('.w','.d')
+        self.lang = 'photon'
+        self.libExtension = 'photonExt'
+        self.filename = filename.split('/')[-1].replace('.w','.photon')
         self.module = module
 
         self.operators = ['**','*','%','/','-','+','==','!=','>','<','>=','<=','is','in','andnot','and','or','&', '<<', '>>'] # in order 
@@ -22,6 +25,7 @@ class BaseTranspiler():
             'return': self.processReturn,
             'breakStatement': self.processBreak,
             'comment': self.processComment,
+            'import': self.processImport,
             '+': self.add,
             '-': self.sub,
             '*': self.mul,
@@ -587,6 +591,26 @@ class BaseTranspiler():
     def processComment(self, token):
         # Do nothing for now
         pass
+
+    def processImport(self, token):
+        folder = None
+        if token['expr']['args'][0]['token'] == 'var':
+            name = token['expr']['args'][0]['name']
+            if f"{name}.w" in os.listdir(folder):
+                # Local module import
+                raise SyntaxError('Local module import not implemented yet.')
+            elif f"{name}.w" in os.listdir(self.standardLibs):
+                # Photon module import
+                raise SyntaxError('Photon module import not implemented yet.')
+            elif f"{name}.{self.libExtension}" in os.listdir(self.standardLibs + f'/native/{self.lang}/'):
+                # Native Photon lib module import
+                raise SyntaxError('Native Photon module import not implemented yet.')
+            elif f"{name}.{self.libExtension}" in os.listdir():
+                # Native Photon local module import
+                raise SyntaxError('Native Photon local module import not implemented yet.')
+            else:
+                # System library import
+                self.insertCode(self.formatSystemLibImport(token['expr']))
 
     def printFunc(self, token):
         if 'expr' in token:

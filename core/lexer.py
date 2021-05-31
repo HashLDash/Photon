@@ -497,6 +497,15 @@ def funcReturn(i, t):
         t[i]['token'] = 'return'
         t[i]['type'] = t[i+1]['type'],
         t[i]['expr'] = t[i+1]
+        del t[i+1] # expr
+    return t
+
+def imports(i, t):
+    ''' Return an import token if valid'''
+
+    t[i]['token'] = 'import'
+    t[i]['expr'] = t[i+1]
+    del t[i+1] # expr
     return t
 
 def array(i, t):

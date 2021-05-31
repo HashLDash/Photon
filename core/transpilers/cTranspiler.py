@@ -9,6 +9,8 @@ def debug(*args):
 class Transpiler(BaseTranspiler):
     def __init__(self, filename, **kwargs):
         super().__init__(filename, **kwargs)
+        self.lang = 'c'
+        self.libExtension = 'h'
         self.filename = self.filename.replace('.w', '.c')
         self.commentSymbol = '//'
         self.imports = {'#include <stdio.h>', '#include <stdlib.h>', '#include <locale.h>'}
@@ -21,6 +23,7 @@ class Transpiler(BaseTranspiler):
         self.self = 'self'
         self.methodsInsideClass = False
         self.notOperator = '!'
+        self.links = set()
         self.listTypes = set()
         self.dictTypes = set()
         self.instanceCounter = 0
@@ -33,6 +36,13 @@ class Transpiler(BaseTranspiler):
             'unknown': 'auto',
         }
         self.initInternal = False
+
+    def formatSystemLibImport(self, expr):
+        # TODO: Handle dotAccess imports
+        name = expr['args'][0]['name']
+        self.imports.add(f'#include "{name}.h"')
+        self.links.add(f"-l{name}")
+        return ''
 
     def formatVarInit(self, name, varType):
         return f'{varType} {name};'
@@ -354,6 +364,7 @@ class Transpiler(BaseTranspiler):
 
     def exp(self, arg1, arg2):
         self.imports.add('#include <math.h>')
+        self.links.add('-lm')
         return {'value':f'pow((double) {arg1["value"]}, (double) {arg2["value"]})', 'type':'float'}
     
     def equals(self, arg1, arg2):
@@ -433,11 +444,10 @@ class Transpiler(BaseTranspiler):
         self.write()
         debug(f'Running {self.filename}')
         try:
-            links = []
-            if '#include <math.h>' in self.imports:
-                links.append('-lm')
-            check_call(['gcc', '-O2', '-std=c99', f'Sources/c/{self.filename}'] + links + ['-o', 'Sources/c/main'])
-        except:
+            debug(' '.join(['gcc', '-O2', '-std=c99', f'Sources/c/{self.filename}'] + list(self.links) + ['-o', 'Sources/c/main']))
+            check_call(['gcc', '-O2', '-std=c99', f'Sources/c/{self.filename}'] + list(self.links) + ['-o', 'Sources/c/main'])
+        except Exception as e:
+            print(e)
             print('Compilation error. Check errors above.')
         else:
             call(['./Sources/c/main'])

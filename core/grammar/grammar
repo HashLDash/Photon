@@ -42,6 +42,8 @@ array = lbracket args rbracket
 funcReturn = returnStatement
            | returnStatement expr
 
+imports = importStatement expr
+
 rangeExpr = expr dot dot expr
           | expr dot dot expr dot dot expr
 

@@ -45,6 +45,7 @@ patterns = {
   ('lbracket', 'rbracket'): array,
   ('returnStatement',): funcReturn,
   ('returnStatement', 'expr'): funcReturn,
+  ('importStatement', 'expr'): imports,
   ('expr', 'dot', 'dot', 'expr'): rangeExpr,
   ('expr', 'dot', 'dot', 'expr', 'dot', 'dot', 'expr'): rangeExpr,
   ('ifStatement', 'expr', 'beginBlock'): ifelif,
