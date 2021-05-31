@@ -448,6 +448,8 @@ class BaseTranspiler():
         else:
             callType = name['type']
         val = self.formatCall(name['value'], name['type'],args)
+        if 'modifier' in token:
+            val = token['modifier'].replace('not',self.notOperator) + val
         return {'value':val, 'type':callType}
 
     def processDotAccess(self, token):
