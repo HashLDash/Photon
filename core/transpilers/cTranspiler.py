@@ -180,6 +180,10 @@ class Transpiler(BaseTranspiler):
                 varType = self.nativeType(target['type'])
             else:
                 varType = self.nativeType(self.inferType(expr))
+        elif target['token'] == 'dotAccess':
+            v = self.getValAndType(target)
+            variable = v['value']
+            varType = v['type']
         else:
             raise SyntaxError(f'Format assign with variable {target} not implemented yet.')
         if 'format' in expr:
@@ -224,7 +228,7 @@ class Transpiler(BaseTranspiler):
                 elif value['type'] == 'str':
                     return f'strtol({value["value"]}, NULL, 10)'
                 elif value['type'] == 'float':
-                    return f'(long) {value["value"]}'
+                    return f'(long)({value["value"]})'
                 else:
                     raise SyntaxError(f'Convert from type {value["type"]} to type {cast} not implemented')
             elif cast == 'double':
@@ -233,7 +237,7 @@ class Transpiler(BaseTranspiler):
                 elif value['type'] == 'str':
                     return f'strtod({value["value"]}, NULL)'
                 elif value['type'] == 'int':
-                    return f'(double) {value["value"]}'
+                    return f'(double)({value["value"]})'
                 else:
                     raise SyntaxError(f'Convert from type {value["type"]} to type {cast} not implemented')
             else:

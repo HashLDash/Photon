@@ -394,7 +394,7 @@ def augAssign(i, t):
 def assign(i, t):
     ''' expr equal expr
     '''
-    if t[i]['args'][0]['token'] == 'var':
+    if t[i]['args'][0]['token'] in {'var', 'dotAccess'}:
         t[i] = {'token':'assign', 'target':t[i]['args'][0], 'expr':t[i+2]}
         del t[i+1] # equal
         del t[i+1] # expr
@@ -571,7 +571,7 @@ def dotAccess(i, t):
         if it is.
     '''
     if not t[i]['args'][-1]['token'] in {'var','dotAccess'}\
-        or not t[i+2]['args'][-1]['token'] in {'var', 'dotAccess'}:
+        or not t[i+2]['args'][0]['token'] in {'var', 'dotAccess'}:
         # Not a valid dotAccess
         return 'continue'
     if t[i]['args'][-1]['token'] == 'dotAccess':
@@ -584,7 +584,17 @@ def dotAccess(i, t):
     elif t[i+2]['args'][0]['token'] == 'var':
         names += [t[i+2]['args'][0]]
 
-    t[i] = convertToExpr({'token':'dotAccess', 'type':'unknown', 'dotAccess':names})
+    # Get the args and ops from the previous expr
+    args = deepcopy(t[i]['args'])
+    ops = deepcopy(t[i]['ops'])
+    # The last arg is where the junction occurs and it must be converted to a dotAccess token
+    args[-1] = {'token':'dotAccess', 'type':'unknown', 'dotAccess':names}
+    # Now join the args from the other expr, removing the first because it was joined
+    args = args + deepcopy(t[i+2]['args'][1:])
+    ops = ops + deepcopy(t[i+2]['ops'])
+    # Update the current expression token
+    t[i]['args'] = args
+    t[i]['ops'] = ops
     
     del t[i+1] # dot
     del t[i+1] # var or dotAccess

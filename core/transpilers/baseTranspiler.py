@@ -283,7 +283,7 @@ class BaseTranspiler():
         expr = self.processExpr(token['expr'])
         if not self.typeKnown(variable['type']):
             variable['type'] = expr['type']
-        self.currentScope[variable['value']] = {'type': variable['type']}
+        self.classes[self.inClass]['scope'][variable['value']] = {'type': variable['type']}
         self.classes[self.inClass]['attributes'].append(
             {'name':variable['value'],
             'type':variable['type'],
@@ -293,8 +293,8 @@ class BaseTranspiler():
             if not 'elementType' in variable:
                 variable['elementType'] = expr['elementType']
                 variable['size'] = expr['size']
-            self.currentScope[variable['value']]['elementType'] = variable['elementType']
-            self.currentScope[variable['value']]['size'] = variable['size']
+            self.classes[self.inClass]['scope'][variable['value']]['elementType'] = variable['elementType']
+            self.classes[self.inClass]['scope'][variable['value']]['size'] = variable['size']
             self.classes[self.inClass]['attributes'][-1]['elementType'] = variable['elementType']
             self.classes[self.inClass]['attributes'][-1]['size'] = variable['size']
         self.insertCode(self.formatClassAttribute(variable, expr))
@@ -302,8 +302,9 @@ class BaseTranspiler():
     def processAssign(self, token):
         target = token['target']
         expr = token['expr']
-        if target['token'] == 'var':
-            variable = self.processVar(target)
+        if target['token'] in {'var', 'dotAccess'}:
+            #variable = self.processVar(target)
+            variable = self.getValAndType(target)
             if variable['type'] == 'array':
                 if not self.typeKnown(expr['args'][0]['elementType']):
                     # Add array info into expression
@@ -316,7 +317,7 @@ class BaseTranspiler():
             raise SyntaxError(f'Assign with variable {target} no supported yet.')
         expr = self.processExpr(expr)
         inMemory = False
-        if variable['value'] in self.currentScope:
+        if variable['value'] in self.currentScope or target['token'] == 'dotAccess':
             inMemory = True
         elif self.typeKnown(variable['type']):
             self.currentScope[variable['value']] = {'type':variable['type']}
