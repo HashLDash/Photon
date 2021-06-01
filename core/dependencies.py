@@ -236,7 +236,7 @@ def resolveJsWin32():
     ''' Install nodejs '''
     chocoInstaller("nodejs")
     chocoInstaller("npm")
-    linuxInstaller("node prompt-sync")
+    os.system(linux_cmds["node prompt-sync"])
     return programIsInstalled("node") and programIsInstalled("npm")
 
 def resolveDartWin32():
