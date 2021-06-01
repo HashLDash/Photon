@@ -1,8 +1,10 @@
+from interpreter import Interpreter
 from copy import deepcopy
 import os
 
 class BaseTranspiler():
     def __init__(self, filename, target='web', module=False, standardLibs=''):
+        self.debug = False # make this a global variable instead, inseide the debug module
         self.standardLibs = standardLibs
         self.target = target
         self.lang = 'photon'
@@ -601,7 +603,20 @@ class BaseTranspiler():
             name = token['expr']['args'][0]['name']
             if f"{name}.w" in os.listdir(folder):
                 # Local module import
-                raise SyntaxError('Local module import not implemented yet.')
+                interpreter = Interpreter(
+                        filename=f'{name}.w',
+                        lang=self.lang,
+                        target=self.target,
+                        module=True,
+                        standardLibs=self.standardLibs,
+                        transpileOnly=True,
+                        debug=self.debug)
+                interpreter.run()
+                self.classes.update(interpreter.engine.classes)
+                self.currentScope.update(interpreter.engine.currentScope)
+                self.imports = self.imports.union(interpreter.engine.imports)
+                self.outOfMain += interpreter.engine.outOfMain
+                self.source += interpreter.engine.source
             elif f"{name}.w" in os.listdir(self.standardLibs):
                 # Photon module import
                 raise SyntaxError('Photon module import not implemented yet.')

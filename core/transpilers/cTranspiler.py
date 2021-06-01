@@ -435,12 +435,10 @@ class Transpiler(BaseTranspiler):
         if not self.module:
             self.filename = 'main.c'
         else:
+            moduleName = self.filename.split('.')[0]    
             self.filename = f'{moduleName}.c'
             boilerPlateStart = []
             boilerPlateEnd = []
-            del self.imports[0]
-            del self.imports[0]
-            del self.imports[0]
         with open(f'Sources/c/{self.filename}', 'w') as f:
             for imp in self.imports:
                 module = imp.split(' ')[-1].replace('.w', '').replace('"', '')
@@ -448,11 +446,8 @@ class Transpiler(BaseTranspiler):
                 if module in os.listdir(f'{self.standardLibs}/native/c'):
                     from shutil import copyfile
                     copyfile(f'{self.standardLibs}/native/c/{module}', f'Sources/c/{module}')
-                if f'{module}.c' in os.listdir('Sources/c'):
-                    with open(f'Sources/c/{module}.c', 'r') as m:
-                        for line in m:
-                            f.write(line)
-                else:
+                if not f'{module}.c' in os.listdir('Sources/c'):
+                    # native import
                     f.write(imp + '\n')
             for line in [''] + self.outOfMain + [''] + boilerPlateStart + self.source + boilerPlateEnd:
                 if line:

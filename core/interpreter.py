@@ -10,7 +10,7 @@ from photonParser import parse, assembly, showError
 import sys
 
 class Interpreter():
-    def __init__(self, filename='', lang='c', target=sys.platform, module=False, standardLibs='', debug=False):
+    def __init__(self, filename='', lang='c', target=sys.platform, module=False, standardLibs='', debug=False, transpileOnly=False):
         self.debug = debug
         if lang == 'c':
             from transpilers.cTranspiler import Transpiler
@@ -50,7 +50,7 @@ class Interpreter():
             self.input = self.console
         self.end = False
         self.processing = True
-        self.transpileOnly = False
+        self.transpileOnly = transpileOnly
         self.lineNumber = 0
 
     def console(self, glyph='>>> '):
