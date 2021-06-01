@@ -9,6 +9,8 @@ class Transpiler(BaseTranspiler):
     def __init__(self, filename, **kwargs):
         super().__init__(filename, **kwargs)
         self.filename = self.filename.replace('.w','.py')
+        self.lang = 'py'
+        self.libExtension = 'py'
         self.commentSymbol = '#'
         self.imports = set()
         self.funcIdentifier = 'def '
@@ -34,6 +36,11 @@ class Transpiler(BaseTranspiler):
             return self.nativeTypes[varType]
         except KeyError:
             return 'any'
+
+    def formatSystemLibImport(self, expr):
+        module = self.getValAndType(expr)['value']
+        self.imports.add(f'from {module} import *')
+        return ''
 
     def formatVarInit(self, name, varType):
         if varType:

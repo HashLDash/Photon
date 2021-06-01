@@ -234,8 +234,7 @@ def resolveHaxeWin32():
 
 def resolveJsWin32():
     ''' Install nodejs '''
-    chocoInstaller("nodejs")
-    chocoInstaller("npm")
+    chocoInstaller("nodejs") # npm is also installed with nodejs
     os.system(linux_cmds["node prompt-sync"])
     return programIsInstalled("node") and programIsInstalled("npm")
 
