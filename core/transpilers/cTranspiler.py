@@ -211,7 +211,7 @@ class Transpiler(BaseTranspiler):
             return formattedExpr.format(var=variable)
         elif expr['type'] in self.classes:
             className = expr["type"]
-            classInit = self.formatClassInit(className).format(var=variable)
+            classInit = self.formatClassInit(className, variable)#.format(var=variable)
             return f'{className} {variable} = {classInit};'
         return f'{varType}{variable} = {formattedExpr};'
 
@@ -336,18 +336,33 @@ class Transpiler(BaseTranspiler):
             size = 10
         return f"{{ {len(elements)}, {size}, malloc(sizeof({elementType})*{size}) }}"
 
-    def formatClassInit(self, className):
+    def formatClassInit(self, className, variable):
         attrs = self.classes[className]['attributes']
-        defaultValues = ', '.join(
-            a['value']['value'] if a['value']['type'] != 'array' else
-            self.formatArrayInit(a['value']).replace('{','{{').replace('}','}}') for a in attrs)
+        defaultValues = []
+        for a in attrs:
+            if a['value']['type'] in self.classes:
+                attrClassName = a['value']['type']
+                # TODO: handle array init in class init
+                # The split is used to separate initVals
+                # Maybe try separating it to avoid manipulating processed values
+                defaultValues.append(self.formatClassInit(attrClassName, variable).split(';')[0])
+            elif a['value']['type'] == 'array':
+                defaultValues.append(self.formatArrayInit(a['value']))#.replace('{','{{').replace('}','}}'))
+            else:
+                defaultValues.append(a['value']['value'])
+        defaultValues = ', '.join(defaultValues)
         # Initialize array values
         # TODO: Initialize dict values
         initVals = ''
         for attr in self.classes[className]['attributes']:
             if attr['type'] == 'array':
-                initVals += ';'.join(v.format(var=f"{{var}}.{attr['name']}") for v in attr['value']['value'].split(';')[1:]) + ';'
-        return f'{{{{ {defaultValues} }}}}; {initVals}'
+                #initVals += ';'.join(v.format(var=f"{{var}}.{attr['name']}") for v in attr['value']['value'].split(';')[1:]) + ';'
+                initVals += ';'.join(v.format(var=f"{variable}.{attr['name']}") for v in attr['value']['value'].split(';')[1:]) + ';'
+            elif attr['type'] in self.classes:
+                # Get initVals of the attribute class
+                initVals += ';'.join(self.formatClassInit(attr['type'], f'{variable}.{attr["name"]}').split(';')[1:])
+        #return f'{{{{ {defaultValues} }}}}; {initVals}'
+        return f'{{ {defaultValues} }}; {initVals}'
 
     def formatClassAttribute(self, variable, expr):
         varType = variable['type']
