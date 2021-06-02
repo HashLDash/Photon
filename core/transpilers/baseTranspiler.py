@@ -615,6 +615,7 @@ class BaseTranspiler():
                 self.classes.update(interpreter.engine.classes)
                 self.currentScope.update(interpreter.engine.currentScope)
                 self.imports = self.imports.union(interpreter.engine.imports)
+                self.links = self.links.union(interpreter.engine.links)
                 self.outOfMain += interpreter.engine.outOfMain
                 self.source += interpreter.engine.source
             elif f"{name}.w" in os.listdir(self.standardLibs):
