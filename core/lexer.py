@@ -343,7 +343,9 @@ def call(i, t):
 
     arguments = []
     kwargs = []
-    if t[i+2]['token'] == 'args':
+    if t[i+2]['token'] == 'rparen':
+        pass
+    elif t[i+2]['token'] == 'args':
         arguments = t[i+2]['args']
         del t[i+1] # args
     elif t[i+2]['token'] == 'expr':
