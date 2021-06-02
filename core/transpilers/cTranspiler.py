@@ -40,7 +40,10 @@ class Transpiler(BaseTranspiler):
     def formatSystemLibImport(self, expr):
         # TODO: Handle dotAccess imports
         name = expr['args'][0]['name']
-        self.imports.add(f'#include "{name}.h"')
+        self.imports.add(f'#include <{name}.h>')
+        if name == 'math':
+            # the link name is different
+            name = 'm'
         self.links.add(f"-l{name}")
         return ''
 
