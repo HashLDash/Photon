@@ -302,6 +302,12 @@ def group(i, t):
 def args(i, t):
     ''' Return an args token '''
     args = []
+    try:
+        if t[i+3]['token'] == 'equal':
+            # Probably a kwargs token. Not ready to proceed.
+            return 'continue'
+    except IndexError:
+        pass
     for tok in [t[i],t[i+2]]:
         if tok['token'] == 'args':
             args += tok['args']
@@ -312,29 +318,53 @@ def args(i, t):
     del t[i+1] # arg or expr
     return t
 
+def kwargs(i, t):
+    ''' Return a kwargs token, if valid '''
+    kwargs = []
+    for tok in [t[i],t[i+2]]:
+        if tok['token'] == 'kwargs':
+            kwargs += tok['kwargs']
+        elif tok['token'] == 'assign':
+            if tok['target']['token'] == 'var':
+                kwargs.append(tok)
+            else:
+                raise SyntaxError(f'Kwargs with {tok["target"]["token"]} not supported.')
+    t[i] = {'token':'kwargs','kwargs':kwargs}
+    del t[i+1] # comma
+    del t[i+1] # kwargs or assign
+    return t
+
 def call(i, t):
     ''' Return a call token if valid '''
     # Verify if it is a valid call
     if not t[i]['args'][0]['token'] in {'var','dotAccess'} or t[i-1]['token'] in {'defStatement','classStatement'}:
         # Not a valid call
         return 'continue'
-    if t[i+2]['token'] == 'rparen':
-        arguments = []
-    elif t[i+2]['token'] == 'args':
+
+    arguments = []
+    kwargs = []
+    if t[i+2]['token'] == 'args':
         arguments = t[i+2]['args']
         del t[i+1] # args
     elif t[i+2]['token'] == 'expr':
         arguments = [t[i+2]]
         del t[i+1] # expr
+    elif t[i+2]['token'] == 'kwargs':
+        kwargs = t[i+2]['kwargs']
+        del t[i+1] # kwargs
     else:
-        raise SyntaxError('Call with arg {t[i+2]} not supported')
+        raise SyntaxError(f'Call with arg {t[i+2]} not supported')
+    if t[i+2]['token'] == 'kwargs':
+        kwargs = t[i+2]['kwargs']
+        del t[i+1] # kwargs
+
     if t[i]['args'][0]['token'] == 'dotAccess':
         t[i]['args'][0]['dotAccess'][-1] = {
             'token':'call',
             'type':t[i]['args'][0]['dotAccess'][-1]['type'],
             'name':t[i]['args'][0]['dotAccess'][-1],
             'args':arguments,
-            'kwargs':[],
+            'kwargs':kwargs,
         }
     else:
         callToken = {
@@ -342,7 +372,7 @@ def call(i, t):
             'type':t[i]['args'][0]['type'],
             'name':t[i]['args'][0],
             'args':arguments,
-            'kwargs':[],
+            'kwargs':kwargs,
         }
         t[i] = convertToExpr(callToken)
     del t[i+1] # rparen
@@ -472,16 +502,21 @@ def function(i, t):
     t[i]['token'] = 'func'
     t[i]['name'] = t[i+1]['args'][0]['name']
     t[i]['type'] = t[i+1]['args'][0]['type']
-    if t[i+3]['token'] == 'rparen':
-        t[i]['args'] = []
-    elif t[i+3]['token'] == 'args':
+    t[i]['args'] = []
+    if t[i+3]['token'] == 'args':
         t[i]['args'] = t[i+3]['args']
-        del t[i+1] # expr or args
+        del t[i+1] # args
     elif t[i+3]['token'] == 'expr':
         t[i]['args'] = [t[i+3]]
-        del t[i+1] # expr or args
+        del t[i+1] # expr
+    elif t[i+3]['token'] == 'kwargs':
+        t[i]['kwargs'] = t[i+3]['kwargs']
+        del t[i+1] # kwargs
     else:
         raise SyntaxError(f'function arg with token {t[i+3]} not supported.')
+    if t[i+3]['token'] == 'kwargs':
+        t[i]['kwargs'] = t[i+3]['kwargs']
+        del t[i+1] # kwargs
     del t[i+1] # var
     del t[i+1] # lparen
     del t[i+1] # rparen

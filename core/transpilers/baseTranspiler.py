@@ -438,19 +438,51 @@ class BaseTranspiler():
         args = []
         for tok in tokens:
             arg = self.getValAndType(tok)
-            # ignore value becauso of the scope
+            # ignore value type because of the scope
             # Function arguments need explicit type
             args.append( {'type':tok['type'], 'value':arg['value']} )
         return args
 
-    def processCall(self, token):
-        args = self.processArgs(token['args'])
+    def processKwargs(self, tokens):
+        kwargs = []
+        for tok in tokens:
+            kw = self.getValAndType(tok['expr'])
+            name = tok['target']['name']
+            # ignore value type because of the scope
+            # Function keyword arguments need explicit type or inferred from expr
+            if self.typeKnown(tok['target']['type']):
+                varType = tok['target']['type']
+            else:
+                varType = kw['type']
+            kwargs.append( {'type':varType, 'name':name, 'value':kw['value']} )
+        return kwargs
+
+    def processCall(self, token, className=None):
         name = self.getValAndType(token['name'])
+        args = self.processArgs(token['args'])
+        # Put kwargs in the right order
+        if not className is None:
+            kws = self.classes[className]['scope'][name]['kwargs']
+        elif name['value'] in self.currentScope:
+            kws = self.currentScope[name['value']]['kwargs']
+        else:
+            # Call signature not defined, use the order it was passed
+            kws = self.processKwargs(token['kwargs'])
+        kwargs = []
+        # If the kwarg was passed, use it. Otherwise use the default value
+        for kw in kws:
+            for a in self.processKwargs(token['kwargs']):
+                input(a)
+                if kw['name'] == a['name']:
+                    kwargs.append(a)
+                    break
+            else:
+                kwargs.append(kw)
         if name['value'] in self.classes:
             callType = name['value']
         else:
             callType = name['type']
-        val = self.formatCall(name['value'], name['type'],args)
+        val = self.formatCall(name['value'], name['type'], args, kwargs)
         if 'modifier' in token:
             val = token['modifier'].replace('not',self.notOperator) + val
         return {'value':val, 'type':callType}
@@ -537,6 +569,7 @@ class BaseTranspiler():
     def processFunc(self, token):
         #TODO: add support for kwargs
         args = self.processArgs(token['args'])
+        kwargs = self.processKwargs(token['kwargs'])
         name = token['name']
         returnType = token['type']
         self.returnType = returnType
@@ -547,10 +580,16 @@ class BaseTranspiler():
             # change mode to not insert code on processing
             self.insertMode = False
             self.startScope()
+            # put args in scope
             for arg in args:
                 argType = arg['type']
                 argVal = arg['value']
                 self.currentScope[argVal] = {'type':argType}
+            # put kwargs in scope
+            for kw in kwargs:
+                kwType = kw['type']
+                kwVal = kw['name']
+                self.currentScope[kwVal] = {'type':kwType}
             # get a deepcopy or it will corrupt the block
             block = deepcopy(token['block'])
             for c in block:
@@ -566,20 +605,25 @@ class BaseTranspiler():
             self.insertMode = True
             # End pre processing
         self.startScope()
-        self.currentScope[name] = {'type':returnType, 'token':'func'}
+        self.currentScope[name] = {'type':returnType, 'token':'func', 'args':args, 'kwargs':kwargs}
         index = len(self.outOfMain)
         # put args in scope
         for arg in args:
             argType = arg['type']
             argVal = arg['value']
             self.currentScope[argVal] = {'type':argType}
+        # put kwargs in scope
+        for kw in kwargs:
+            kwType = kw['type']
+            kwVal = kw['name']
+            self.currentScope[kwVal] = {'type':kwType}
         for c in token['block']:
             self.process(c)
-        self.insertCode(self.formatFunc(name, returnType, args),index)
+        self.insertCode(self.formatFunc(name, returnType, args, kwargs),index)
         self.insertCode(self.formatEndFunc())
         self.inFunc = None
         funcScope = self.endScope()
-        self.currentScope[name] = {'token':'func','args':args, 'type':returnType, 'scope':funcScope}
+        self.currentScope[name] = {'scope':funcScope, 'type':returnType, 'token':'func', 'args':args, 'kwargs':kwargs}
 
     def processReturn(self, token):
         if 'expr' in token:

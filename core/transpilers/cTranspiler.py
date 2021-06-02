@@ -65,7 +65,7 @@ class Transpiler(BaseTranspiler):
                 if currentType in self.classes:
                     instance = dotAccess.pop()
                     v['args'] = [{'value':instance, 'type':currentType, 'pointer':True}] + v['args']
-                    value = self.processCall(v)
+                    value = self.processCall(v, className=currentType)
                     dotAccess.append(f'{currentType}_{value["value"]}')
                 else:
                     value = self.processCall(v)
@@ -126,10 +126,10 @@ class Transpiler(BaseTranspiler):
                     raise SyntaxError(f'Cannot format {valType} in formatStr')
         return string, exprs
 
-    def formatCall(self, name, returnType, args):
-        # Handle function arguments
+    def formatCall(self, name, returnType, args, kwargs):
+        # Handle function arguments. Kwargs are in the right order
         arguments = ', '.join(f'{arg["value"]}' if not arg['type'] in self.classes
-            else f'&{arg["value"]}' for arg in args)
+            else f'&{arg["value"]}' for arg in args+kwargs)
         return f'{name}({arguments})'
     
     def formatIndexAccess(self, token):
@@ -316,8 +316,10 @@ class Transpiler(BaseTranspiler):
             f'{self.nativeType(arg["type"])} {arg["value"]}' if not arg['type'] in self.classes
             else f'{self.nativeType(arg["type"])}* {arg["value"]}' for arg in args])
 
-    def formatFunc(self, name, returnType, args):
-        args = self.formatArgs(args)
+    def formatFunc(self, name, returnType, args, kwargs):
+        # convert kwargs to args
+        kwargs = [{'value':kw['name'], 'type':kw['type']} for kw in kwargs]
+        args = self.formatArgs(args+kwargs)
         if self.inClass:
             # Its a method
             return f'/*def*/{self.nativeType(returnType)} {self.inClass}_{name}({args}) {{'

@@ -24,7 +24,8 @@ group = lparen expr rparen
 operator = (equal operator) (equal operator)
 
 call = expr lparen rparen
-     | expr lparen (expr args) rparen
+     | expr lparen (expr args kwargs) rparen
+     | expr lparen (expr args) kwargs rparen
 
 expr = num
      | floatNumber
@@ -55,11 +56,14 @@ whileLoop = whileStatement expr beginBlock
 
 args = (args expr) comma (args expr)
 
+kwargs = (assign kwargs) comma (assign kwargs)
+
 augAssign = expr operator equal expr
 
 assign = expr equal expr
 
-function = defStatement expr lparen (expr args) rparen beginBlock
+function = defStatement expr lparen (expr args kwargs) rparen beginBlock
+         | defStatement expr lparen (expr args) kwargs rparen beginBlock
          | defStatement expr lparen rparen beginBlock
 
 classDefinition = classStatement expr lparen rparen beginBlock

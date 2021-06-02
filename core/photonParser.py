@@ -99,7 +99,11 @@ def token2word(tokens):
         elif t['token'] in {'num', 'var', 'expr','print','printFunc',
                 'floatNumber', 'type',
                 'assign','operator','group','ifStatement','if','elifStatement',
-                'elif','input','inputFunc', 'args','call', 'whileStatement','while','forStatement','inStatement','for','range','defStatement','func','returnStatement','return','breakStatement','comment','augAssign','classStatement','class','dotAccess', 'importStatement', 'import'}:
+                'elif','input','inputFunc', 'args','call', 'whileStatement',
+                'while','forStatement','inStatement','for','range','defStatement',
+                'func','returnStatement','return','breakStatement','comment',
+                'augAssign','classStatement','class','dotAccess', 'importStatement',
+                'import', 'kwargs'}:
             phrase += t['token']
         else:
             raise Exception(f'Cannot convert the token {t["token"]} to a word')
