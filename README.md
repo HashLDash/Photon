@@ -78,7 +78,7 @@ Salve-o como hello.w e execute-o em seu cmd ou powershell com
 photon hello.w
 ```
 
-E você deverá ver o Hello World! saída em seu console!
+E você deverá ver o Hello World! em seu console!
 
 No devlog 1, mostro como instalar e criar seu primeiro programa hello world. [Clique aqui para ver.](Https://www.youtube.com/watch?v=5QtISBpOlr0)
   
