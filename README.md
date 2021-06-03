@@ -63,6 +63,26 @@ Por outro lado, os aplicativos Photon podem ser facilmente executados em qualque
 O Devlog está disponível [aqui](https://www.youtube.com/watch?v=Seu5q_hc6go&list=PL89TmjrkwpOfteQJRptqmK-y8pr6uJdlc).
 Também carreguei um vídeo no meu canal português comparando-o com Python e C, confira [aqui](https://youtu.be/_8xtTyCTPXI).
 
+ ## Começo rápido
+
+Baixe ou clone (preferencialmente) o repositório onde deseja instalá-lo. Execute o windowsInstaller.bat se você estiver no Windows ou linuxInstaller.sh se você estiver no Linux. Após o processo de instalação, você deve ter o photon instalado e disponível na sua PATH (como variável do seu sistema).
+Agora você pode escrever este simples Hello World, com qualquer editor de texto de sua escolha.
+
+```python
+print("Olá, mundo!")
+```
+
+Salve-o como hello.w e execute-o em seu cmd ou powershell com
+
+```
+photon hello.w
+```
+
+E você deverá ver o Hello World! saída em seu console!
+
+No devlog 1, mostro como instalar e criar seu primeiro programa hello world. [Clique aqui para ver.](Https://www.youtube.com/watch?v=5QtISBpOlr0)
+  
+  
 ## Estágio ALPHA
 
 Photon está atualmente em alfa.
