@@ -505,6 +505,7 @@ def function(i, t):
     t[i]['name'] = t[i+1]['args'][0]['name']
     t[i]['type'] = t[i+1]['args'][0]['type']
     t[i]['args'] = []
+    t[i]['kwargs'] = []
     if t[i+3]['token'] == 'args':
         t[i]['args'] = t[i+3]['args']
         del t[i+1] # args
