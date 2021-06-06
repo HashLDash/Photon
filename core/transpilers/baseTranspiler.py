@@ -462,7 +462,7 @@ class BaseTranspiler():
         args = self.processArgs(token['args'])
         # Put kwargs in the right order
         if not className is None:
-            kws = self.classes[className]['scope'][name]['kwargs']
+            kws = self.classes[className]['scope'][name['value']]['kwargs']
         elif name['value'] in self.currentScope:
             kws = self.currentScope[name['value']]['kwargs']
         else:
@@ -535,7 +535,6 @@ class BaseTranspiler():
                 raise SyntaxError(f'Cannot use {c["token"]} inside a class')
         classScope = self.endScope()
         # Include methods, args/kwargs
-        self.classes[name]['scope'] = classScope
         args = self.processArgs(token['args'])
         self.insertCode(self.formatClass(name, args), index)
         if not self.methodsInsideClass:
