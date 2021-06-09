@@ -515,6 +515,9 @@ def function(i, t):
     elif t[i+3]['token'] == 'kwargs':
         t[i]['kwargs'] = t[i+3]['kwargs']
         del t[i+1] # kwargs
+    elif t[i+3]['token'] == 'rparen':
+        # no args no kwargs, but valid definition
+        pass
     else:
         raise SyntaxError(f'function arg with token {t[i+3]} not supported.')
     if t[i+3]['token'] == 'kwargs':
