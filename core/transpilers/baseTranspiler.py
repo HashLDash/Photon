@@ -727,7 +727,7 @@ class BaseTranspiler():
         return {'value':f'{arg1["value"]} % {arg2["value"]}', 'type':'int'}
 
     def exp(self, arg1, arg2):
-        if t1 == 'int' and t2 == 'int':
+        if arg1['type'] == 'int' and arg2['type'] == 'int':
             varType = 'int'
         else:
             varType = 'float'
