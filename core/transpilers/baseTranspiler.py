@@ -434,13 +434,16 @@ class BaseTranspiler():
             self.process(c)
         self.insertCode(self.formatEndFor())
 
-    def processArgs(self, tokens):
+    def processArgs(self, tokens, inferType=False):
         args = []
         for tok in tokens:
             arg = self.getValAndType(tok)
-            # ignore value type because of the scope
-            # Function arguments need explicit type
-            args.append( {'type':tok['type'], 'value':arg['value']} )
+            if inferType:
+                args.append( {'type':arg['type'], 'value':arg['value']} )
+            else:
+                # ignore value type because of the scope
+                # Function arguments need explicit type
+                args.append( {'type':tok['type'], 'value':arg['value']} )
         return args
 
     def processKwargs(self, tokens):
@@ -459,7 +462,7 @@ class BaseTranspiler():
 
     def processCall(self, token, className=None):
         name = self.getValAndType(token['name'])
-        args = self.processArgs(token['args'])
+        args = self.processArgs(token['args'], inferType=True)
         # Put kwargs in the right order
         if not className is None:
             kws = self.classes[className]['scope'][name['value']]['kwargs']
