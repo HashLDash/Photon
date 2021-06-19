@@ -562,7 +562,7 @@ def array(i, t):
         elements = []
     t[i] = convertToExpr({'token':'array','type':'array','elementType':'unknown',
         'len':len(elements), 'size':'unknown', 'elements':elements})
-    del t[i+1] # rbracket
+    del t[i+1] # rSBracket
     return t
 
 def indexAccess(i, t):
@@ -576,9 +576,9 @@ def indexAccess(i, t):
         t[i]['args'][-1]['indexAccess'] = t[i+2]
     elif t[i]['args'][-1]['token'] == 'dotAccess':
         t[i]['args'][-1]['dotAccess'][-1]['indexAccess'] = t[i+2]
-    del t[i+1] # lbracket
+    del t[i+1] # lSBracket
     del t[i+1] # expr
-    del t[i+1] # rbracket
+    del t[i+1] # rSBracket
     return t
 
 def classDefinition(i, t):
