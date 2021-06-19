@@ -542,7 +542,7 @@ def funcReturn(i, t):
     return t
 
 def imports(i, t):
-    ''' Return an import token if valid'''
+    ''' Return an import token if valid '''
 
     t[i]['token'] = 'import'
     t[i]['expr'] = t[i+1]
@@ -550,7 +550,7 @@ def imports(i, t):
     return t
 
 def array(i, t):
-    ''' Verify if its an array and return an array token if it is'''
+    ''' Verify if its an array and return an array token if it is '''
     if t[i-1]['token'] in {'var','expr'}:
         # Its an index access
         return 'continue'
@@ -563,6 +563,13 @@ def array(i, t):
     t[i] = convertToExpr({'token':'array','type':'array','elementType':'unknown',
         'len':len(elements), 'size':'unknown', 'elements':elements})
     del t[i+1] # rbracket
+    return t
+
+def hashmap(i, t):
+    ''' Verify if its a valid hashmap and return a map token if it is '''
+    t[i] = convertToExpr({'token':'map','type':'map','valType':'unknown','keyType':'unknown',
+        'elements':elements})
+    del t[i+1] # rbrace
     return t
 
 def indexAccess(i, t):

@@ -40,7 +40,7 @@ indexAccess = expr lbracket (expr) rbracket
 array = lbracket args rbracket
       | lbracket rbracket
 
-map = lbrace rbrace
+hashmap = lbrace rbrace
 
 funcReturn = returnStatement
            | returnStatement expr

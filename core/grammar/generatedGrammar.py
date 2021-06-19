@@ -46,7 +46,7 @@ patterns = {
   ('expr', 'lbracket', 'expr', 'rbracket'): indexAccess,
   ('lbracket', 'args', 'rbracket'): array,
   ('lbracket', 'rbracket'): array,
-  ('lbrace', 'rbrace'): map,
+  ('lbrace', 'rbrace'): hashmap,
   ('returnStatement',): funcReturn,
   ('returnStatement', 'expr'): funcReturn,
   ('importStatement', 'expr'): imports,
