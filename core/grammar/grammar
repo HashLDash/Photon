@@ -35,12 +35,12 @@ expr = num
      | (num var expr) operator (num var expr)
      | operator (expr)
 
-indexAccess = expr lSBracket (expr) rSBracket
+indexAccess = expr lbracket (expr) rbracket
 
-array = lSBracket args rSBracket
-      | lSBracket rSBracket
+array = lbracket args rbracket
+      | lbracket rbracket
 
-map = lCBracket rCBracket
+map = lbrace rbrace
 
 funcReturn = returnStatement
            | returnStatement expr
