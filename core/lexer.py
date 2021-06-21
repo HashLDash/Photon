@@ -258,6 +258,10 @@ def expr(i, t):
     if t[i]['token'] == 'operator' and t[i-1]['token'] == 'rparen':
         # its part of an expression. Not ready to parse this yet.
         return 'continue'
+    elif len(t[i:]) > 3 and t[i+1]['token'] == 'operator' and t[i+3]['token'] == 'lparen':
+        # The second argument is probly a function. Not ready to parse
+        # this yet.
+        return 'continue'
     elif t[i]['token'] == 'operator':
         # Modifier operator
         t2 = t[i+1].copy()
