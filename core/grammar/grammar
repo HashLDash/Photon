@@ -64,7 +64,7 @@ augAssign = expr operator equal expr
 
 assign = expr equal expr
 
-function = defStatement expr lparen (expr args kwargs) rparen beginBlock
+function = defStatement expr lparen (expr args assign kwargs) rparen beginBlock
          | defStatement expr lparen (expr args) kwargs rparen beginBlock
          | defStatement expr lparen rparen beginBlock
 

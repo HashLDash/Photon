@@ -70,6 +70,7 @@ patterns = {
   ('expr', 'equal', 'expr'): assign,
   ('defStatement', 'expr', 'lparen', 'expr', 'rparen', 'beginBlock'): function,
   ('defStatement', 'expr', 'lparen', 'args', 'rparen', 'beginBlock'): function,
+  ('defStatement', 'expr', 'lparen', 'assign', 'rparen', 'beginBlock'): function,
   ('defStatement', 'expr', 'lparen', 'kwargs', 'rparen', 'beginBlock'): function,
   ('defStatement', 'expr', 'lparen', 'expr', 'kwargs', 'rparen', 'beginBlock'): function,
   ('defStatement', 'expr', 'lparen', 'args', 'kwargs', 'rparen', 'beginBlock'): function,

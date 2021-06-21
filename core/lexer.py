@@ -357,7 +357,7 @@ def call(i, t):
         del t[i+1] # expr
     elif t[i+2]['token'] == 'assign':
         kwargs = [t[i+2]]
-        del t[i+1] # expr
+        del t[i+1] # assign
     elif t[i+2]['token'] == 'kwargs':
         kwargs = t[i+2]['kwargs']
         del t[i+1] # kwargs
@@ -519,6 +519,9 @@ def function(i, t):
     elif t[i+3]['token'] == 'expr':
         t[i]['args'] = [t[i+3]]
         del t[i+1] # expr
+    elif t[i+3]['token'] == 'assign':
+        t[i]['kwargs'] = [t[i+3]]
+        del t[i+1] # assign
     elif t[i+3]['token'] == 'kwargs':
         t[i]['kwargs'] = t[i+3]['kwargs']
         del t[i+1] # kwargs
