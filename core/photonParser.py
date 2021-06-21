@@ -40,9 +40,13 @@ parsePhrase = ''
 
 DEBUG = False
 
-def debug(*args):
+def debug(*args, center=False):
     if DEBUG:
-        print(*args)
+        if center:
+            consoleWidth = os.get_terminal_size()[0]
+            print(args[0].center(consoleWidth, '-'))
+        else:    
+            print(*args)
 
 def parse(line, filename='', no=-1, debug=False):
     global currentLine, lineNumber, currentFilename, DEBUG

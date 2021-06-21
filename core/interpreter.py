@@ -7,6 +7,7 @@
 #   - Run the processed struct
 
 from photonParser import parse, assembly, showError
+from photonParser import debug as debugFunc
 import sys
 
 class Interpreter():
@@ -96,7 +97,9 @@ class Interpreter():
         ''' Return a list of code corresponding to the indentation level
         '''
         self.line = self.input('... ')
-        blockTokenized = parse(self.line, filename=self.filename, no=self.lineNumber)
+        debugFunc('In a block', center=True)
+        blockTokenized = parse(self.line, filename=self.filename,
+                no=self.lineNumber, debug=self.debug)
         blockIndent = blockTokenized[0]['indent']
         block = []
         if blockIndent > indent:
@@ -104,15 +107,19 @@ class Interpreter():
             block.append(struct)
             if not nextLine:
                 self.line = self.input('... ')
-            blockTokenized = parse(self.line, filename=self.filename, no=self.lineNumber)
+            blockTokenized = parse(self.line, filename=self.filename,
+                    no=self.lineNumber, debug=self.debug)
             while blockTokenized[0]['indent'] == blockIndent:
                 struct, nextLine = self.handleTokenized(blockTokenized)
                 block.append(struct)
                 if not nextLine:
                     self.line = self.input('... ')
-                blockTokenized = parse(self.line, filename=self.filename, no=self.lineNumber)
+                blockTokenized = parse(self.line, filename=self.filename,
+                        no=self.lineNumber, debug=self.debug)
+            debugFunc('Out of a block', center=True)
             return block, blockTokenized
         else:
+            debugFunc('Out of a block', center=True)
             return block, blockTokenized
             raise SyntaxError(f'Expecting an indented block here.\nLine: {self.line}')
 

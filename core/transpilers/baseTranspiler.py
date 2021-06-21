@@ -461,12 +461,15 @@ class BaseTranspiler():
         return kwargs
 
     def processCall(self, token, className=None):
+        input(token)
         name = self.getValAndType(token['name'])
         args = self.processArgs(token['args'], inferType=True)
         # Put kwargs in the right order
         if not className is None:
             kws = self.classes[className]['scope'][name['value']]['kwargs']
         elif name['value'] in self.currentScope:
+            input(self.currentScope[name['value']])
+            input(name['value'])
             kws = self.currentScope[name['value']]['kwargs']
         else:
             # Call signature not defined, use the order it was passed
@@ -608,6 +611,7 @@ class BaseTranspiler():
             # End pre processing
         self.startScope()
         self.currentScope[name] = {'type':returnType, 'token':'func', 'args':args, 'kwargs':kwargs}
+        print(self.currentScope)
         index = len(self.outOfMain)
         # put args in scope
         for arg in args:
