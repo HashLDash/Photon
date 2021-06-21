@@ -142,10 +142,15 @@ class Transpiler(BaseTranspiler):
             raise SyntaxError(f'IndexAccess with type {token["type"]} not implemented yet')
 
     def formatIndexAssign(self, target, expr, inMemory=False):
-        if target['type'] == 'array':
-            index = self.processExpr(target['indexAccess'])['value']
-            name = target['name']
-            varType = target['elementType']
+        if target['type'] == 'array' or target['dotAccess'][-1]['type'] == 'array':
+            if 'dotAccess' in target:
+                index = self.processExpr(target['dotAccess'][-1]['indexAccess'])['value']
+                name = target['dotAccess'][-1]['name']
+                varType = target['dotAccess'][-1]['elementType']
+            else:
+                index = self.processExpr(target['indexAccess'])['value']
+                name = target['name']
+                varType = target['elementType']
             if self.typeKnown(expr['type']) and expr['type'] != varType:
                 cast = self.nativeType(varType)
             else:
@@ -192,6 +197,7 @@ class Transpiler(BaseTranspiler):
             v = self.getValAndType(target)
             variable = v['value']
             varType = v['type']
+            input(target)
         else:
             raise SyntaxError(f'Format assign with variable {target} not implemented yet.')
         if 'format' in expr:

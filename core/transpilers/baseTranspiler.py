@@ -282,7 +282,15 @@ class BaseTranspiler():
     def processClassAttribute(self, token):
         #TODO: Handle dict types
         variable = self.processVar(token['target'])
-        expr = self.processExpr(token['expr'])
+        expr = token['expr']
+        if self.typeKnown(variable['type']) and expr['args'][0]['type'] == 'array':
+            # The type declaration is for the elementType
+            variable['elementType'] = variable['type']
+            expr['args'][0]['elementType'] = variable['type']
+            variable['type'] = 'array'
+            if not 'size' in variable:
+                variable['size'] = expr['args'][0]['size']
+        expr = self.processExpr(expr)
         if not self.typeKnown(variable['type']):
             variable['type'] = expr['type']
         self.classes[self.inClass]['scope'][variable['value']] = {'type': variable['type']}
@@ -349,7 +357,8 @@ class BaseTranspiler():
                         raise SyntaxError(f'Array with unknown type not implemented yet.')
                     self.currentScope[variable['value']]['size'] = expr['size']
                 target['type'] = varType
-        if 'indexAccess' in target:
+        #if 'indexAccess' in target:
+        if 'indexAccess' in variable:
             self.insertCode(self.formatIndexAssign(target, expr, inMemory=inMemory))
         else:
             self.insertCode(self.formatAssign(target, expr, inMemory=inMemory))
@@ -362,12 +371,9 @@ class BaseTranspiler():
             if op == '+':
                 if variable['type'] == 'array':
                     self.insertCode(self.formatArrayAppend(variable, expr))
-                elif token['target']['type'] == 'array':
+                elif 'indexAccess' in variable:
                     self.insertCode(self.formatArrayIncrement(token['target'], variable['indexAccess']['args'][0]['value'], expr))
-                elif 'dotAccess' in token['target'] and token['target']['dotAccess'][-1]['type'] == 'array':
-                    self.insertCode(self.formatArrayIncrement(token['target'], token['target']['dotAccess'][-1]['indexAccess']['args'][0]['value'], expr))
                 elif variable['type'] in {'int', 'float'}:
-                    input('increment 2')
                     self.insertCode(self.formatIncrement(variable, expr))
                 else:
                     raise SyntaxError(f'AugAssign with type {variable["type"]} not implemented yet.')
@@ -495,6 +501,7 @@ class BaseTranspiler():
     def processDotAccess(self, token):
         tokens = token['dotAccess']
         varType = self.processVar(tokens[0])['type']
+        currentType = None
         tokens[0]['type'] = varType
         for n, v in enumerate(tokens[1:], 1):
             if varType in self.classes:
@@ -512,6 +519,18 @@ class BaseTranspiler():
                         varType = currentType
                         tokens[n]['type'] = varType
         value = self.formatDotAccess(tokens)
+        
+        # pass other arguments to be compatible with processVar method
+        if currentType == 'array':
+            if 'indexAccess' in tokens[-1]:
+                # Accessing an element of the array
+                #tokens[-1]['type'] = varType
+                return {'value': value, #tokens[-1]['name'],
+                    'indexAccess':tokens[-1]['indexAccess'],
+                    'type':varType}
+            return {'value':value, 'type':currentType,
+                'elementType':tokens[-1]['elementType'], 'size':'unknown'}
+
         return {'value':value, 'type':varType}
 
     def startScope(self):
@@ -535,7 +554,8 @@ class BaseTranspiler():
                 self.processClassAttribute(c)
             elif c['token'] == 'func':
                 self.processClassMethods(c)
-                #raise SyntaxError('Class methods not implemented yet.')
+            elif c['token'] == 'comment':
+                self.processComment(c)
             else:
                 raise SyntaxError(f'Cannot use {c["token"]} inside a class')
         classScope = self.endScope()
