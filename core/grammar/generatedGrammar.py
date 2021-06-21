@@ -25,6 +25,7 @@ patterns = {
   ('expr', 'lparen', 'rparen'): call,
   ('expr', 'lparen', 'expr', 'rparen'): call,
   ('expr', 'lparen', 'args', 'rparen'): call,
+  ('expr', 'lparen', 'assign', 'rparen'): call,
   ('expr', 'lparen', 'kwargs', 'rparen'): call,
   ('expr', 'lparen', 'expr', 'kwargs', 'rparen'): call,
   ('expr', 'lparen', 'args', 'kwargs', 'rparen'): call,
