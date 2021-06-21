@@ -501,7 +501,7 @@ class BaseTranspiler():
     def processDotAccess(self, token):
         tokens = token['dotAccess']
         varType = self.processVar(tokens[0])['type']
-        currentType = None
+        currentType = varType
         tokens[0]['type'] = varType
         for n, v in enumerate(tokens[1:], 1):
             if varType in self.classes:
@@ -518,6 +518,10 @@ class BaseTranspiler():
                     else:
                         varType = currentType
                         tokens[n]['type'] = varType
+            elif currentType == 'array' and v['name'] == 'len':
+                tokens[n]['type'] = 'int'
+                currentType = 'int'
+                varType = 'int'
         value = self.formatDotAccess(tokens)
         
         # pass other arguments to be compatible with processVar method
