@@ -269,6 +269,10 @@ def expr(i, t):
                 # Second argument is probably a func or indexAccess. Not ready
                 # to parse this yet.
                 return 'continue'
+            if t[i-1]['token'] in {'rparen','rbracket'}:
+                # First argument is probably a func or indexAccess. Not ready
+                # to parse this yet
+                return 'continue'
         except IndexError:
             # it is the last element on the line, ready to proceed.
             pass
