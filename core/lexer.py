@@ -258,11 +258,20 @@ def expr(i, t):
     if t[i]['token'] == 'operator' and t[i-1]['token'] == 'rparen':
         # its part of an expression. Not ready to parse this yet.
         return 'continue'
-    elif len(t[i:]) > 3 and t[i+1]['token'] == 'operator' and t[i+3]['token'] == 'lparen':
-        # The second argument is probly a function. Not ready to parse
+    elif len(t[i:]) > 3 and t[i+1]['token'] == 'operator' and t[i+3]['token'] in {'lparen','lbracket'}:
+        # The second argument is probly a function or indexAccess. Not ready to parse
         # this yet.
         return 'continue'
     elif t[i]['token'] == 'operator':
+        # check if it's ready
+        try:
+            if t[i+2]['token'] in {'lparen','lbracket'}:
+                # Second argument is probably a func or indexAccess. Not ready
+                # to parse this yet.
+                return 'continue'
+        except IndexError:
+            # it is the last element on the line, ready to proceed.
+            pass
         # Modifier operator
         t2 = t[i+1].copy()
         t2['args'][0]['modifier'] = t[i]['operator']

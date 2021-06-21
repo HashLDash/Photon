@@ -475,7 +475,6 @@ class BaseTranspiler():
         # If the kwarg was passed, use it. Otherwise use the default value
         for kw in kws:
             for a in self.processKwargs(token['kwargs']):
-                input(a)
                 if kw['name'] == a['name']:
                     kwargs.append(a)
                     break

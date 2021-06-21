@@ -137,7 +137,7 @@ def reduceToken(tokens):
     reduce()
 
     # No patterns were found, reduced to maximum
-    if len(tokens) > 3:
+    if len(tokens) > 2: #indent reducedToken (beginBlock)
         if not 'symbol' in tokens[0]:
             if 'indent' in tokens[0] and not 'symbol' in tokens[1]:
                 showError(f'SyntaxError')
