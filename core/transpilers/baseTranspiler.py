@@ -608,7 +608,6 @@ class BaseTranspiler():
             # End pre processing
         self.startScope()
         self.currentScope[name] = {'type':returnType, 'token':'func', 'args':args, 'kwargs':kwargs}
-        print(self.currentScope)
         index = len(self.outOfMain)
         # put args in scope
         for arg in args:
