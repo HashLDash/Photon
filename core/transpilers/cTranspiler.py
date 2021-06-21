@@ -56,7 +56,7 @@ class Transpiler(BaseTranspiler):
         for v in tokens:
             if 'indexAccess' in v:
                 # The value should be the dotAccess up to now
-                v['name'] = '.'.join(dotAccess + [v['name']])
+                v['name'] = '.'.join(dotAccess + [v['name']]).replace('->.','->')
                 value = self.processIndexAccess(v)
                 currentType = value['type']
                 # Now the result is just this dotAccess
