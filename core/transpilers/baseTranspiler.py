@@ -357,8 +357,8 @@ class BaseTranspiler():
     def processAugAssign(self, token):
         op = token['operator']
         expr = self.processExpr(token['expr'])
-        if token['target']['token'] == 'var':
-            variable = self.processVar(token['target'])
+        if token['target']['token'] in {'var','dotAccess'}:
+            variable = self.getValAndType(token['target'])
             if op == '+':
                 if variable['type'] == 'array':
                     self.insertCode(self.formatArrayAppend(variable, expr))
@@ -369,7 +369,7 @@ class BaseTranspiler():
                 else:
                     raise SyntaxError(f'AugAssign with type {variable["type"]} not implemented yet.')
         else:
-            raise SyntaxError(f'AugAssign with variable {variable} not supported yet.')
+            raise SyntaxError(f'AugAssign with variable {token["target"]} not supported yet.')
 
     def formatIndexAccess(self, token):
         if token['type'] == 'array':

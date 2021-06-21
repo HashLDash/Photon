@@ -430,7 +430,7 @@ def inputFunc(i, t):
 def augAssign(i, t):
     ''' expr operator equal expr
     '''
-    if t[i]['args'][0]['token'] == 'var':
+    if t[i]['args'][0]['token'] in {'var','dotAccess'}:
         t[i] = {'token':'augAssign', 'target':t[i]['args'][0], 'operator': t[i+1]['operator'], 'expr':t[i+3]}
         del t[i+1] # operator
         del t[i+1] # equal
