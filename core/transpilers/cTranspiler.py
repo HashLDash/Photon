@@ -162,8 +162,13 @@ class Transpiler(BaseTranspiler):
         return f'list_{varType}_append(&{name}, {expr});'
 
     def formatArrayIncrement(self, target, index, expr):
-        name = target['name']
-        varType = target['elementType']
+        if 'name' in target:
+            name = target['name']
+            varType = target['elementType']
+        else:
+            # dotAccess
+            name = target['dotAccess'][-1]['name']
+            varType = target['dotAccess'][-1]['elementType']
         expr = self.formatExpr(expr)
         return f'list_{varType}_inc(&{name}, {index}, {expr});'
 

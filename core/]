@@ -359,13 +359,15 @@ class BaseTranspiler():
         expr = self.processExpr(token['expr'])
         if token['target']['token'] in {'var','dotAccess'}:
             variable = self.getValAndType(token['target'])
+            input(variable)
+            input(token['target'])
             if op == '+':
                 if variable['type'] == 'array':
                     self.insertCode(self.formatArrayAppend(variable, expr))
-                elif token['target']['type'] == 'array':
+                elif token['target']['type'] == 'array' or ('dotAccess' in
+                        token and token['target']['dotAccess'][-1]['type'] == 'array'):
+                    input('increment')
                     self.insertCode(self.formatArrayIncrement(token['target'], variable['indexAccess']['args'][0]['value'], expr))
-                elif 'dotAccess' in token['target'] and token['target']['dotAccess'][-1]['type'] == 'array':
-                    self.insertCode(self.formatArrayIncrement(token['target'], token['target']['dotAccess'][-1]['indexAccess']['args'][0]['value'], expr))
                 elif variable['type'] in {'int', 'float'}:
                     input('increment 2')
                     self.insertCode(self.formatIncrement(variable, expr))
