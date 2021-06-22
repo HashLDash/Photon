@@ -53,10 +53,10 @@ else
 
 if ((Get-Command "python.exe" -ErrorAction SilentlyContinue) -ne $null) 
 {
-   python -m pip install pyreadline
+   cmd /c "refreshenv; python -m pip install pyreadline"
    $scriptPath = split-path -parent $MyInvocation.MyCommand.Definition
    echo "Installing Photon . . ."
-   python "${scriptPath}\install.py"
+   cmd /c "python  '${scriptPath}\install.py'"
 }
 else
 {
