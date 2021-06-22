@@ -20,27 +20,31 @@ while ((Get-Command "choco.exe" -ErrorAction SilentlyContinue) -eq $null)
 }
 
 $dependencies = ""
+$show_dependencies = ""
 
-if ((Get-Command "python.exe" -ErrorAction SilentlyContinue) -eq $null) 
+if (((Get-Command "python.exe" -ErrorAction SilentlyContinue) -eq $null) -or ((Get-Item (Get-Command "python.exe").Path).length -eq 0))
 {
-   $dependencies = "python "
+   $dependencies = "python;"
+   $show_dependencies = "python "
 }
 
-if ((Get-Command "gcc.exe" -ErrorAction SilentlyContinue) -eq $null) 
+if ((Get-Command "gcc.exe" -ErrorAction SilentlyContinue) -eq $null)
 {
-   $dependencies = "${dependencies}mingw "
+   $dependencies = "${dependencies}mingw;"
+   $show_dependencies = "${show_dependencies}mingw "
 }
 
-if ((Get-Command "git.exe" -ErrorAction SilentlyContinue) -eq $null) 
+if ((Get-Command "git.exe" -ErrorAction SilentlyContinue) -eq $null)
 {
-   $dependencies = "${dependencies}git "
+   $dependencies = "${dependencies}git;"
+   $show_dependencies = "${show_dependencies}git "
 }
 
-if ($dependencies -ne "") 
+if ($dependencies -ne "")
 {
-   echo "To use Photon, you need to install the following programs: ${dependencies}"
+   echo "To use Photon, you need to install the following programs: ${show_dependencies}"
    pause
-   choco install -y $dependencies
+   choco install -y "$dependencies"
 } 
 else 
 {
