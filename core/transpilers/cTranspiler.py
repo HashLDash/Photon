@@ -27,6 +27,7 @@ class Transpiler(BaseTranspiler):
         self.listTypes = set()
         self.dictTypes = set()
         self.instanceCounter = 0
+        self.iterVar = []
         self.nativeTypes = {
             'float': 'double',
             'int': 'long',
@@ -281,20 +282,20 @@ class Transpiler(BaseTranspiler):
         self.freeTempArray = ''
         if 'from' in iterable:
             # For with range
-            self.iterVar = variables[0]['value']
+            self.iterVar.append(variables[0]['value'])
             varType = iterable['type']
             fromVal = iterable['from']['value']
             self.step = iterable['step']['value']
             toVal = iterable['to']['value']
-            if self.iterVar in self.currentScope:
+            if self.iterVar[-1] in self.currentScope:
                 varType = ''
             else:
                 varType = varType + ' '
-            return f'{varType}{self.iterVar} = {fromVal}; for (; {self.iterVar} < {toVal}; {self.iterVar} += {self.step}) {{'
+            return f'{varType}{self.iterVar[-1]} = {fromVal}; for (; {self.iterVar[-1]} < {toVal}; {self.iterVar[-1]} += {self.step}) {{'
         elif iterable['type'] == 'array':
             varType = iterable['elementType']
-            self.iterVar = variables[0]['value']
-            if self.iterVar in self.currentScope:
+            self.iterVar.append(variables[0]['value'])
+            if self.iterVar[-1] in self.currentScope:
                 varType = ''
             else:
                 varType = varType + ' '
@@ -309,15 +310,17 @@ class Transpiler(BaseTranspiler):
                 tempArray = ''
                 beginScope = ''
             # tempArray is inside a scope block, must end that when closing the loop
-            return f'{varType}{self.iterVar}; {beginScope}{tempArray}; for (int __iteration__=0; __iteration__ < {iterable["value"]}.len; __iteration__++) {{ {self.iterVar}={iterable["value"]}.values[__iteration__];'
+            return f'{varType}{self.iterVar[-1]}; {beginScope}{tempArray}; for (int __iteration__=0; __iteration__ < {iterable["value"]}.len; __iteration__++) {{ {self.iterVar[-1]}={iterable["value"]}.values[__iteration__];'
         else:
             raise SyntaxError(f'Format for with iterable {iterable["type"]} not suported yet.')
     
     def formatEndFor(self):
         if self.step:
             # Must also close the tempArray scope block
-            return f'}} {self.iterVar} -= {self.step};{self.freeTempArray}'
+            return f'}} {self.iterVar.pop()} -= {self.step};{self.freeTempArray}'
         else:
+            # consume the iterVar of this loop
+            self.iterVar.pop()
             # Must also close the tempArray scope block
             return f'}}{self.freeTempArray}'
 

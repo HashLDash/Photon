@@ -155,18 +155,20 @@ class Transpiler(BaseTranspiler):
     def formatFor(self, variables, iterable):
         self.step = 0
         if 'from' in iterable:
-            self.var = variables[0]['value']
+            self.var.append(variables[0]['value'])
             fromVal = iterable['from']['value']
             self.step = iterable['step']['value']
             toVal = iterable['to']['value']
-            return f'for (var {self.var} = {fromVal}; {self.var} < {toVal}; {self.var} += {self.step}) {{'
+            return f'for (var {self.var[-1]} = {fromVal}; {self.var[-1]} < {toVal}; {self.var[-1]} += {self.step}) {{'
         elif iterable['type'] == 'array':
-            self.var = variables[0]['value']
-            return f'var {self.var}; for (var __iteration__ = 0; __iteration__ < {iterable["value"]}.length; __iteration__++) {{ {self.var} = {iterable["value"]}[__iteration__];'
+            self.var.append(variables[0]['value'])
+            return f'var {self.var[-1]}; for (var __iteration__ = 0; __iteration__ < {iterable["value"]}.length; __iteration__++) {{ {self.var[-1]} = {iterable["value"]}[__iteration__];'
 
     def formatEndFor(self):
         if self.step:
-            return f'}} {self.var} -= {self.step};'
+            return f'}} {self.var.pop()} -= {self.step};'
+        # consume iter var for this loop
+        self.var.pop()
         return '}'
 
     def formatArgs(self, args):

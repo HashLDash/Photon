@@ -13,6 +13,7 @@ import sys
 class Interpreter():
     def __init__(self, filename='', lang='c', target=sys.platform, module=False, standardLibs='', debug=False, transpileOnly=False):
         self.debug = debug
+        input(lang)
         if lang == 'c':
             from transpilers.cTranspiler import Transpiler
         elif lang in {'py', 'python'}:
@@ -25,6 +26,9 @@ class Interpreter():
             from transpilers.haxeTranspiler import Transpiler
         elif lang == 'd':
             from transpilers.dTranspiler import Transpiler
+        else:
+            print(f'Invalid language {lang}')
+            sys.exit()
         self.filename = filename
         if filename:
             self.engine = Transpiler(filename=filename,target=target, module=module, standardLibs=standardLibs)
