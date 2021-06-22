@@ -197,7 +197,6 @@ class Transpiler(BaseTranspiler):
             v = self.getValAndType(target)
             variable = v['value']
             varType = v['type']
-            input(target)
         else:
             raise SyntaxError(f'Format assign with variable {target} not implemented yet.')
         if 'format' in expr:

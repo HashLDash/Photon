@@ -372,7 +372,9 @@ class BaseTranspiler():
                 if variable['type'] == 'array':
                     self.insertCode(self.formatArrayAppend(variable, expr))
                 elif 'indexAccess' in variable:
-                    self.insertCode(self.formatArrayIncrement(token['target'], variable['indexAccess']['args'][0]['value'], expr))
+                    indexVal = variable['indexAccess']['args'][0]
+                    index = indexVal['value'] if 'value' in indexVal else indexVal['name']
+                    self.insertCode(self.formatArrayIncrement(token['target'], index, expr))
                 elif variable['type'] in {'int', 'float'}:
                     self.insertCode(self.formatIncrement(variable, expr))
                 else:
