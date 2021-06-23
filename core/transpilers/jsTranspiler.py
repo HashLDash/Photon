@@ -10,6 +10,7 @@ class Transpiler(BaseTranspiler):
     def __init__(self, filename, **kwargs):
         super().__init__(filename, **kwargs)
         self.filename = self.filename.replace('.w','.js')
+        self.lang = 'js'
         self.commentSymbol = '//'
         self.imports = set()
         self.funcIdentifier = 'function '
@@ -124,7 +125,7 @@ class Transpiler(BaseTranspiler):
         return f'var {variable} = {formattedExpr};'
 
     def formatCall(self, name, returnType, args, kwargs):
-        arguments = ', '.join([ arg["value"] for arg in args])
+        arguments = ', '.join([ arg["value"] for arg in args+kwargs])
         return f'{name}({arguments})'
 
     def formatExpr(self, value, cast=None):
@@ -174,8 +175,9 @@ class Transpiler(BaseTranspiler):
     def formatArgs(self, args):
         return ', '.join([ f'{arg["value"]}' for arg in args ])
 
-    def formatFunc(self, name, returnType, args):
-        args = self.formatArgs(args)
+    def formatFunc(self, name, returnType, args, kwargs):
+        kwargs = [{'value':kw['name'], 'type':kw['type']} for kw in kwargs]
+        args = self.formatArgs(args+kwargs)
         if self.inClass:
             func = ''
         else:

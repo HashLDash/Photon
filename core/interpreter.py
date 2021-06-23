@@ -13,7 +13,6 @@ import sys
 class Interpreter():
     def __init__(self, filename='', lang='c', target=sys.platform, module=False, standardLibs='', debug=False, transpileOnly=False):
         self.debug = debug
-        input(lang)
         if lang == 'c':
             from transpilers.cTranspiler import Transpiler
         elif lang in {'py', 'python'}:

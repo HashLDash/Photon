@@ -123,7 +123,7 @@ class Transpiler(BaseTranspiler):
         return f'{variable} = {formattedExpr}'
 
     def formatCall(self, name, returnType, args, kwargs):
-        arguments = ','.join([ arg["value"] for arg in args])
+        arguments = ','.join([ arg["value"] for arg in args+kwargs])
         return f'{name}({arguments})'
 
     def formatExpr(self, value, cast=None):
@@ -165,8 +165,9 @@ class Transpiler(BaseTranspiler):
     def formatArgs(self, args):
         return ','.join([ f'{arg["value"]}: {self.nativeType(arg["type"])}' for arg in args ])
 
-    def formatFunc(self, name, returnType, args):
-        args = self.formatArgs(args)
+    def formatFunc(self, name, returnType, args, kwargs):
+        kwargs = [{'value':kw['name'], 'type':kw['type']} for kw in kwargs]
+        args = self.formatArgs(args+kwargs)
         returnType = self.nativeType(returnType)
         return f'def {name}({args}) -> {returnType}:'
 
