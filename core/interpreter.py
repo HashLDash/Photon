@@ -39,6 +39,9 @@ class Interpreter():
             except UnicodeDecodeError:
                 with open(filename,'r') as f:
                     self.source = [line for line in f]
+            except FileNotFoundError as e:
+                print(f"photon: can't open file {filename}: {e}")
+                exit()
         else:
             try:
                 import readline
