@@ -457,8 +457,7 @@ class Transpiler(BaseTranspiler):
             self.filename = f'{moduleName}.c'
             boilerPlateStart = []
             boilerPlateEnd = []
-        # Force utf8 on windows
-        with open(f'Sources/c/{self.filename}', 'w', encoding='utf8') as f:
+        with open(f'Sources/c/{self.filename}', 'w') as f:
             for imp in self.imports:
                 module = imp.split(' ')[-1].replace('.w', '').replace('"', '')
                 debug(f'Importing {module}')

@@ -241,7 +241,7 @@ class Transpiler(BaseTranspiler):
                 module = imp.split(' ')[-1].replace('.w', '').replace('"',  '')
                 debug(f'Importing {module}')
                 if f'{module}.js' in os.listdir('Sources/js'):
-                    with open(f'Sources/js/{module}.js', 'r', encoding='utf8') as m:
+                    with open(f'Sources/js/{module}.js', 'r') as m:
                         for line in m:
                             f.write(line)
                 else:
