@@ -24,7 +24,7 @@ try:
         p_dir = os.path.expandvars('%ProgramFiles%\\Photon')
         if not os.path.exists(p_dir):
             os.mkdir(p_dir)
-        with open(os.path.join(p_dir, 'photon.bat'), 'w') as w:
+        with open(os.path.join(p_dir, 'photon.bat'), 'w', encoding='utf-8') as w:
             w.write(f'@echo off\npython "{PHOTON_PATH}" %*')
         if p_dir in os.environ.get("PATH"):
             print('Photon already on PATH, skipping')
