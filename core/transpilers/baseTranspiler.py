@@ -791,7 +791,7 @@ class BaseTranspiler():
     def processGroup(self, token):
         expr = self.processExpr(token['expr'])
         if 'modifier' in token:
-            op = token['modifier']
+            op = token['modifier'].replace('not',self.notOperator)
         else:
             op = ''
         return {'value':f'{op}({expr["value"]})', 'type':expr['type']}
