@@ -72,7 +72,7 @@ def string(i, t):
                 inExpr = False
                 expressions.append(deepcopy(expression))
                 expression = []
-            else:
+            elif not token['token'] == 'space':
                 expression.append(token)
         elif token['token'] == stringQuote:
             break
@@ -94,12 +94,10 @@ def string(i, t):
                 s += token['symbol']
         elif token['token'] == 'type':
             s += token['type']
+        elif 'Statement' in token['token']:
+            s += token['token'].replace('Statement', '')
         else:
-            tok = token['token']
-            if 'Statement' in tok:
-                s += tok.replace('Statement', '')
-            else:
-                s += tok
+            s += token['token']
         n += 1
 
     processedExpressions = []

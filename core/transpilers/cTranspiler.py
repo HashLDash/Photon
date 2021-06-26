@@ -204,6 +204,7 @@ class Transpiler(BaseTranspiler):
             # It's a format string
             formatstr = expr['format']
             values = ','.join(expr['values'])
+            varType = self.nativeType(varType)
             return f'{varType} {variable}; asprintf(&{variable}, {formatstr},{values});'
         if expr['type'] == 'array' and expr['elementType'] != self.currentScope[variable]['elementType']:
             cast = self.nativeType(varType)
