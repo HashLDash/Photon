@@ -222,9 +222,12 @@ def floatNumber(i, t):
     ''' Check if it is a floatNumber token and
         Return a float number from the given tokenList
     '''
-    if t[i+2]['token'] == 'dot':
-        # Its a range token
-        return 'continue'
+    try:
+        if t[i+2]['token'] == 'dot':
+            # Its a range token
+            return 'continue'
+    except IndexError:
+        pass
     try:
         t[i] = {
             'token':'floatNumber',
