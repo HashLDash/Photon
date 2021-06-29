@@ -67,18 +67,14 @@ class Transpiler(BaseTranspiler):
         return f'[{values}]'
     
     def formatIndexAssign(self, target, expr, inMemory=False):
-        if target['type'] == 'array':
-            index = self.processExpr(target['indexAccess'])['value']
-            name = target['name']
-            varType = target['elementType']
-            if self.typeKnown(expr['type']) and expr['type'] != varType:
-                cast = self.nativeType(varType)
-            else:
-                cast = None
-            expr = self.formatExpr(expr, cast=cast)
-            return f'{name}[{index}] = {expr}'
+        target = self.getValAndType(target)
+        varType = target['type']
+        if self.typeKnown(expr['type']) and expr['type'] != varType:
+            cast = self.nativeType(varType)
         else:
-            raise SyntaxError(f'Index assign with type {target["type"]} not implemented in py target.')
+            cast = None
+        expr = self.formatExpr(expr, cast=cast)
+        return f'{target["value"]} = {expr}'
 
     def formatArrayAppend(self, target, expr):
         name = target['value']
@@ -86,15 +82,23 @@ class Transpiler(BaseTranspiler):
         return f'{name}.append({expr})'
 
     def formatArrayIncrement(self, target, index, expr):
-        name = target['name']
-        varType = target['elementType']
-        expr = self.formatExpr(expr)
-        return f'{name}[{index}] += {expr}'
+        name = self.getValAndType(target)['value']
+        varType = target['type']
+        if self.typeKnown(expr['type']) and expr['type'] != varType:
+            cast = self.nativeType(varType)
+        else:
+            cast = None
+        expr = self.formatExpr(expr, cast=cast)
+        return f'{name} += {expr}'
 
     def formatIncrement(self, target, expr):
         name = target['value']
         varType = target['type']
-        expr = self.formatExpr(expr)
+        if self.typeKnown(expr['type']) and expr['type'] != varType:
+            cast = self.nativeType(varType)
+        else:
+            cast = None
+        expr = self.formatExpr(expr, cast=cast)
         return f'{name} += {expr};'
 
     def formatAssign(self, target, expr, inMemory=False):
@@ -218,12 +222,9 @@ class Transpiler(BaseTranspiler):
         if not self.module:
             self.filename = 'main.py'
         else:
-            self.filename = f'{moduleName}.py'
+            #self.filename = f'{moduleName}.py'
             boilerPlateStart = []
             boilerPlateEnd = []
-            del self.imports[0]
-            del self.imports[0]
-            del self.imports[0]
         with open(f'Sources/py/{self.filename}', 'w') as f:
             for imp in self.imports:
                 module = imp.split(' ')[-1].replace('.w', '').replace('"', '')

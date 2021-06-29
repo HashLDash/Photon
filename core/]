@@ -516,8 +516,8 @@ class BaseTranspiler():
                 if name in self.classes[varType]['scope']:
                     currentType = self.classes[varType]['scope'][name]['type']
                     if currentType == 'array':
-                        size = self.classes[varType]['scope'][name]['size']
                         varType = self.classes[varType]['scope'][name]['elementType']
+                        size = self.classes[varType]['scope'][name]['size']
                         tokens[n]['type'] = currentType
                         tokens[n]['elementType'] = varType
                         tokens[n]['size'] = size
