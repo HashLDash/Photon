@@ -164,7 +164,6 @@ class BaseTranspiler():
                 v = self.processIndexAccess(token)
                 return {'value':v['value'],
                     'indexAccess':token['indexAccess'], 'type':v['type']}
-            input(token)
             return {'value':token['name'], 'type':varType,
                 'elementType':token['elementType'], 'size':token['size']}
         return {'value':token['name'], 'type':varType}
