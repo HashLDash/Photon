@@ -87,7 +87,6 @@ class Transpiler(BaseTranspiler):
             self.imports.add(f'#include "{className}.h"')
         else:
             raise SyntaxError(f'Array of type {elementType} not implemented yet.')
-        values = ','.join(e['value'] for e in elements)
         if size == 'unknown':
             size = 10
         if elements:
@@ -96,6 +95,26 @@ class Transpiler(BaseTranspiler):
             initValues = ''
         elementType = self.nativeType(elementType)
         return f"{className} {{var}} = {{{{ {len(elements)}, {size}, malloc(sizeof({elementType})*{size}) }}}};{initValues};"
+
+    def formatMap(self, elements, keyType, valType):
+        className = f'dict_{keyType.replace("*", "ptr")}_{valType.replace("*", "ptr")}'
+        self.dictTypes.add(className)
+        self.listTypes.add(keyType)
+        self.listTypes.add(valType)
+        if keyType in {'int', 'float', 'str'} and valType in {'int', 'float', 'str'}:
+            self.imports.add(f'#include "{className}.h"')
+            self.imports.add(f'#include "list_{keyType.replace("*", "ptr")}.h"')
+            self.imports.add(f'#include "list_{valType.replace("*", "ptr")}.h"')
+        else:
+            raise SyntaxError(f'Dict of type {className} not implemented yet.')
+        size = 10
+        if elements:
+            initValues = ';'.join(f'{{var}}.keys.values[{i}] = {v[0]["value"]}; {{var}}.values.values[{i}] = {v[1]["value"]}' for i, v in enumerate(elements))
+        else:
+            initValues = ''
+        keyType = self.nativeType(keyType)
+        valType = self.nativeType(valType)
+        return f"{className} {{var}} = {{{{ {{{{ {len(elements)}, {size}, malloc(sizeof({keyType})*{size}) }}}}, {{{{ {len(elements)}, {size}, malloc(sizeof({valType})*{size}) }}}} }}}}; {initValues};"
 
     def formatInput(self, expr):
         self.imports.add('#include "photonInput.h"')
@@ -226,7 +245,7 @@ class Transpiler(BaseTranspiler):
                 return formattedExpr + f'{varType}{variable}; {variable} = __inputStr__;'
         except KeyError:
             pass
-        if expr['type'] == 'array':
+        if expr['type'] in {'array', 'map'}:
             return formattedExpr.format(var=variable)
         elif expr['type'] in self.classes:
             className = expr["type"]
@@ -436,6 +455,12 @@ class Transpiler(BaseTranspiler):
         else:
             raise SyntaxError(f'Print function with token {value} not supported yet.')
 
+    def sortedImports(self):
+        ''' Imports must be sorted to avoid definition errors or conflicts '''
+        # Lists must be imported before dicts
+        imports = sorted(list(self.imports), reverse=True)
+        return imports
+                
     def write(self):
         boilerPlateStart = [
             'int main() {',
@@ -459,7 +484,7 @@ class Transpiler(BaseTranspiler):
             boilerPlateStart = []
             boilerPlateEnd = []
         with open(f'Sources/c/{self.filename}', 'w') as f:
-            for imp in self.imports:
+            for imp in self.sortedImports():
                 module = imp.split(' ')[-1].replace('.w', '').replace('"', '')
                 debug(f'Importing {module}')
                 if module in os.listdir(f'{self.standardLibs}/native/c'):
