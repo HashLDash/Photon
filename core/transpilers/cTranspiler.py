@@ -158,6 +158,12 @@ class Transpiler(BaseTranspiler):
             indexAccess = self.processExpr(token['indexAccess'])['value']
             name = token['name']
             return f'list_{varType}_get(&{name}, {indexAccess})'
+        elif token['type'] == 'map':
+            keyType = token['keyType']
+            valType = token['valType']
+            indexAccess = self.processExpr(token['indexAccess'])['value']
+            name = token['name']
+            return f'dict_{keyType}_{valType}_get(&{name}, {indexAccess})'
         else:
             raise SyntaxError(f'IndexAccess with type {token["type"]} not implemented yet')
 

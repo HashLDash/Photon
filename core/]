@@ -144,9 +144,6 @@ class BaseTranspiler():
             if varType == 'array':
                 token['elementType'] = self.currentScope[name]['elementType']
                 token['size'] = self.currentScope[name]['size']
-            elif varType == 'map':
-                token['keyType'] = self.currentScope[name]['keyType']
-                token['valType'] = self.currentScope[name]['valType']
         elif name == self.inFunc and self.returnType:
             for rt in self.returnType:
                 if self.typeKnown(rt):
@@ -155,9 +152,6 @@ class BaseTranspiler():
                     if varType == 'array':
                         token['elementType'] = self.currentScope[name]['elementType']
                         token['size'] = self.currentScope[name]['size']
-                    elif varType == 'map':
-                        token['keyType'] = self.currentScope[name]['keyType']
-                        token['valType'] = self.currentScope[name]['valType']
         else:
             varType = 'unknown'
         if 'modifier' in token:
@@ -173,8 +167,9 @@ class BaseTranspiler():
             return {'value':token['name'], 'type':varType,
                 'elementType':token['elementType'], 'size':token['size']}
         if varType == 'map':
+            input(token)
             if 'indexAccess' in token:
-                # Accessing an element of the map
+                # Accessing an element of the array
                 token['type'] = varType
                 v = self.processIndexAccess(token)
                 return {'value':v['value'],
@@ -236,20 +231,20 @@ class BaseTranspiler():
         'elements':elements, 'elementType':varType, 'size':'unknown'}
 
     def processMap(self, token):
-        keyTypes = set()
-        valTypes = set()
-        elements = []
-        for keyVal in token['elements']:
-            key, val = self.getValAndType(keyVal['key']), self.getValAndType(keyVal['val'])
-            keyTypes.add(key['type'])
-            valTypes.add(val['type'])
-            elements.append((key, val))
         if self.typeKnown(token['keyType']) and self.typeKnown(token['valType']):
             # Type was explicit
             keyType = token['keyType']
             valType = token['valType']
         else:
             # Infer type
+            keyTypes = set()
+            valTypes = set()
+            elements = []
+            for keyVal in token['elements']:
+                key, val = self.getValAndType(keyVal['key']), self.getValAndType(keyVal['val'])
+                keyTypes.add(key['type'])
+                valTypes.add(val['type'])
+                elements.append((key, val))
             if len(keyTypes) == 0:
                 keyType = 'unknown'
                 valType = 'unknown'
@@ -368,11 +363,6 @@ class BaseTranspiler():
                     # Add array info into expression
                     expr['args'][0]['elementType'] = variable['elementType']
                     expr['args'][0]['size'] = variable['size']
-            elif variable['type'] == 'map':
-                if not self.typeKnown(expr['args'][0]['valType']):
-                    # Add map info into expression
-                    expr['args'][0]['keyType'] = variable['keyType']
-                    expr['args'][0]['valType'] = variable['valType']
             elif self.typeKnown(variable['type']) and expr['args'][0]['type'] == 'array':
                 # The type declaration is for the elementType
                 expr['args'][0]['elementType'] = variable['type']
@@ -397,16 +387,6 @@ class BaseTranspiler():
                 # for the elementType
                 self.currentScope[variable['value']]['type'] = 'array'
 
-            if variable['type'] == 'map':
-                self.currentScope[variable['value']]['keyType'] = variable['keyType']
-                self.currentScope[variable['value']]['valType'] = variable['valType']
-            elif expr['type'] == 'map':
-                self.currentScope[variable['value']]['keyType'] = expr['keyType']
-                self.currentScope[variable['value']]['valType'] = expr['valType']
-                # We have to change the type to array because the type declaration was intended
-                # for the elementType
-                self.currentScope[variable['value']]['type'] = 'map'
-
         else:
             varType = self.inferType(expr)
             if self.typeKnown(varType):
@@ -419,15 +399,6 @@ class BaseTranspiler():
                     else:
                         raise SyntaxError(f'Array with unknown type not implemented yet.')
                     self.currentScope[variable['value']]['size'] = expr['size']
-                #elif varType == 'map':
-                #    if self.typeKnown(expr['valType']):
-                #        self.currentScope[variable['value']]['keyType'] = expr['keyType']
-                #    elif self.typeKnown(variable['type']):
-                #        self.currentScope[variable['value']]['keyType'] = variable['keyType']
-                #        self.currentScope[variable['value']]['valType'] = variable['valType']
-                #    else:
-                #        raise SyntaxError(f'Array with unknown type not implemented yet.')
-                #    self.currentScope[variable['value']]['size'] = expr['size']
                 target['type'] = varType
         #if 'indexAccess' in target:
         if 'indexAccess' in variable:
@@ -672,6 +643,7 @@ class BaseTranspiler():
         del self.currentScope[token['name']]
 
     def processFunc(self, token):
+        #TODO: add support for kwargs
         args = self.processArgs(token['args'])
         kwargs = self.processKwargs(token['kwargs'])
         name = token['name']
@@ -784,6 +756,7 @@ class BaseTranspiler():
             value = self.processExpr(token['expr'])
         else:
             value = {'value':'','type':'null'}
+        input(value)
         self.insertCode(self.formatPrint(value))
 
     def add(self, arg1, arg2):
