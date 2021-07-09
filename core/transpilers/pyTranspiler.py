@@ -65,6 +65,10 @@ class Transpiler(BaseTranspiler):
     def formatArray(self, elements, varType, size):
         values = ', '.join(v['value'] for v in elements)
         return f'[{values}]'
+
+    def formatMap(self, elements, varType, size):
+        values = ', '.join(f"{k['value']}:{v['value']}" for k, v in elements)
+        return f'{{{values}}}'
     
     def formatIndexAssign(self, target, expr, inMemory=False):
         target = self.getValAndType(target)

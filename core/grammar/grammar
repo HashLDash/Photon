@@ -35,12 +35,17 @@ expr = num
      | (num var expr) operator (num var expr)
      | operator (expr)
 
+keyVal = expr beginBlock expr
+
+keyVals = (keyVals keyVal) comma (keyVal keyVals)
+
 indexAccess = expr lbracket (expr) rbracket
 
 array = lbracket args rbracket
       | lbracket rbracket
 
 hashmap = lbrace rbrace
+        | lbrace (keyVal keyVals) rbrace
 
 funcReturn = returnStatement
            | returnStatement expr

@@ -189,18 +189,17 @@ class BaseTranspiler():
         return token
 
     def processArray(self, token):
-        # InferType
-        types = set()
-        elements = []
-        for tok in token['elements']:
-            element = self.getValAndType(tok)
-            types.add(element['type'])
-            elements.append(element)
         if self.typeKnown(token['elementType']):
             # Type was explicit
             varType = token['elementType']
         else:
             # Infer type
+            types = set()
+            elements = []
+            for tok in token['elements']:
+                element = self.getValAndType(tok)
+                types.add(element['type'])
+                elements.append(element)
             if len(types) == 0:
                 varType = 'unknown'
             elif len(types) == 1:
@@ -216,6 +215,33 @@ class BaseTranspiler():
                 raise SyntaxError(f'Type inference in array with types {types} not implemented yet.')
         return {'value':self.formatArray(elements, varType, token['size']), 'type':'array',
         'elements':elements, 'elementType':varType, 'size':'unknown'}
+
+    def processMap(self, token):
+        if self.typeKnown(token['keyType']) and self.typeKnown(token['valType']):
+            # Type was explicit
+            keyType = token['keyType']
+            valType = token['valType']
+        else:
+            # Infer type
+            keyTypes = set()
+            valTypes = set()
+            elements = []
+            for keyVal in token['elements']:
+                key, val = self.getValAndType(keyVal['key']), self.getValAndType(keyVal['val'])
+                keyTypes.add(key['type'])
+                valTypes.add(val['type'])
+                elements.append((key, val))
+            if len(keyTypes) == 0:
+                keyType = 'unknown'
+                valType = 'unknown'
+            elif len(keyTypes) == 1:
+                keyType = keyTypes.pop()
+                valType = valTypes.pop()
+            else:
+                raise SyntaxError('Map with dynamic types not implemented yet.')
+        return {'value':self.formatMap(elements, valType, keyType),
+            'type':'map', 'elements':elements, 'valType':valType,
+            'keyType':keyType}
 
     def getValAndType(self, token):
         if 'value' in token and 'type' in token and (self.typeKnown(token['type']) or not self.insertMode):
@@ -243,6 +269,8 @@ class BaseTranspiler():
             return self.processInput(token)
         elif token['token'] == 'array':
             return self.processArray(token)
+        elif token['token'] == 'map':
+            return self.processMap(token)
         else:
             raise ValueError(f'ValAndType with token {token} not implemented')
 

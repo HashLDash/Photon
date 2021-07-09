@@ -104,7 +104,7 @@ def string(i, t):
     for expression in expressions:
         # process expression. Add a dummy token for index compatibility
         expression = parser.reduceToken([{'token':'indent'}]+expression)[1:][0]
-        # verify its an expression
+        # verify if it's an expression
         if not expression['token'] == 'expr':
             raise SyntaxError(f'Expected expression in format string, but got {expression[0]["token"]} instead')
         else:
@@ -167,6 +167,30 @@ def mapType(i, t):
 
     del t[i+1] #beginBlock
     del t[i+1] #var or type
+    return t
+
+def keyVal(i, t):
+    ''' KeyVal token is used to define map elements '''
+    # Verify if it's a valid token
+    # TODO
+    key = t[i]
+    val = t[i+2]
+    t[i] = {'token':'keyVal', 'key':key, 'val':val}
+    del t[i+1] # beginBlock
+    del t[i+1] # expr
+    return t
+
+def keyVals(i, t):
+    ''' keyVal beginBlock keyVal '''
+    keyVals = []
+    for tok in [t[i], t[i+2]]:
+        if tok['token'] == 'keyVals':
+            keyVals += tok['keyVals']
+        elif tok['token'] == 'keyVal':
+            keyVals.append(tok)
+    t[i] = {'token':'keyVals', 'keyVals':keyVals}
+    del t[i+1] # beginBlock
+    del t[i+1] # keyVal
     return t
 
 def typeDeclaration(i, t):
@@ -250,7 +274,7 @@ def convertToExpr(token):
         else:
             varType = 'float'
         return {'token':'expr', 'type':varType, 'args':[token], 'ops':[]}
-    elif token['token'] in {'var','group','inputFunc','call', 'array', 'dotAccess'}:
+    elif token['token'] in {'var','group','inputFunc','call', 'array', 'dotAccess', 'map'}:
         return {'token':'expr', 'type':token['type'], 'args':[token], 'ops':[]}
     else:
         raise SyntaxError(f'Cant convert token {token} to expr')
@@ -595,6 +619,13 @@ def array(i, t):
 
 def hashmap(i, t):
     ''' Verify if its a valid hashmap and return a map token if it is '''
+    elements = []
+    if t[i+1]['token'] == 'keyVal':
+        elements.append(t[i+1])  
+        del t[i+1] # keyVal
+    elif t[i+1]['token'] == 'keyVals':
+        elements = t[i+1]['keyVals']
+        del t[i+1] # keyVals
     t[i] = convertToExpr({'token':'map','type':'map','valType':'unknown','keyType':'unknown',
         'elements':elements})
     del t[i+1] # rbrace

@@ -2,8 +2,8 @@
 #include <stdlib.h>
 
 typedef struct list_int {
-    int len;
-    int size;
+    int len;  // number of element stored
+    int size; // allocated array size
     int* values;
 } list_int;
 
