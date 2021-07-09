@@ -190,8 +190,6 @@ def mapType(i, t):
 
 def keyVal(i, t):
     ''' KeyVal token is used to define map elements '''
-    # Verify if it's a valid token
-    # TODO
     key = t[i]
     val = t[i+2]
     t[i] = {'token':'keyVal', 'key':key, 'val':val}
