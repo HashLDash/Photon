@@ -129,6 +129,9 @@ def arrayType(i, t):
     Return a type token according to signature.
     (var type) beginBlock num -> array
     '''
+    # Verify if it's a valid type token
+    if inMap(i, t):
+        return 'continue'
     if t[i]['token'] == 'var':
         elementType = t[i]['name']
     elif t[i]['token'] == 'type':
@@ -144,11 +147,27 @@ def arrayType(i, t):
     del t[i+1] #num
     return t
 
+def inMap(i, t):
+    ''' Checks if the current token is inside a map definition '''
+    # If there is an open brace, then it is a keyVal and not a mapType
+    braceLevel = 0
+    for i in range(i):
+        if t[i]['token'] == 'lbrace':
+            braceLevel += 1
+        elif t[i]['token'] == 'rbrace':
+            braceLevel -= 1
+    if braceLevel > 0:
+        return True
+    return False
+
 def mapType(i, t):
     ''' 
     Return a type token according to signature.
     (var type) beginBlock (var type) -> map
     '''
+    # Verify if it's a valid type token
+    if inMap(i, t):
+        return 'continue'
     if t[i]['token'] == 'var':
         keyType = t[i]['name']
     elif t[i]['token'] == 'type':
