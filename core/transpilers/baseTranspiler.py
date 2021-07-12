@@ -455,7 +455,7 @@ class BaseTranspiler():
             raise SyntaxError(f'AugAssign with variable {token["target"]} not supported yet.')
 
     def formatIndexAccess(self, token):
-        if token['type'] == 'array':
+        if token['type'] in {'array', 'map'}:
             indexAccess = self.processExpr(token['indexAccess'])['value']
             name = token['name']
             return f'{name}[{indexAccess}]'
