@@ -59,10 +59,15 @@ class Transpiler(BaseTranspiler):
     def formatArray(self, elements, varType, size):
         values = ', '.join(v['value'] for v in elements)
         return f'[{values}]'
+
+    def formatMap(self, elements, varType, size):
+        # the [] in the key is used to evaluate the variable, else the key won't be the value
+        # and will produce errors.
+        values = ', '.join(f"[{k['value']}]:{v['value']}" for k, v in elements)
+        return f'{{{values}}}'
     
     def formatIndexAccess(self, token):
-        if token['type'] == 'array':
-            varType = token['elementType']
+        if token['type'] in {'array', 'map'}:
             index = self.processExpr(token['indexAccess'])['value']
             #TODO: Optimize for constants and remove the if else test. The same applies to C
             name = token['name']
