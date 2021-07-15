@@ -17,3 +17,4 @@ src/_black_version.py
 *.swp
 .hypothesis/
 venv/
+examples/Sources/
