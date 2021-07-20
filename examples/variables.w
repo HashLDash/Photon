@@ -1,20 +1,21 @@
 
-# Variables in the photon can be dynamically typed or have a specific fixed type.
+# Variables in the photon language can be inferred or explicitly typed.
 #-----------------------------------------------------------------------------------------
-# Every variable contains three elements. Type, Name and Value, by default in Photon
-# the dynamically typed variables do not require the type to be informed.
-# Because the type will be implicitly defined based on the informed (assigned) value.
+# Every variable contains three elements. Type, Name and Value. By default, Photon
+# tries to infer the type of the variable based on the assigned value.
 
 #-----------------------------------------------------------------------------------------
-# Dynamically typed variables
-my_var = 1
-my_var = 3.1415
-my_var = "The name of this programming language is called Photon"
+# Type inference in action
+my_int = 1
+my_float = 3.1415
+my_string = "The name of this programming language is called Photon"
+my_int_array = [1,2,3]
+my_float_array = [1,2,2.4,3.0]
 
 #-----------------------------------------------------------------------------------------
 # Explicitly typed variables
 
-# Number integer
+# Integer number
 int number_int = 1
 
 # Floating point number
@@ -30,7 +31,7 @@ array_int += 1
 array_int += 2
 array_int += 3
 
-# Array of integers
+# Array of floats
 float array_float = []
 # Append elements on array of floats
 array_float += 1.1
@@ -39,6 +40,6 @@ array_float += 3.1
 
 # Array of strings
 str array_str = []
-# The addition of elements is still under development!
+# The addition of string elements is still under development!
 #array_str += "My name"
 #array_str += "is Johann"

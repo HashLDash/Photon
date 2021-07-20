@@ -14,8 +14,9 @@ print("Hello, {name}")
 # Displays a line break.
 print()
 
-# In this case, the input function's return is cast of string to integer e float.
+# In this case, the input function's return is cast from string to integer
 int a = input("Enter an integer: ")
+# or float in this case
 float b = input("Enter a number with decimal places: ")
 
 # Displaying the sum result.
