@@ -15,7 +15,7 @@ class Transpiler(BaseTranspiler):
         self.imports = set()
         self.funcIdentifier = 'function '
         self.constructorName = 'new'
-        self.block = {'class ','function ', 'for ','while ','if ','elif ','else'}
+        self.block = {'/*def*/', 'class ','function ', 'for ','while ','if ','elif ','else'}
         self.true = 'true'
         self.false = 'false'
         self.null = 'null'
@@ -40,7 +40,7 @@ class Transpiler(BaseTranspiler):
         return f'var {name} = {self.null}'
 
     def formatDotAccess(self, tokens):
-        return '.'.join(self.getValAndType(v)['value'] for v in tokens)
+        return '.'.join(self.getValAndType(v)['value'] for v in tokens).replace('self.','this.')
     
     def formatInput(self, expr):
         if not self.target == 'web':
@@ -77,18 +77,14 @@ class Transpiler(BaseTranspiler):
             raise SyntaxError(f'IndexAccess with type {token["type"]} not implemented yet')
     
     def formatIndexAssign(self, target, expr, inMemory=False):
-        if target['type'] == 'array':
-            index = self.processExpr(target['indexAccess'])['value']
-            name = target['name']
-            varType = target['elementType']
-            if self.typeKnown(expr['type']) and expr['type'] != varType:
-                cast = self.nativeType(varType)
-            else:
-                cast = None
-            expr = self.formatExpr(expr, cast=cast)
-            return f'{name}[{index}] = {expr}'
+        target = self.getValAndType(target)
+        varType = target['type']
+        if self.typeKnown(expr['type']) and expr['type'] != varType:
+            cast = self.nativeType(varType)
         else:
-            raise SyntaxError(f'Index assign with type {target["type"]} not implemented in py target.')
+            cast = None
+        expr = self.formatExpr(expr, cast=cast)
+        return f'{target["value"]} = {expr}'
 
     def formatArrayAppend(self, target, expr):
         name = target['value']
@@ -179,13 +175,13 @@ class Transpiler(BaseTranspiler):
         return '}'
 
     def formatArgs(self, args):
-        return ', '.join([ f'{arg["value"]}' for arg in args ])
+        return ', '.join([ f'{arg["value"]}' for arg in args if not arg['value'] == 'self'])
 
     def formatFunc(self, name, returnType, args, kwargs):
         kwargs = [{'value':kw['name'], 'type':kw['type']} for kw in kwargs]
         args = self.formatArgs(args+kwargs)
         if self.inClass:
-            func = ''
+            func = '/*def*/'
         else:
             func = 'function '
         return f'{func}{name}({args}) {{'
@@ -256,7 +252,7 @@ class Transpiler(BaseTranspiler):
                 if line:
                     if line.startswith('}'):
                         indent -= 4
-                f.write(' ' * indent + line + '\n')
+                f.write(' ' * indent + line.replace('/*def*/', '') + '\n')
                 if self.isBlock(line):
                     indent += 4
         debug('Generated ' + self.filename)
