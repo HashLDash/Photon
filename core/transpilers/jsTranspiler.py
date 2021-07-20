@@ -45,6 +45,7 @@ class Transpiler(BaseTranspiler):
     def formatInput(self, expr):
         if not self.target == 'web':
             self.imports.add("prompt = require('prompt-sync')()")
+            self.links.add('prompt-sync')
         message = expr['value']
         return f'prompt({message})'
 
@@ -265,6 +266,10 @@ class Transpiler(BaseTranspiler):
         self.write()
         debug(f'Running {self.filename}')
         try:
+            if not 'node_modules' in os.listdir():
+                print('Linking libraries. This will only run once per project.')
+                for module in self.links:
+                    check_call(['npm', 'link', module])
             check_call(['node', f'Sources/js/{self.filename}'])
         except:
             print('Compilation error. Check errors above.')

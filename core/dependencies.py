@@ -123,7 +123,8 @@ def brewInstaller(name):
 linux_cmds = {'dmd': 'curl https://dlang.org/install.sh | bash -s || (mkdir -p ~/dlang && wget '
                      'https://dlang.org/install.sh -O ~/dlang/install.sh && chmod +x ~/dlang/install.sh && '
                      '~/dlang/install.sh)'}
-linux_cmds['node prompt-sync'] = 'npm install prompt-sync -G'
+linux_cmds['node prompt-sync'] = 'sudo npm install -g prompt-sync'
+win_cmds = {'node prompt-sync': 'npm install -g prompt-sync'}
 if os.path.exists('/etc/debian_version'):  # debian, ubuntu, pop!_os, zorin os
     linux_cmds['before'] = 'sudo apt-get update'
     linux_cmds['gcc'] = 'sudo apt install build-essential'
@@ -235,7 +236,7 @@ def resolveHaxeWin32():
 def resolveJsWin32():
     ''' Install nodejs '''
     chocoInstaller("nodejs") # npm is also installed with nodejs
-    os.system(linux_cmds["node prompt-sync"])
+    os.system(win_cmds["node prompt-sync"])
     return programIsInstalled("node") and programIsInstalled("npm")
 
 def resolveDartWin32():

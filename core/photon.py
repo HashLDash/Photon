@@ -114,4 +114,8 @@ if __name__ == "__main__":
             (otherParams[0] == '-l' or otherParams[0] == '--lang') and \
             (otherParams[1].lower() in langs):
             lang = otherParams[1].lower()
+            print('TESTING FOR LANG', haveDependencies(lang, sys.platform))
+            if not haveDependencies(lang, sys.platform):
+                resolveDependencies(lang, sys.platform)
+                print('Dependencies successfuly installed.')
         Interpreter(filename = first, lang = lang, standardLibs = os.path.join(PHOTON_INSTALL_PATH, 'libs/'), debug = DEBUG).run()
