@@ -11,6 +11,8 @@ int dict_int_int_get(dict_int_int* self, int key) {
             return list_int_get(&self->values,n);
         }
     }
+    printf("KeyError: The key %ld was not found.\n", key);
+    exit(-1);
 }
 void dict_int_int_set(dict_int_int* self, int key,int value) {
     list_int_append(&self->keys,key);

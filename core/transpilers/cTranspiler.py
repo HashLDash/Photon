@@ -85,6 +85,8 @@ class Transpiler(BaseTranspiler):
         className = f'list_{elementType.replace("*", "ptr")}'
         if elementType in {'int', 'float', 'str'}:
             self.imports.add(f'#include "{className}.h"')
+            if elementType == 'str':
+                self.imports.add('#include "asprintf.h"')
         else:
             raise SyntaxError(f'Array of type {elementType} not implemented yet.')
         if size == 'unknown':
@@ -168,23 +170,38 @@ class Transpiler(BaseTranspiler):
             raise SyntaxError(f'IndexAccess with type {token["type"]} not implemented yet')
 
     def formatIndexAssign(self, target, expr, inMemory=False):
-        if target['type'] == 'array' or target['dotAccess'][-1]['type'] == 'array':
-            if 'dotAccess' in target:
-                index = self.processExpr(target['dotAccess'][-1]['indexAccess'])['value']
-                name = target['dotAccess'][-1]['name']
-                varType = target['dotAccess'][-1]['elementType']
-            else:
-                index = self.processExpr(target['indexAccess'])['value']
-                name = target['name']
-                varType = target['elementType']
-            if self.typeKnown(expr['type']) and expr['type'] != varType:
-                cast = self.nativeType(varType)
-            else:
-                cast = None
-            expr = self.formatExpr(expr, cast = cast, var = name)
-            return f'list_{varType}_set(&{name}, {index}, {expr});'
+        assignType = None
+        if target['type'] == 'array':
+            assignType = 'array'
+            index = self.processExpr(target['indexAccess'])['value']
+            name = target['name']
+            varType = target['elementType']
+        elif 'dotAccess' in target and target['dotAccess'][-1]['type'] == 'array':
+            assignType = 'array'
+            index = self.processExpr(target['dotAccess'][-1]['indexAccess'])['value']
+            name = target['dotAccess'][-1]['name']
+            varType = target['dotAccess'][-1]['elementType']
+        elif target['type'] == 'map':
+            assignType = 'map'
+            index = self.processExpr(target['indexAccess'])['value']
+            name = target['name']
+            varType = target['valType']
+            keyType = target['keyType']
         else:
             raise SyntaxError(f'Index assign with type {target["type"]} not implemented in c target.')
+
+        if self.typeKnown(expr['type']) and expr['type'] != varType:
+            cast = self.nativeType(varType)
+        else:
+            cast = None
+        expr = self.formatExpr(expr, cast = cast, var = name)
+
+        if assignType == 'array':
+            return f'list_{varType}_set(&{name}, {index}, {expr});'
+        elif assignType == 'map':
+            return f'dict_{keyType}_{varType}_set(&{name}, {index}, {expr});'
+        else:
+            raise SyntaxError('This assign type for indexAssign is not implemented yet.')
 
     def formatArrayAppend(self, target, expr):
         name = target['value']
@@ -465,6 +482,15 @@ class Transpiler(BaseTranspiler):
         ''' Imports must be sorted to avoid definition errors or conflicts '''
         # Lists must be imported before dicts
         imports = sorted(list(self.imports), reverse=True)
+        try:
+            index = imports.index('#include "list_str.h"')
+        except ValueError:
+            pass
+        else:
+            aspIndex = imports.index('#include "asprintf.h"')
+            # asprintf must come before list_str. Switch if not
+            if aspIndex > index:
+                imports[index], imports[aspIndex] = imports[aspIndex], imports[index]
         return imports
                 
     def write(self):
