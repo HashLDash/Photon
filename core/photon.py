@@ -46,7 +46,7 @@ if __name__ == "__main__":
         first = sys.argv[1]
     except IndexError:
         print(f'Photon - {__version__} - pyEngine')
-        Interpreter(debug=DEBUG).run()
+        Interpreter(standardLibs = os.path.join(PHOTON_INSTALL_PATH, 'libs/'), debug = DEBUG).run()
         sys.exit()
     if first == '--version' or first == '-v' :
         print(f'Photon Version {__version__}')
