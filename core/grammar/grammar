@@ -41,7 +41,7 @@ keyVals = (keyVals keyVal) comma (keyVal keyVals)
 
 indexAccess = expr lbracket (expr) rbracket
 
-array = lbracket args rbracket
+array = lbracket (args expr) rbracket
       | lbracket rbracket
 
 hashmap = lbrace rbrace

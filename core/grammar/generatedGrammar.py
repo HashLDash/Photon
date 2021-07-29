@@ -51,6 +51,7 @@ patterns = {
   ('keyVal', 'comma', 'keyVals'): keyVals,
   ('expr', 'lbracket', 'expr', 'rbracket'): indexAccess,
   ('lbracket', 'args', 'rbracket'): array,
+  ('lbracket', 'expr', 'rbracket'): array,
   ('lbracket', 'rbracket'): array,
   ('lbrace', 'rbrace'): hashmap,
   ('lbrace', 'keyVal', 'rbrace'): hashmap,

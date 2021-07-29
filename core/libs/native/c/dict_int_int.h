@@ -15,6 +15,12 @@ int dict_int_int_get(dict_int_int* self, int key) {
     exit(-1);
 }
 void dict_int_int_set(dict_int_int* self, int key,int value) {
+    for (int n=1; n<self->keys.len; n++) {
+        if (key == list_int_get(&self->keys, n)) {
+            list_int_set(&self->values, n, value);
+            return;
+        }
+    }
     list_int_append(&self->keys,key);
     list_int_append(&self->values,value);
 }

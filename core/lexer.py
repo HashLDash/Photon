@@ -627,6 +627,9 @@ def array(i, t):
     if t[i+1]['token'] == 'args':
         elements = t[i+1]['args']
         del t[i+1] # args
+    elif t[i+1]['token'] == 'expr':
+        elements = [t[i+1]]
+        del t[i+1] # expr
     else:
         elements = []
     t[i] = convertToExpr({'token':'array','type':'array','elementType':'unknown',
