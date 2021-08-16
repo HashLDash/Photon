@@ -341,7 +341,7 @@ class Transpiler(BaseTranspiler):
             if self.iterVar[-1] in self.currentScope:
                 varType = ''
             else:
-                varType = varType + ' '
+                varType = varType
             if '{var}' in iterable['value']:
                 # Temp array, must be initialized first
                 tempArray = iterable['value'].format(var="__tempArray__")
@@ -353,7 +353,7 @@ class Transpiler(BaseTranspiler):
                 tempArray = ''
                 beginScope = ''
             # tempArray is inside a scope block, must end that when closing the loop
-            return f'{varType}{self.iterVar[-1]}; {beginScope}{tempArray}; for (int __iteration__=0; __iteration__ < {iterable["value"]}.len; __iteration__++) {{ {self.iterVar[-1]}={iterable["value"]}.values[__iteration__];'
+            return f'{self.nativeType(varType)} {self.iterVar[-1]}; {beginScope}{tempArray}; for (int __iteration__=0; __iteration__ < {iterable["value"]}.len; __iteration__++) {{ {self.iterVar[-1]}={iterable["value"]}.values[__iteration__];'
         else:
             raise SyntaxError(f'Format for with iterable {iterable["type"]} not suported yet.')
     
