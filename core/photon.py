@@ -52,6 +52,7 @@ if __name__ == "__main__":
         print(f'Photon Version {__version__}')
     elif first == '--build' or first == '-b':
         try:
+            print('here')
             Builder(platform = sys.argv[2], standardLibs = os.path.join(PHOTON_INSTALL_PATH, 'libs/'), debug=DEBUG)
         except IndexError:
             print(f'ERROR: Platform [{(", ".join(platforms))}] not informed.')
