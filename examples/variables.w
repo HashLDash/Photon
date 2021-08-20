@@ -40,6 +40,5 @@ array_float += 3.1
 
 # Array of strings
 str array_str = []
-# The addition of string elements is still under development!
-#array_str += "My name"
-#array_str += "is Johann"
+array_str += "My name"
+array_str += "is Johann"
