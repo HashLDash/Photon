@@ -368,6 +368,7 @@ class Transpiler(BaseTranspiler):
             return f'}}{self.freeTempArray}'
 
     def formatArgs(self, args):
+        args = [arg if not '%{className}%' == arg['type'] else {'type':self.inClass, 'value':arg['value']} for arg in args]
         return ', '.join([ 
             f'{self.nativeType(arg["type"])} {arg["value"]}' if not arg['type'] in self.classes
             else f'{self.nativeType(arg["type"])}* {arg["value"]}' for arg in args])

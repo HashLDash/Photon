@@ -1,6 +1,7 @@
 from interpreter import Interpreter
 from copy import deepcopy
 import os
+from pprint import pprint
 
 class BaseTranspiler():
     def __init__(self, filename, target='web', module=False, standardLibs=''):
@@ -327,10 +328,14 @@ class BaseTranspiler():
 
         return token['args'][0]
 
-    def processClassAttribute(self, token):
+    def processClassAttribute(self, token, inherited=False):
         #TODO: Handle dict types
-        variable = self.processVar(token['target'])
-        expr = token['expr']
+        if inherited:
+            variable = token['variable']
+            expr = {'args':[token['expr']], 'ops':[]}
+        else:
+            variable = self.processVar(token['target'])
+            expr = token['expr']
         if self.typeKnown(variable['type']) and expr['args'][0]['type'] == 'array':
             # The type declaration is for the elementType
             variable['elementType'] = variable['type']
@@ -626,10 +631,27 @@ class BaseTranspiler():
 
     def processClass(self, token):
         name = token['name']
+        inheritedClasses = [v['value'] for v in self.processArgs(token['args'])]
+        if len(inheritedClasses) > 1:
+            raise SyntaxError('Multiple Inheritance is not allowed yet.')
+        self.classes[name] = {'scope':{}, 'attributes':[],'methods':{}, 'inherited':[]}
         self.inClass = name
-        self.classes[name] = {'scope':{}, 'attributes':[],'methods':{}}
         self.startScope()
         index = len(self.outOfMain)
+        for inherited in inheritedClasses:
+            if inherited in self.classes:
+                self.classes[name]['inherited'].append(inherited)
+                for attr in self.classes[inherited]['attributes']:
+                    c = {'variable':{
+                            'type':attr['type'],
+                            'value':attr['name'],
+                            },
+                         'expr': attr['value']
+                    }
+                    self.processClassAttribute(c, inherited=True)
+                for method in self.classes[inherited]['methods']:
+                    self.processClassMethods(self.classes[inherited]['methods'][method]['tokens'])
+
         for c in token['block']:
             if c['token'] == 'assign':
                 self.processClassAttribute(c)
@@ -665,10 +687,13 @@ class BaseTranspiler():
         token['args'] = [selfArg] + token['args']
         index = len(self.outOfMain)
         self.processFunc(token)
+        # delete self, because the next inheritance will insert it
+        del token['args'][0]
         methodCode = self.outOfMain[index:]
         del self.outOfMain[index:]
         self.classes[self.inClass]['methods'][token['name']] = deepcopy(self.currentScope[token['name']])
         self.classes[self.inClass]['methods'][token['name']]['code'] = methodCode
+        self.classes[self.inClass]['methods'][token['name']]['tokens'] = token
         del self.currentScope[token['name']]
 
     def processFunc(self, token):
