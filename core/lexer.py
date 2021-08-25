@@ -388,10 +388,14 @@ def kwargs(i, t):
         if tok['token'] == 'kwargs':
             kwargs += tok['kwargs']
         elif tok['token'] == 'assign':
-            if tok['target']['token'] == 'var':
-                kwargs.append(tok)
-            else:
-                raise SyntaxError(f'Kwargs with {tok["target"]["token"]} not supported.')
+            if tok['target']['token'] == 'dotAccess':
+                # Only valid for self.var
+                if len(tok['target']['dotAccess']) == 2:
+                    tok['target'] = tok['target']['dotAccess'][1]
+                    tok['target']['attribute'] = True
+                else:
+                    raise SyntaxError('Default class attribute initiation is only valid for immediate class attributes. Ex: self.a.b not valid, but self.a is valid.')
+            kwargs.append(tok)
     t[i] = {'token':'kwargs','kwargs':kwargs}
     del t[i+1] # comma
     del t[i+1] # kwargs or assign
@@ -697,19 +701,34 @@ def dotAccess(i, t):
     ''' Verify if its a dotAccess and return a dotAccess token
         if it is.
     '''
-    if not t[i]['args'][-1]['token'] in {'var','dotAccess'}\
-        or not t[i+2]['args'][0]['token'] in {'var', 'dotAccess'}:
-        # Not a valid dotAccess
-        return 'continue'
-    if t[i]['args'][-1]['token'] == 'dotAccess':
-        names = t[i]['args'][-1]['dotAccess']
-    elif t[i]['args'][-1]['token'] == 'var':
-        names = [t[i]['args'][-1]]
+    if t[i]['token'] == 'dot':
+        if not t[i-1]['token'] in {'var', 'dotAccess'}\
+                and t[i+1]['args'][0]['token'] in {'var', 'dotAccess'}:
+            # Its a self. shorthand notation
+            names = [{'token':'var', 'type':'unknown', 'name':'self'}]
+            t[i] = convertToExpr(names[0])
+            secondToken = t[i+1]
+        else:
+            # not a valid shorthand for self.
+            return 'continue'
+    else:
+        if not t[i]['args'][-1]['token'] in {'var','dotAccess'}\
+            or not t[i+2]['args'][0]['token'] in {'var', 'dotAccess'}:
+            # Not a valid dotAccess
+            return 'continue'
 
-    if t[i+2]['args'][0]['token'] == 'dotAccess':
-        names += t[i+2]['args'][0]['dotAccess']
-    elif t[i+2]['args'][0]['token'] == 'var':
-        names += [t[i+2]['args'][0]]
+        if t[i]['args'][-1]['token'] == 'dotAccess':
+            names = t[i]['args'][-1]['dotAccess']
+        elif t[i]['args'][-1]['token'] == 'var':
+            names = [t[i]['args'][-1]]
+
+        secondToken = t[i+2]
+        del t[i+1] # dot
+
+    if secondToken['args'][0]['token'] == 'dotAccess':
+        names += secondToken['args'][0]['dotAccess']
+    elif secondToken['args'][0]['token'] == 'var':
+        names += [secondToken['args'][0]]
 
     # Get the args and ops from the previous expr
     args = deepcopy(t[i]['args'])
@@ -717,12 +736,11 @@ def dotAccess(i, t):
     # The last arg is where the junction occurs and it must be converted to a dotAccess token
     args[-1] = {'token':'dotAccess', 'type':'unknown', 'dotAccess':names}
     # Now join the args from the other expr, removing the first because it was joined
-    args = args + deepcopy(t[i+2]['args'][1:])
-    ops = ops + deepcopy(t[i+2]['ops'])
+    args = args + deepcopy(secondToken['args'][1:])
+    ops = ops + deepcopy(secondToken['ops'])
     # Update the current expression token
     t[i]['args'] = args
     t[i]['ops'] = ops
     
-    del t[i+1] # dot
     del t[i+1] # var or dotAccess
     return t
