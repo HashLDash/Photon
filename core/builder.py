@@ -7,7 +7,7 @@ import sys
 
 class Builder():
     def __init__(self, platform, standardLibs='', **kwargs):
-        print(platform)
+        print(f'Platform: {platform}')
         if platform == 'shared':
             from toolchains.shared import Toolchain
         else:
