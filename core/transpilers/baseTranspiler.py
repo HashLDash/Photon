@@ -50,6 +50,7 @@ class BaseTranspiler():
         # E.g. methods of a class have the classScope and the method scope
         self.oldScope = []
         self.classes = {}
+        self.oldClasses = []
         self.links = set()
         self.inFunc = None
         self.inClass = None
@@ -621,6 +622,12 @@ class BaseTranspiler():
 
         return {'value':value, 'type':varType}
 
+    def startClassScope(self):
+        self.oldClasses.append(deepcopy(self.classes))
+
+    def endClassScope(self):
+        self.classes = self.oldClasses.pop()
+
     def startScope(self):
         self.oldScope.append(deepcopy(self.currentScope))
         # refresh returnType
@@ -711,6 +718,7 @@ class BaseTranspiler():
             # change mode to not insert code on processing
             self.insertMode = False
             self.startScope()
+            self.startClassScope()
             # put args in scope
             for arg in args:
                 argType = arg['type']
@@ -721,6 +729,20 @@ class BaseTranspiler():
                 kwType = kw['type']
                 kwVal = kw['name']
                 self.currentScope[kwVal] = {'type':kwType}
+                if 'default' in kw:
+                    attribute = {
+                        'target':{
+                            'name':kw['name'],
+                            'type':kw['type']
+                        },
+                        'expr':{
+                            'args':[
+                                {'value':kw['value'], 'type':kw['type']},
+                            ],
+                            'ops':[]
+                        }
+                    }
+                    self.processClassAttribute(attribute)
             # get a deepcopy or it will corrupt the block
             block = deepcopy(token['block'])
             for c in block:
@@ -732,6 +754,7 @@ class BaseTranspiler():
             else:
                 returnType = 'void'
             self.endScope()
+            self.endClassScope()
             # return to normal mode
             self.insertMode = True
             # End pre processing
