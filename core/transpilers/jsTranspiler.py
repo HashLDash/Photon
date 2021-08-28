@@ -14,7 +14,7 @@ class Transpiler(BaseTranspiler):
         self.commentSymbol = '//'
         self.imports = set()
         self.funcIdentifier = 'function '
-        self.constructorName = 'new'
+        self.constructorName = 'constructor'
         self.block = {'/*def*/', 'class ','function ', 'for ','while ','if ','elif ','else'}
         self.true = 'true'
         self.false = 'false'

@@ -150,8 +150,12 @@ class Transpiler(BaseTranspiler):
 
     def formatCall(self, name, returnType, args, kwargs):
         # Handle function arguments. Kwargs are in the right order
+        if name in self.classes:
+            args.append({'value':'{var}', 'type':name})
         arguments = ', '.join(f'{arg["value"]}' if not arg['type'] in self.classes
             else f'&{arg["value"]}' for arg in args+kwargs)
+        if name in self.classes:
+            name = f'{name}_new'
         return f'{name}({arguments})'
     
     def formatIndexAccess(self, token):
@@ -273,7 +277,8 @@ class Transpiler(BaseTranspiler):
         elif expr['type'] in self.classes:
             className = expr["type"]
             classInit = self.formatClassInit(className, variable)#.format(var=variable)
-            return f'{className} {variable} = {classInit};'
+            initMethod = expr['value'].format(var=variable) + ';'
+            return f'{className} {variable} = {classInit};{initMethod}'
         return f'{varType}{variable} = {formattedExpr};'
 
     def formatExpr(self, value, cast=None, var=None):

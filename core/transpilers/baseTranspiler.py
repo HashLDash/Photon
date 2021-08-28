@@ -686,23 +686,27 @@ class BaseTranspiler():
             'args': [{'token': 'var', 'name': 'self', 'type': self.inClass}], 'ops': []}
         token['args'] = [selfArg] + token['args']
         index = len(self.outOfMain)
+        name = token['name']
+        if name == "new":
+            # Only change the name for transpilation
+            token['name'] = self.constructorName
         self.processFunc(token)
         # delete self, because the next inheritance will insert it
         del token['args'][0]
         methodCode = self.outOfMain[index:]
         del self.outOfMain[index:]
-        self.classes[self.inClass]['methods'][token['name']] = deepcopy(self.currentScope[token['name']])
-        self.classes[self.inClass]['methods'][token['name']]['code'] = methodCode
-        self.classes[self.inClass]['methods'][token['name']]['tokens'] = token
-        del self.currentScope[token['name']]
+        self.classes[self.inClass]['methods'][name] = deepcopy(self.currentScope[name])
+        self.classes[self.inClass]['methods'][name]['code'] = methodCode
+        self.classes[self.inClass]['methods'][name]['tokens'] = token
+        del self.currentScope[name]
 
     def processFunc(self, token):
         args = self.processArgs(token['args'])
         kwargs = self.processKwargs(token['kwargs'])
-        name = token['name']
+        functionName = token['name']
         returnType = token['type']
         self.returnType = returnType
-        self.inFunc = name
+        self.inFunc = functionName
         # infer return type if not known
         if not self.typeKnown(returnType):
             # Pre process code and get returnType
@@ -734,7 +738,8 @@ class BaseTranspiler():
             self.insertMode = True
             # End pre processing
         self.startScope()
-        self.currentScope[name] = {'type':returnType, 'token':'func', 'args':args, 'kwargs':kwargs}
+        scopeName = 'new' if functionName == self.constructorName else functionName
+        self.currentScope[scopeName] = {'type':returnType, 'token':'func', 'args':args, 'kwargs':kwargs}
         index = len(self.outOfMain)
         # put args in scope
         for arg in args:
@@ -748,11 +753,11 @@ class BaseTranspiler():
             self.currentScope[kwVal] = {'type':kwType}
         for c in token['block']:
             self.process(c)
-        self.insertCode(self.formatFunc(name, returnType, args, kwargs),index)
+        self.insertCode(self.formatFunc(functionName, returnType, args, kwargs),index)
         self.insertCode(self.formatEndFunc())
         self.inFunc = None
         funcScope = self.endScope()
-        self.currentScope[name] = {'scope':funcScope, 'type':returnType, 'token':'func', 'args':args, 'kwargs':kwargs}
+        self.currentScope[scopeName] = {'scope':funcScope, 'type':returnType, 'token':'func', 'args':args, 'kwargs':kwargs}
 
     def processReturn(self, token):
         if 'expr' in token:
