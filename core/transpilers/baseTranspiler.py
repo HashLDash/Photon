@@ -347,20 +347,13 @@ class BaseTranspiler():
         if not self.typeKnown(variable['type']):
             variable['type'] = expr['type']
         self.classes[self.inClass]['scope'][variable['value']] = {'type': variable['type']}
-        self.classes[self.inClass]['attributes'].append(
-            {'name':variable['value'],
-            'type':variable['type'],
-            'value':expr}
-        )
         if variable['type'] == 'array':
             if not 'elementType' in variable:
                 variable['elementType'] = expr['elementType']
                 variable['size'] = expr['size']
             self.classes[self.inClass]['scope'][variable['value']]['elementType'] = variable['elementType']
             self.classes[self.inClass]['scope'][variable['value']]['size'] = variable['size']
-            self.classes[self.inClass]['attributes'][-1]['elementType'] = variable['elementType']
-            self.classes[self.inClass]['attributes'][-1]['size'] = variable['size']
-        self.insertCode(self.formatClassAttribute(variable, expr))
+        self.classes[self.inClass]['attributes'].append({'variable':variable, 'expr':expr})
 
     def processAssign(self, token):
         target = token['target']
@@ -538,14 +531,23 @@ class BaseTranspiler():
         kwargs = []
         for tok in tokens:
             kw = self.getValAndType(tok['expr'])
-            name = tok['target']['name']
+            try:
+                name = tok['target']['name']
+                defaultVar = False
+            except KeyError:
+                name = tok['target']['dotAccess'][1]['name']
+                defaultVar = True
             # ignore value type because of the scope
             # Function keyword arguments need explicit type or inferred from expr
             if self.typeKnown(tok['target']['type']):
                 varType = tok['target']['type']
             else:
                 varType = kw['type']
-            kwargs.append( {'type':varType, 'name':name, 'value':kw['value']} )
+            kwarg =  {'type':varType, 'name':name, 'value':kw['value']} 
+            if defaultVar:
+                kwarg['default'] = True
+
+            kwargs.append(kwarg)
         return kwargs
 
     def processCall(self, token, className=None):
@@ -642,13 +644,7 @@ class BaseTranspiler():
             if inherited in self.classes:
                 self.classes[name]['inherited'].append(inherited)
                 for attr in self.classes[inherited]['attributes']:
-                    c = {'variable':{
-                            'type':attr['type'],
-                            'value':attr['name'],
-                            },
-                         'expr': attr['value']
-                    }
-                    self.processClassAttribute(c, inherited=True)
+                    self.processClassAttribute(attr, inherited=True)
                 for method in self.classes[inherited]['methods']:
                     self.processClassMethods(self.classes[inherited]['methods'][method]['tokens'])
 
@@ -665,6 +661,8 @@ class BaseTranspiler():
         # Include methods, args/kwargs
         args = self.processArgs(token['args'])
         self.insertCode(self.formatClass(name, args), index)
+        for attr in self.classes[self.inClass]['attributes']:
+            self.insertCode(self.formatClassAttribute(attr['variable'], attr['expr']))
         if not self.methodsInsideClass:
             # Close class definition before writing methods
             self.insertCode(self.formatEndClass())
@@ -740,8 +738,8 @@ class BaseTranspiler():
         self.startScope()
         scopeName = 'new' if functionName == self.constructorName else functionName
         self.currentScope[scopeName] = {'type':returnType, 'token':'func', 'args':args, 'kwargs':kwargs}
-        index = len(self.outOfMain)
         # put args in scope
+        index = len(self.outOfMain)
         for arg in args:
             argType = arg['type']
             argVal = arg['value']
@@ -751,6 +749,21 @@ class BaseTranspiler():
             kwType = kw['type']
             kwVal = kw['name']
             self.currentScope[kwVal] = {'type':kwType}
+            if 'default' in kw:
+                self.formatClassDefaultValue(kw)
+                attribute = {
+                    'target':{
+                        'name':kw['name'],
+                        'type':kw['type']
+                    },
+                    'expr':{
+                        'args':[
+                            {'value':kw['value'], 'type':kw['type']},
+                        ],
+                        'ops':[]
+                    }
+                }
+                self.processClassAttribute(attribute)
         for c in token['block']:
             self.process(c)
         self.insertCode(self.formatFunc(functionName, returnType, args, kwargs),index)

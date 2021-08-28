@@ -407,32 +407,35 @@ class Transpiler(BaseTranspiler):
             size = 10
         return f"{{ {len(elements)}, {size}, malloc(sizeof({elementType})*{size}) }}"
 
+    def formatClassDefaultValue(self, kwarg):
+        name = kwarg['name']
+        value = kwarg['value']
+        return f'{self.self}->{name} = {value};'
+
     def formatClassInit(self, className, variable):
         attrs = self.classes[className]['attributes']
         defaultValues = []
         for a in attrs:
-            if a['value']['type'] in self.classes:
-                attrClassName = a['value']['type']
+            if a['variable']['type'] in self.classes:
+                attrClassName = a['variable']['type']
                 # TODO: handle array init in class init
                 # The split is used to separate initVals
                 # Maybe try separating it to avoid manipulating processed values
                 defaultValues.append(self.formatClassInit(attrClassName, variable).split(';')[0])
-            elif a['value']['type'] == 'array':
-                defaultValues.append(self.formatArrayInit(a['value']))#.replace('{','{{').replace('}','}}'))
+            elif a['variable']['type'] == 'array':
+                defaultValues.append(self.formatArrayInit(a['expr']))#.replace('{','{{').replace('}','}}'))
             else:
-                defaultValues.append(a['value']['value'])
+                defaultValues.append(a['expr']['value'])
         defaultValues = ', '.join(defaultValues)
         # Initialize array values
         # TODO: Initialize dict values
         initVals = ''
         for attr in self.classes[className]['attributes']:
-            if attr['type'] == 'array':
-                #initVals += ';'.join(v.format(var=f"{{var}}.{attr['name']}") for v in attr['value']['value'].split(';')[1:]) + ';'
-                initVals += ';'.join(v.format(var=f"{variable}.{attr['name']}") for v in attr['value']['value'].split(';')[1:]) + ';'
-            elif attr['type'] in self.classes:
+            if attr['variable']['type'] == 'array':
+                initVals += ';'.join(v.format(var=f"{variable}.{attr['variable']['name']}") for v in attr['expr']['value'].split(';')[1:]) + ';'
+            elif attr['variable']['type'] in self.classes:
                 # Get initVals of the attribute class
-                initVals += ';'.join(self.formatClassInit(attr['type'], f'{variable}.{attr["name"]}').split(';')[1:])
-        #return f'{{{{ {defaultValues} }}}}; {initVals}'
+                initVals += ';'.join(self.formatClassInit(attr['variable']['type'], f'{variable}.{attr["variable"]["name"]}').split(';')[1:])
         return f'{{ {defaultValues} }}; {initVals}'
 
     def formatClassAttribute(self, variable, expr):
