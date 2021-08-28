@@ -337,6 +337,12 @@ class BaseTranspiler():
         else:
             variable = self.processVar(token['target'])
             expr = token['expr']
+            
+        for attr in self.classes[self.inClass]['attributes']:
+            if variable['value'] == attr['variable']['value']:
+                # Attribute already defined, skip
+                return
+
         if self.typeKnown(variable['type']) and expr['args'][0]['type'] == 'array':
             # The type declaration is for the elementType
             variable['elementType'] = variable['type']
