@@ -196,6 +196,11 @@ class Transpiler(BaseTranspiler):
     def formatEndClass(self):
         return '}'
 
+    def formatClassDefaultValue(self, kwarg):
+        name = kwarg['name']
+        value = kwarg['value']
+        return f'{self.self}.{name} = {value};'
+
     def formatClassAttribute(self, variable, expr):
         varType = variable['type']
         name = variable['value']
