@@ -544,17 +544,10 @@ class BaseTranspiler():
             except KeyError:
                 name = tok['target']['dotAccess'][1]['name']
                 defaultVar = True
-            # ignore value type because of the scope
-            # Function keyword arguments need explicit type or inferred from expr
-            if self.typeKnown(tok['target']['type']):
-                varType = tok['target']['type']
-            else:
-                varType = kw['type']
-            kwarg =  {'type':varType, 'name':name, 'value':kw['value']} 
+            kw['name'] = name
             if defaultVar:
-                kwarg['default'] = True
-
-            kwargs.append(kwarg)
+                kw['default'] = True
+            kwargs.append(kw)
         return kwargs
 
     def processCall(self, token, className=None):
@@ -735,6 +728,10 @@ class BaseTranspiler():
                 kwType = kw['type']
                 kwVal = kw['name']
                 self.currentScope[kwVal] = {'type':kwType}
+                if kwType == 'array':
+                    self.currentScope[kwVal]['elementType'] = kw['elementType']
+                    self.currentScope[kwVal]['size'] = kw['size']
+                    
                 if 'default' in kw:
                     attribute = {
                         'target':{
@@ -778,6 +775,9 @@ class BaseTranspiler():
             kwType = kw['type']
             kwVal = kw['name']
             self.currentScope[kwVal] = {'type':kwType}
+            if kwType == 'array':
+                self.currentScope[kwVal]['elementType'] = kw['elementType']
+                self.currentScope[kwVal]['size'] = kw['size']
             if 'default' in kw:
                 self.formatClassDefaultValue(kw)
                 attribute = {

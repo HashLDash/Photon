@@ -132,8 +132,7 @@ class Transpiler(BaseTranspiler):
         string = '"' + string[1:-1].replace('"', '\\"').replace('%', '%%') + '"'
         exprs = []
         if '{' in string:
-            if self.target in {'win32', 'cygwin', 'msys'}:
-                self.imports.add('#include "asprintf.h"')
+            self.imports.add('#include "asprintf.h"')
             for expr in expressions:
                 valType = expr['type']
                 val = expr['value']
@@ -152,10 +151,30 @@ class Transpiler(BaseTranspiler):
         # Handle function arguments. Kwargs are in the right order
         if name in self.classes:
             args.append({'value':'{var}', 'type':name})
-        arguments = ', '.join(f'{arg["value"]}' if not arg['type'] in self.classes
-            else f'&{arg["value"]}' for arg in args+kwargs)
+        arguments = ''
+        tempVars = ''
+        freeVars = ''
+        for arg in args+kwargs:
+            n = 0
+            if arg['type'] == 'array':
+                if '{var}' in arg['value']:
+                    tempVars += f"{arg['value'].format(var=f'__tempArray{n}__')}; "
+                    arguments += f'__tempArray{n}__, '
+                    freeVars += f'free(__tempArray{n}__.values); '
+                    n += 1
+                else:
+                    arguments += f"{arg['value']}, "
+                
+            else:
+                if not arg['type'] in self.classes:
+                    arguments += f"{arg['value']}, "
+                else:
+                    arguments += f"&{arg['value']}, "
+        arguments = arguments[:-2]
         if name in self.classes:
             name = f'{name}_new'
+        if tempVars:
+            return f'{{ {tempVars}{name}({arguments}); {freeVars} }}'
         return f'{name}({arguments})'
     
     def formatIndexAccess(self, token):
@@ -351,7 +370,7 @@ class Transpiler(BaseTranspiler):
                 # Temp array, must be initialized first
                 tempArray = iterable['value'].format(var="__tempArray__")
                 self.freeTempArray = 'free(__tempArray__.values); }'
-                beginScope = '{{ '
+                beginScope = '{ '
                 iterable["value"] = "__tempArray__"
                 self.listTypes.add(varType)
             else:
@@ -373,14 +392,29 @@ class Transpiler(BaseTranspiler):
             return f'}}{self.freeTempArray}'
 
     def formatArgs(self, args):
-        args = [arg if not '%{className}%' == arg['type'] else {'type':self.inClass, 'value':arg['value']} for arg in args]
+        newArgs = []
+        for arg in args:
+            if arg['type'] == '%{className}%':
+                arg['type'] = self.inClass
+            elif arg['type'] == 'array':
+                input(arg)
+                arg['type'] = f"list_{arg['elementType']}"
+            newArgs.append(arg)
+        args = newArgs
+
         return ', '.join([ 
             f'{self.nativeType(arg["type"])} {arg["value"]}' if not arg['type'] in self.classes
             else f'{self.nativeType(arg["type"])}* {arg["value"]}' for arg in args])
 
     def formatFunc(self, name, returnType, args, kwargs):
         # convert kwargs to args
-        kwargs = [{'value':kw['name'], 'type':kw['type']} for kw in kwargs]
+        newKwargs = []
+        for kw in kwargs:
+            kwarg = {'value':kw['name'], 'type':kw['type']}
+            if kw['type'] == 'array':
+                kwarg['elementType'] = kw['elementType']
+            newKwargs.append(kwarg)
+        kwargs = newKwargs
         args = self.formatArgs(args+kwargs)
         if self.inClass:
             # Its a method
