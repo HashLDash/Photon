@@ -397,7 +397,6 @@ class Transpiler(BaseTranspiler):
             if arg['type'] == '%{className}%':
                 arg['type'] = self.inClass
             elif arg['type'] == 'array':
-                input(arg)
                 arg['type'] = f"list_{arg['elementType']}"
             newArgs.append(arg)
         args = newArgs
