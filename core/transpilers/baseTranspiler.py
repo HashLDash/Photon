@@ -740,6 +740,13 @@ class BaseTranspiler():
                             'ops':[]
                         }
                     }
+                    if kw['type'] == 'array':
+                        attribute['target']['type'] = kw['elementType']
+                        attribute['target']['elementType'] = kw['elementType']
+                        attribute['target']['size'] = kw['size']
+                        attribute['expr']['args'][0]['elementType'] = kw['elementType']
+                        attribute['expr']['args'][0]['size'] = kw['size']
+                        attribute['expr']['args'][0]['elements'] = kw['elements']
                     self.processClassAttribute(attribute)
             # get a deepcopy or it will corrupt the block
             block = deepcopy(token['block'])
@@ -787,6 +794,13 @@ class BaseTranspiler():
                         'ops':[]
                     }
                 }
+                if kw['type'] == 'array':
+                    attribute['target']['type'] = kw['elementType']
+                    attribute['target']['elementType'] = kw['elementType']
+                    attribute['target']['size'] = kw['size']
+                    attribute['expr']['args'][0]['elementType'] = kw['elementType']
+                    attribute['expr']['args'][0]['size'] = kw['size']
+                    attribute['expr']['args'][0]['elements'] = kw['elements']
                 self.processClassAttribute(attribute)
         for c in token['block']:
             self.process(c)

@@ -296,7 +296,7 @@ class Transpiler(BaseTranspiler):
         elif expr['type'] in self.classes:
             className = expr["type"]
             classInit = self.formatClassInit(className, variable)
-            initMethod = expr['value'].format(var=variable) + ';'
+            initMethod = expr['value'].replace('{var}',variable) + ';'
             return f'{className} {variable} = {classInit};{initMethod}'
         return f'{varType}{variable} = {formattedExpr};'
 
@@ -465,10 +465,11 @@ class Transpiler(BaseTranspiler):
         initVals = ''
         for attr in self.classes[className]['attributes']:
             if attr['variable']['type'] == 'array':
-                initVals += ';'.join(v.format(var=f"{variable}.{attr['variable']['name']}") for v in attr['expr']['value'].split(';')[1:]) + ';'
+                initVals += ';'.join(v.format(var=f"{variable}.{attr['variable']['value']}") for v in attr['expr']['value'].split(';')[1:]) + ';'
             elif attr['variable']['type'] in self.classes:
                 # Get initVals of the attribute class
                 initVals += ';'.join(self.formatClassInit(attr['variable']['type'], f'{variable}.{attr["variable"]["name"]}').split(';')[1:])
+        input(initVals)
         return f'{{ {defaultValues} }}; {initVals}'
 
     def formatClassAttribute(self, variable, expr):
