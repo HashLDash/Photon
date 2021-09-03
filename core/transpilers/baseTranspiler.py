@@ -538,14 +538,9 @@ class BaseTranspiler():
         kwargs = []
         for tok in tokens:
             kw = self.getValAndType(tok['expr'])
-            try:
-                name = tok['target']['name']
-                defaultVar = False
-            except KeyError:
-                name = tok['target']['dotAccess'][1]['name']
-                defaultVar = True
+            name = tok['target']['name']
             kw['name'] = name
-            if defaultVar:
+            if 'attribute' in tok['target']:
                 kw['default'] = True
             kwargs.append(kw)
         return kwargs
@@ -779,7 +774,7 @@ class BaseTranspiler():
                 self.currentScope[kwVal]['elementType'] = kw['elementType']
                 self.currentScope[kwVal]['size'] = kw['size']
             if 'default' in kw:
-                self.formatClassDefaultValue(kw)
+                self.insertCode(self.formatClassDefaultValue(kw))
                 attribute = {
                     'target':{
                         'name':kw['name'],
