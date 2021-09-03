@@ -468,8 +468,7 @@ class Transpiler(BaseTranspiler):
                 initVals += ';'.join(v.format(var=f"{variable}.{attr['variable']['value']}") for v in attr['expr']['value'].split(';')[1:]) + ';'
             elif attr['variable']['type'] in self.classes:
                 # Get initVals of the attribute class
-                initVals += ';'.join(self.formatClassInit(attr['variable']['type'], f'{variable}.{attr["variable"]["name"]}').split(';')[1:])
-        input(initVals)
+                initVals += ';'.join(self.formatClassInit(attr['variable']['type'], f'{variable}.{attr["variable"]["value"]}').split(';')[1:])
         return f'{{ {defaultValues} }}; {initVals}'
 
     def formatClassAttribute(self, variable, expr):
