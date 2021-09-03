@@ -115,8 +115,9 @@ def token2word(tokens):
     return phrase[:-1]
 
 def reduceToken(tokens):
-    ''' Find patterns that can be reduced to a single token '''
-    ''' and return the reduced list of tokens '''
+    ''' Find patterns that can be reduced to a single token
+        and return the reduced list of tokens
+    '''
     global parsePhrase
     def reduce():
         for pattern in patterns:
@@ -134,7 +135,9 @@ def reduceToken(tokens):
     tokenList = [ token['token'] for token in tokens if not token['token'] == 'indent' ]
     parsePhrase = token2word(tokens)
     debug(parsePhrase)
-    reduce()
+    reducedTokens = reduce()
+    if reducedTokens:
+        tokens = reducedTokens
 
     # No patterns were found, reduced to maximum
     if len(tokens) > 2: #indent reducedToken (beginBlock)

@@ -295,7 +295,7 @@ class Transpiler(BaseTranspiler):
             return formattedExpr.format(var=variable)
         elif expr['type'] in self.classes:
             className = expr["type"]
-            classInit = self.formatClassInit(className, variable)#.format(var=variable)
+            classInit = self.formatClassInit(className, variable)
             initMethod = expr['value'].format(var=variable) + ';'
             return f'{className} {variable} = {classInit};{initMethod}'
         return f'{varType}{variable} = {formattedExpr};'

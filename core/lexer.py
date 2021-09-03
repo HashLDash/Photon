@@ -29,7 +29,7 @@ def comment(i, t):
         if token['token'] == 'hashtag':
             # remove all tokens after the hashtag
             t[n]['token'] = 'comment'
-            return t[:n+1]
+            return t[:n]
 
 def operator(i, t):
     ''' Combine operators that are compatible '''

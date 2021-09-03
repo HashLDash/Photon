@@ -553,9 +553,13 @@ class BaseTranspiler():
     def processCall(self, token, className=None):
         name = self.getValAndType(token['name'])
         args = self.processArgs(token['args'], inferType=True)
+        callType = name['type']
         # Put kwargs in the right order
         if not className is None:
             kws = self.classes[className]['scope'][name['value']]['kwargs']
+        elif name['value'] in self.classes:
+            callType = name['value']
+            kws = self.classes[callType]['scope']['new']['kwargs']
         elif name['value'] in self.currentScope:
             kws = self.currentScope[name['value']]['kwargs']
         else:
@@ -570,10 +574,6 @@ class BaseTranspiler():
                     break
             else:
                 kwargs.append(kw)
-        if name['value'] in self.classes:
-            callType = name['value']
-        else:
-            callType = name['type']
         val = self.formatCall(name['value'], name['type'], args, kwargs)
         if 'modifier' in token:
             val = token['modifier'].replace('not',self.notOperator) + val
