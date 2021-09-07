@@ -381,6 +381,16 @@ def args(i, t):
     del t[i+1] # arg or expr
     return t
 
+def assign2kwarg(tok):
+    if tok['target']['token'] == 'dotAccess':
+        # Only valid for self.var
+        if len(tok['target']['dotAccess']) == 2:
+            tok['target'] = tok['target']['dotAccess'][1]
+            tok['target']['attribute'] = True
+        else:
+            raise SyntaxError('Default class attribute initiation is only valid for immediate class attributes. Ex: self.a.b not valid, but self.a is valid.')
+    return tok
+
 def kwargs(i, t):
     ''' Return a kwargs token, if valid '''
     kwargs = []
@@ -388,14 +398,7 @@ def kwargs(i, t):
         if tok['token'] == 'kwargs':
             kwargs += tok['kwargs']
         elif tok['token'] == 'assign':
-            if tok['target']['token'] == 'dotAccess':
-                # Only valid for self.var
-                if len(tok['target']['dotAccess']) == 2:
-                    tok['target'] = tok['target']['dotAccess'][1]
-                    tok['target']['attribute'] = True
-                else:
-                    raise SyntaxError('Default class attribute initiation is only valid for immediate class attributes. Ex: self.a.b not valid, but self.a is valid.')
-            kwargs.append(tok)
+            kwargs.append(assign2kwarg(tok))
     t[i] = {'token':'kwargs','kwargs':kwargs}
     del t[i+1] # comma
     del t[i+1] # kwargs or assign
@@ -586,7 +589,7 @@ def function(i, t):
         t[i]['args'] = [t[i+3]]
         del t[i+1] # expr
     elif t[i+3]['token'] == 'assign':
-        t[i]['kwargs'] = [t[i+3]]
+        t[i]['kwargs'] = [assign2kwarg(t[i+3])]
         del t[i+1] # assign
     elif t[i+3]['token'] == 'kwargs':
         t[i]['kwargs'] = t[i+3]['kwargs']

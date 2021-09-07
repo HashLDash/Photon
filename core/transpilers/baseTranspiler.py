@@ -554,7 +554,10 @@ class BaseTranspiler():
             kws = self.classes[className]['scope'][name['value']]['kwargs']
         elif name['value'] in self.classes:
             callType = name['value']
-            kws = self.classes[callType]['scope']['new']['kwargs']
+            if 'new' in self.classes[callType]['scope']:
+                kws = self.classes[callType]['scope']['new']['kwargs']
+            else:
+                kws = []
         elif name['value'] in self.currentScope:
             kws = self.currentScope[name['value']]['kwargs']
         else:

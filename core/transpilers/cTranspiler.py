@@ -54,7 +54,7 @@ class Transpiler(BaseTranspiler):
     def formatDotAccess(self, tokens):
         dotAccess = []
         currentType = None
-        for v in tokens:
+        for n, v in enumerate(tokens):
             if 'indexAccess' in v:
                 # The value should be the dotAccess up to now
                 v['name'] = '.'.join(dotAccess + [v['name']]).replace('->.','->')
@@ -73,9 +73,12 @@ class Transpiler(BaseTranspiler):
                     dotAccess.append(value['value'])
             elif 'name' in v:
                 currentType = v['type']
-                if v['name'] == 'self' and self.inClass:
-                    # self is always a pointer
-                    dotAccess.append('self->')
+                if 'name' in v and v['type'] in self.classes:
+                    if self.inFunc or self.inClass or n > 0:
+                        dotAccess.append(f'{v["name"]}->')
+                    else:
+                        # Outside functions and classes, instances are not pointers
+                        dotAccess.append(f'{v["name"]}')
                 else:
                     dotAccess.append(v['name'])
         return '.'.join(dotAccess).replace('->.','->')
@@ -140,7 +143,7 @@ class Transpiler(BaseTranspiler):
                 if valType == 'str':
                     string = string.replace('{}', '%s', 1)
                 elif valType == 'int':
-                    string = string.replace('{}', '%d', 1)
+                    string = string.replace('{}', '%ld', 1)
                 elif valType == 'float':
                     string = string.replace('{}', '%f', 1)
                 else:
@@ -152,29 +155,34 @@ class Transpiler(BaseTranspiler):
         if name in self.classes:
             args.append({'value':'{var}', 'type':name})
         arguments = ''
+        permanentVars = ''
         tempVars = ''
         freeVars = ''
         for arg in args+kwargs:
             n = 0
             if arg['type'] == 'array':
                 if '{var}' in arg['value']:
-                    tempVars += f"{arg['value'].format(var=f'__tempArray{n}__')}; "
-                    arguments += f'__tempArray{n}__, '
-                    freeVars += f'free(__tempArray{n}__.values); '
+                    tempVars += f"{arg['value'].format(var=f'__tempVar{n}__')}; "
+                    arguments += f'__tempVar{n}__, '
+                    freeVars += f'free(__tempVar{n}__.values); '
                     n += 1
                 else:
                     arguments += f"{arg['value']}, "
                 
-            else:
-                if not arg['type'] in self.classes:
-                    arguments += f"{arg['value']}, "
+            elif arg['type'] in self.classes:
+                if f"{arg['type']}_new(" in arg['value']:
+                    permanentVars += f"{arg['type']} __permVar{self.instanceCounter}__ = {self.formatClassInit(arg['type'], f'__permVar{self.instanceCounter}__')[1]};"
+                    arguments += f"&__permVar{self.instanceCounter}__, "
+                    self.instanceCounter += 1
                 else:
                     arguments += f"&{arg['value']}, "
+            else:
+                arguments += f"{arg['value']}, "
         arguments = arguments[:-2]
         if name in self.classes:
             name = f'{name}_new'
-        if tempVars:
-            return f'{{ {tempVars}{name}({arguments}); {freeVars} }}'
+        if tempVars or permanentVars:
+            return f'{permanentVars} {{ {tempVars}{name}({arguments}); {freeVars} }}'
         return f'{name}({arguments})'
     
     def formatIndexAccess(self, token):
@@ -295,9 +303,9 @@ class Transpiler(BaseTranspiler):
             return formattedExpr.format(var=variable)
         elif expr['type'] in self.classes:
             className = expr["type"]
-            classInit = self.formatClassInit(className, variable)
+            permanentVars, classInit = self.formatClassInit(className, variable)
             initMethod = expr['value'].replace('{var}',variable) + ';'
-            return f'{className} {variable} = {classInit};{initMethod}'
+            return f'{permanentVars}; {className} {variable} = {classInit};{initMethod}'
         return f'{varType}{variable} = {formattedExpr};'
 
     def formatExpr(self, value, cast=None, var=None):
@@ -448,28 +456,25 @@ class Transpiler(BaseTranspiler):
     def formatClassInit(self, className, variable):
         attrs = self.classes[className]['attributes']
         defaultValues = []
+        permanentVars = ''
+        initVals = ''
         for a in attrs:
             if a['variable']['type'] in self.classes:
                 attrClassName = a['variable']['type']
-                # TODO: handle array init in class init
-                # The split is used to separate initVals
-                # Maybe try separating it to avoid manipulating processed values
-                defaultValues.append(self.formatClassInit(attrClassName, variable).split(';')[0])
+                #defaultValues.append(f'malloc(sizeof({attrClassName}))')
+                defaultValues.append(f'&__permVar{self.instanceCounter}__')
+                # Get initVals of the attribute class
+                permanentVar = ';'.join(self.formatClassInit(a['variable']['type'], f'{variable}.{a["variable"]["value"]}')[1].split(';'))
+                permanentVars += f"{a['variable']['type']} __permVar{self.instanceCounter}__ = {permanentVar}; "
+                self.instanceCounter += 1
             elif a['variable']['type'] == 'array':
-                defaultValues.append(self.formatArrayInit(a['expr']))#.replace('{','{{').replace('}','}}'))
+                defaultValues.append(self.formatArrayInit(a['expr']))
+                initVals += ';'.join(v.format(var=f"{variable}.{a['variable']['value']}") for v in a['expr']['value'].split(';')[1:]) + ';'
             else:
                 defaultValues.append(a['expr']['value'])
         defaultValues = ', '.join(defaultValues)
-        # Initialize array values
         # TODO: Initialize dict values
-        initVals = ''
-        for attr in self.classes[className]['attributes']:
-            if attr['variable']['type'] == 'array':
-                initVals += ';'.join(v.format(var=f"{variable}.{attr['variable']['value']}") for v in attr['expr']['value'].split(';')[1:]) + ';'
-            elif attr['variable']['type'] in self.classes:
-                # Get initVals of the attribute class
-                initVals += ';'.join(self.formatClassInit(attr['variable']['type'], f'{variable}.{attr["variable"]["value"]}').split(';')[1:])
-        return f'{{ {defaultValues} }}; {initVals}'
+        return permanentVars, f'{{ {defaultValues} }}; {initVals}'
 
     def formatClassAttribute(self, variable, expr):
         varType = variable['type']
@@ -479,7 +484,10 @@ class Transpiler(BaseTranspiler):
         name = variable['value']
         expr = self.formatExpr(expr)
         varType = self.nativeType(varType)
-        return f'{varType} {name};'
+        if varType in self.classes:
+            return f'{varType}* {name};'
+        else:
+            return f'{varType} {name};'
 
     def formatReturn(self, expr):
         if expr:
