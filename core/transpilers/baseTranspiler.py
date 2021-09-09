@@ -4,8 +4,8 @@ import os
 from pprint import pprint
 
 class BaseTranspiler():
-    def __init__(self, filename, target='web', module=False, standardLibs=''):
-        self.debug = False # make this a global variable instead, inseide the debug module
+    def __init__(self, filename, target='web', module=False, standardLibs='', debug=False):
+        self.debug = debug # make this a global variable instead, inseide the debug module
         self.standardLibs = standardLibs
         self.target = target
         self.lang = 'photon'
