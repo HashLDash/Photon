@@ -159,13 +159,11 @@ class Transpiler(BaseTranspiler):
         tempVars = ''
         freeVars = ''
         for arg in args+kwargs:
-            n = 0
             if arg['type'] == 'array':
                 if '{var}' in arg['value']:
-                    tempVars += f"{arg['value'].format(var=f'__tempVar{n}__')}; "
-                    arguments += f'__tempVar{n}__, '
-                    freeVars += f'free(__tempVar{n}__.values); '
-                    n += 1
+                    permanentVars += f"{arg['value'].format(var=f'__permVar{self.instanceCounter}__')}; "
+                    arguments += f'__permVar{self.instanceCounter}__, '
+                    self.instanceCounter += 1
                 else:
                     arguments += f"{arg['value']}, "
                 
