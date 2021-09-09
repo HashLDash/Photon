@@ -585,6 +585,7 @@ class Transpiler(BaseTranspiler):
                         l = l.strip()
                         if l:
                             f.write(' ' * indent + l + ';\n')
+                    f.write('\n')
                 else:
                     # Ugly, but faster
                     f.write(' ' * indent + line.replace('/*def*/', '') + '\n')
