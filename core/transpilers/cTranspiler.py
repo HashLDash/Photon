@@ -461,10 +461,10 @@ class Transpiler(BaseTranspiler):
             if a['variable']['type'] in self.classes:
                 attrClassName = a['variable']['type']
                 #defaultValues.append(f'malloc(sizeof({attrClassName}))')
-                defaultValues.append(f'&__permVar{self.instanceCounter}__')
                 # Get initVals of the attribute class
-                permanentVar = ';'.join(self.formatClassInit(a['variable']['type'], f'{variable}.{a["variable"]["value"]}')[1].split(';'))
-                permanentVars += f"{a['variable']['type']} __permVar{self.instanceCounter}__ = {permanentVar}; "
+                argPermVars, argInit = self.formatClassInit(a['variable']['type'], f'{variable}.{a["variable"]["value"]}')
+                permanentVars += f"{argPermVars} {a['variable']['type']} __permVar{self.instanceCounter}__ = {argInit}; "
+                defaultValues.append(f'&__permVar{self.instanceCounter}__')
                 self.instanceCounter += 1
             elif a['variable']['type'] == 'array':
                 defaultValues.append(self.formatArrayInit(a['expr']))
