@@ -499,9 +499,12 @@ def augAssign(i, t):
 def assign(i, t):
     ''' expr equal expr
     '''
-    if i == 1 and len(t) > 4:
+    if len(t) > 4 and (
+            i == 1 or\
+            (t[i+2]['args'][0]['token'] in {'var', 'dotAccess'} and 'symbol' in t[i+3])):
         # Not parsed the value of the assign yet.
         return 'continue'
+        
     if t[i]['args'][0]['token'] in {'var', 'dotAccess'}:
         t[i] = {'token':'assign', 'target':t[i]['args'][0], 'expr':t[i+2]}
         del t[i+1] # equal
