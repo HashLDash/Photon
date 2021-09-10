@@ -14,9 +14,9 @@ def inference(value):
             return {'token':'value','type':'unknown','value':value}
         except:
             if value == 'True' or value == 'False':
-                return {'token':'expr','type':'bool','args': [{'type':'bool','value':value.lower()}], 'ops':[] }
+                return {'token':'expr','type':'bool','args': [{'token':'bool', 'type':'bool','value':value.lower()}], 'ops':[] }
             elif value == 'null':
-                return {'token':'expr','type':'null','args': [{'type':'null','value':'null'}], 'ops':[] }
+                return {'token':'expr','type':'null','args': [{'token':'null', 'type':'null','value':'null'}], 'ops':[] }
             else:
                 return {'token':'var', 'type':'unknown', 'name':value}
 
@@ -499,10 +499,11 @@ def augAssign(i, t):
 def assign(i, t):
     ''' expr equal expr
     '''
-    if len(t) > 4 and (
-            i == 1 or\
-            (t[i+2]['args'][0]['token'] in {'var', 'dotAccess'} and 'symbol' in t[i+3])):
+    if len(t) > 4 and i == 1:
         # Not parsed the value of the assign yet.
+        return 'continue'
+    if t[i+2]['args'][0]['token'] in {'var', 'dotAccess'} and 'symbol' in t[i+3]:
+        # Incomplete expression parsing
         return 'continue'
         
     if t[i]['args'][0]['token'] in {'var', 'dotAccess'}:
