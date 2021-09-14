@@ -168,13 +168,17 @@ class Transpiler(BaseTranspiler):
                     arguments += f"{arg['value']}, "
                 
             elif arg['type'] in self.classes:
+                if 'cast' in arg:
+                    cast = f"({arg['cast']}*)"
+                else:
+                    cast = ''
                 if f"{arg['type']}_new(" in arg['value']:
                     argPermVars, argInit = self.formatClassInit(arg['type'], f'__permVar{self.instanceCounter}__')
                     permanentVars += f"{argPermVars} {arg['type']} __permVar{self.instanceCounter}__ = {argInit};"
-                    arguments += f"&__permVar{self.instanceCounter}__, "
+                    arguments += f"{cast}&__permVar{self.instanceCounter}__, "
                     self.instanceCounter += 1
                 else:
-                    arguments += f"&{arg['value']}, "
+                    arguments += f"{cast}&{arg['value']}, "
             else:
                 arguments += f"{arg['value']}, "
         arguments = arguments[:-2]

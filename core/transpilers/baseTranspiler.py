@@ -552,17 +552,23 @@ class BaseTranspiler():
         # Put kwargs in the right order
         if not className is None:
             kws = self.classes[className]['scope'][name['value']]['kwargs']
+            ags = self.classes[className]['scope'][name['value']]['args']
         elif name['value'] in self.classes:
             callType = name['value']
             if 'new' in self.classes[callType]['scope']:
                 kws = self.classes[callType]['scope']['new']['kwargs']
+                ags = self.classes[callType]['scope']['new']['args']
             else:
                 kws = []
+                ags = []
         elif name['value'] in self.currentScope:
             kws = self.currentScope[name['value']]['kwargs']
+            ags = self.currentScope[name['value']]['args']
         else:
             # Call signature not defined, use the order it was passed
             kws = self.processKwargs(token['kwargs'])
+            ags = args
+
         kwargs = []
         # If the kwarg was passed, use it. Otherwise use the default value
         for kw in kws:
@@ -572,7 +578,14 @@ class BaseTranspiler():
                     break
             else:
                 kwargs.append(kw)
-        val = self.formatCall(name['value'], name['type'], args, kwargs)
+
+        arguments = []
+        for arg, a in zip(args, ags):
+            if arg['type'] != a['type']:
+                arg['cast'] = a['type']
+            arguments.append(arg)
+                
+        val = self.formatCall(name['value'], name['type'], arguments, kwargs)
         if 'modifier' in token:
             val = token['modifier'].replace('not',self.notOperator) + val
         return {'value':val, 'type':callType}
