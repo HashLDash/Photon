@@ -183,7 +183,11 @@ class Transpiler(BaseTranspiler):
                 arguments += f"{arg['value']}, "
         arguments = arguments[:-2]
         if name in self.classes:
-            name = f'{name}_new'
+            # only call new if it exists
+            if 'new' in self.classes[name]['methods']:
+                name = f'{name}_new'
+            else:
+                return ''
         if tempVars or permanentVars:
             return f'{permanentVars} {{ {tempVars}{name}({arguments}); {freeVars} }}'
         return f'{name}({arguments})'

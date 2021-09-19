@@ -657,13 +657,20 @@ class BaseTranspiler():
         self.inClass = name
         self.startScope()
         index = len(self.outOfMain)
+        newDefined = False
+        for c in token['block']:
+            if c['token'] == 'func':
+                if c['name'] == 'new':
+                    newDefined = True
+                    break
         for inherited in inheritedClasses:
             if inherited in self.classes:
                 self.classes[name]['inherited'].append(inherited)
                 for attr in self.classes[inherited]['attributes']:
                     self.processClassAttribute(attr, inherited=True)
                 for method in self.classes[inherited]['methods']:
-                    self.processClassMethods(self.classes[inherited]['methods'][method]['tokens'])
+                    if method != 'new' or not newDefined:
+                        self.processClassMethods(self.classes[inherited]['methods'][method]['tokens'])
 
         for c in token['block']:
             if c['token'] == 'assign':
@@ -705,6 +712,17 @@ class BaseTranspiler():
         if name == "new":
             # Only change the name for transpilation
             token['name'] = self.constructorName
+            # add kwargs from inherited class
+            try:
+                inherited = self.classes[self.inClass]['inherited'][0]
+            except IndexError:
+                pass
+            else:
+                inheritedKwargs = self.classes[inherited]['methods']['new']['tokens']['kwargs']
+                # Check if its an inherited new method
+                # to avoid duplicating the attributes
+                if not inheritedKwargs == token['kwargs']:
+                    token['kwargs'] = inheritedKwargs + token['kwargs']
         self.processFunc(token)
         # delete self, because the next inheritance will insert it
         del token['args'][0]
