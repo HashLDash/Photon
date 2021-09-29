@@ -7,7 +7,7 @@ printf "${green}Linux Installer - Photon${normal}\n"
 
 
 SUDO=''
-if (( $EUID != 0 )); then
+if [ $(id -u) -ne 0 ] ; then
     SUDO='sudo'
 fi
 
