@@ -16,7 +16,7 @@ class Transpiler(BaseTranspiler):
         self.imports = {'#include <stdio.h>', '#include <stdlib.h>', '#include <locale.h>'}
         self.funcIdentifier = '/*def*/'
         self.constructorName = 'new'
-        self.block = {'struct ','/*def*/', 'for ','while ','if ','else ', 'int main('}
+        self.block = {'typedef ','/*def*/', 'for ','while ','if ','else ', 'int main('}
         self.true = '1'
         self.false = '0'
         self.null = 'NULL'
@@ -65,9 +65,16 @@ class Transpiler(BaseTranspiler):
             elif v['token'] == 'call':
                 if currentType in self.classes:
                     instance = dotAccess.pop()
-                    v['args'] = [{'value':instance, 'type':currentType, 'pointer':True}] + v['args']
+                    # include instance as the first arg in the call
+                    v['args'] = [{'value':instance.replace('->',''), 'type':currentType, 'pointer':True}] + v['args']
                     value = self.processCall(v, className=currentType)
-                    dotAccess.append(f'{currentType}_{value["value"]}')
+                    if self.inFunc:
+                        value['value'] = '.'.join(dotAccess + [instance, value['value']]).replace('->.','->')
+                    else:
+                        # if outside, call the function directly
+                        # and not by the pointer
+                        value['value'] = '.'.join([value['value']]).replace('->.','->')
+                    dotAccess = [value['value']]
                 else:
                     value = self.processCall(v)
                     dotAccess.append(value['value'])
@@ -150,7 +157,7 @@ class Transpiler(BaseTranspiler):
                     raise SyntaxError(f'Cannot format {valType} in formatStr')
         return string, exprs
 
-    def formatCall(self, name, returnType, args, kwargs):
+    def formatCall(self, name, returnType, args, kwargs, className):
         # Handle function arguments. Kwargs are in the right order
         if name in self.classes:
             args.append({'value':'{var}', 'type':name})
@@ -177,6 +184,8 @@ class Transpiler(BaseTranspiler):
                     permanentVars += f"{argPermVars} {arg['type']} __permVar{self.instanceCounter}__ = {argInit};"
                     arguments += f"{cast}&__permVar{self.instanceCounter}__, "
                     self.instanceCounter += 1
+                elif self.inFunc:
+                    arguments += f"{cast}{arg['value']}, "
                 else:
                     arguments += f"{cast}&{arg['value']}, "
             else:
@@ -188,8 +197,9 @@ class Transpiler(BaseTranspiler):
                 name = f'{name}_new'
             else:
                 return ''
+        className = '' if className is None else f'{className}_'
         if tempVars or permanentVars:
-            return f'{permanentVars} {{ {tempVars}{name}({arguments}); {freeVars} }}'
+            return f'{permanentVars} {{ {tempVars}{className}{name}({arguments}); {freeVars} }}'
         return f'{name}({arguments})'
     
     def formatIndexAccess(self, token):
@@ -466,7 +476,9 @@ class Transpiler(BaseTranspiler):
         permanentVars = ''
         initVals = ''
         for a in attrs:
-            if a['variable']['type'] in self.classes:
+            if 'returnType' in a:
+                defaultValues.append(f'&{className}_{a["name"]}')
+            elif a['variable']['type'] in self.classes:
                 attrClassName = a['variable']['type']
                 #defaultValues.append(f'malloc(sizeof({attrClassName}))')
                 # Get initVals of the attribute class
@@ -483,18 +495,36 @@ class Transpiler(BaseTranspiler):
         # TODO: Initialize dict values
         return permanentVars, f'{{ {defaultValues} }}; {initVals}'
 
-    def formatClassAttribute(self, variable, expr):
-        varType = variable['type']
-        if varType == 'array':
-            elementType = expr['elementType']
-            varType = f'list_{elementType}'
-        name = variable['value']
-        expr = self.formatExpr(expr)
-        varType = self.nativeType(varType)
-        if varType in self.classes:
-            return f'{varType}* {name};'
+    def formatClassAttribute(self, attr):
+        if 'returnType' in attr:
+            # Its a method
+            methodReturnType = attr['returnType']
+            method = attr['name']
+            args = attr['args'] + attr['kwargs']
+            argsTypes = []
+            for a in args:
+                if a['type'] in self.classes:
+                    argsTypes.append(f'struct {a["type"]}*')
+                else:
+                    argsTypes.append(a['type'])
+
+            argsTypes = ', '.join(argsTypes)
+            return f'{methodReturnType} (*{method})({argsTypes});'
         else:
-            return f'{varType} {name};'
+            # Its a variable
+            variable = attr['variable']
+            expr = attr['expr']
+            varType = variable['type']
+            if varType == 'array':
+                elementType = expr['elementType']
+                varType = f'list_{elementType}'
+            name = variable['value']
+            expr = self.formatExpr(expr)
+            varType = self.nativeType(varType)
+            if varType in self.classes:
+                return f'{varType}* {name};'
+            else:
+                return f'{varType} {name};'
 
     def formatReturn(self, expr):
         if expr:

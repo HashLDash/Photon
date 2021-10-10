@@ -330,6 +330,9 @@ class BaseTranspiler():
         return token['args'][0]
 
     def processClassAttribute(self, token, inherited=False):
+        if 'returnType' in token:
+            # Its a method
+            return
         #TODO: Handle dict types
         if inherited:
             variable = token['variable']
@@ -585,7 +588,7 @@ class BaseTranspiler():
                 arg['cast'] = a['type']
             arguments.append(arg)
                 
-        val = self.formatCall(name['value'], name['type'], arguments, kwargs)
+        val = self.formatCall(name['value'], name['type'], arguments, kwargs, className)
         if 'modifier' in token:
             val = token['modifier'].replace('not',self.notOperator) + val
         return {'value':val, 'type':callType}
@@ -686,7 +689,7 @@ class BaseTranspiler():
         args = self.processArgs(token['args'])
         self.insertCode(self.formatClass(name, args), index)
         for attr in self.classes[self.inClass]['attributes']:
-            self.insertCode(self.formatClassAttribute(attr['variable'], attr['expr']))
+            self.insertCode(self.formatClassAttribute(attr))
         if not self.methodsInsideClass:
             # Close class definition before writing methods
             self.insertCode(self.formatEndClass())
@@ -719,7 +722,7 @@ class BaseTranspiler():
                 pass
             else:
                 inheritedKwargs = self.classes[inherited]['methods']['new']['tokens']['kwargs']
-                # Check if its an inherited new method
+                # Check if it's an inherited new method
                 # to avoid duplicating the attributes
                 if not inheritedKwargs == token['kwargs']:
                     token['kwargs'] = inheritedKwargs + token['kwargs']
@@ -731,6 +734,21 @@ class BaseTranspiler():
         self.classes[self.inClass]['methods'][name] = deepcopy(self.currentScope[name])
         self.classes[self.inClass]['methods'][name]['code'] = methodCode
         self.classes[self.inClass]['methods'][name]['tokens'] = token
+
+        methodInfo = self.classes[self.inClass]['methods'][name]['scope'][name] 
+        attrData = {
+            'returnType':methodInfo['type'],
+            'name':name,
+            'args':methodInfo['args'],
+            'kwargs':methodInfo['kwargs']}
+        # Check if this method overrides other inherited method
+        for n, attr in enumerate(self.classes[self.inClass]['attributes']):
+            if 'returnType' in attr and attr['name'] == name:
+                # It is overriding this attr
+                self.classes[self.inClass]['attributes'][n] = attrData
+                break
+        else:
+            self.classes[self.inClass]['attributes'].append(attrData)
         del self.currentScope[name]
 
     def processFunc(self, token):
