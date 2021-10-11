@@ -130,7 +130,7 @@ class Transpiler(BaseTranspiler):
             return f'{variable}:{varType} = {formattedExpr}'
         return f'{variable} = {formattedExpr}'
 
-    def formatCall(self, name, returnType, args, kwargs):
+    def formatCall(self, name, returnType, args, kwargs, className):
         arguments = ','.join([ arg["value"] for arg in args+kwargs])
         return f'{name}({arguments})'
 
@@ -194,7 +194,12 @@ class Transpiler(BaseTranspiler):
         value = kwarg['value']
         return f'{self.self}.{name} = {value}'
 
-    def formatClassAttribute(self, variable, expr):
+    def formatClassAttribute(self, attr):
+        if 'returnType' in attr:
+            # It's a method, do nothing
+            return
+        variable = attr['variable']
+        expr = attr['expr']
         varType = self.nativeType(variable['type'])
         name = variable['value']
         expr = self.formatExpr(expr)
@@ -248,9 +253,9 @@ class Transpiler(BaseTranspiler):
                 if line:
                     if line.startswith('#end') or line.startswith('elif ') or line.startswith('else:'):
                         indent -= 4
-                f.write(' ' * indent + line.replace('#end', '') + '\n')
-                if self.isBlock(line):
-                    indent += 4
+                    f.write(' ' * indent + line.replace('#end', '') + '\n')
+                    if self.isBlock(line):
+                        indent += 4
         debug('Generated ' + self.filename)
 
     def run(self):
