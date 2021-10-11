@@ -342,6 +342,8 @@ class BaseTranspiler():
             expr = token['expr']
             
         for attr in self.classes[self.inClass]['attributes']:
+            if 'returnType' in attr:
+                continue
             if variable['value'] == attr['variable']['value']:
                 # Attribute already defined, skip
                 return
@@ -764,7 +766,8 @@ class BaseTranspiler():
             # change mode to not insert code on processing
             self.insertMode = False
             self.startScope()
-            self.startClassScope()
+            if self.inClass:
+                self.startClassScope()
             # put args in scope
             for arg in args:
                 argType = arg['type']
@@ -799,7 +802,8 @@ class BaseTranspiler():
                         attribute['expr']['args'][0]['elementType'] = kw['elementType']
                         attribute['expr']['args'][0]['size'] = kw['size']
                         attribute['expr']['args'][0]['elements'] = kw['elements']
-                    self.processClassAttribute(attribute)
+                    if self.inClass:
+                        self.processClassAttribute(attribute)
             # get a deepcopy or it will corrupt the block
             block = deepcopy(token['block'])
             for c in block:
@@ -811,7 +815,8 @@ class BaseTranspiler():
             else:
                 returnType = 'void'
             self.endScope()
-            self.endClassScope()
+            if self.inClass:
+                self.endClassScope()
             # return to normal mode
             self.insertMode = True
             # End pre processing
@@ -833,7 +838,8 @@ class BaseTranspiler():
                 self.currentScope[kwVal]['elementType'] = kw['elementType']
                 self.currentScope[kwVal]['size'] = kw['size']
             if 'default' in kw:
-                self.insertCode(self.formatClassDefaultValue(kw))
+                if self.inClass:
+                    self.insertCode(self.formatClassDefaultValue(kw))
                 attribute = {
                     'target':{
                         'name':kw['name'],
@@ -853,7 +859,8 @@ class BaseTranspiler():
                     attribute['expr']['args'][0]['elementType'] = kw['elementType']
                     attribute['expr']['args'][0]['size'] = kw['size']
                     attribute['expr']['args'][0]['elements'] = kw['elements']
-                self.processClassAttribute(attribute)
+                if self.inClass:
+                    self.processClassAttribute(attribute)
         for c in token['block']:
             self.process(c)
         self.insertCode(self.formatFunc(functionName, returnType, args, kwargs),index)
