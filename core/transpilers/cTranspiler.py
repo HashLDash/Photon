@@ -503,10 +503,11 @@ class Transpiler(BaseTranspiler):
             args = attr['args'] + attr['kwargs']
             argsTypes = []
             for a in args:
+                attrType = self.nativeType(a['type'])
                 if a['type'] in self.classes:
-                    argsTypes.append(f'struct {a["type"]}*')
+                    argsTypes.append(f'struct {attrType}*')
                 else:
-                    argsTypes.append(a['type'])
+                    argsTypes.append(attrType)
 
             argsTypes = ', '.join(argsTypes)
             return f'{methodReturnType} (*{method})({argsTypes});'
