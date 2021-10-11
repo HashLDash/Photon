@@ -36,7 +36,9 @@ void list_str_append(list_str* list, char* value) {
         list->size = list->size * 2;
         list->values = realloc(list->values, sizeof(char*) * list->size);
     }
-    list->values[list->len] = value;
+    char * copy = malloc(strlen(value) + 1);
+    strcpy(copy, value);
+    list->values[list->len] = copy;
     list->len += 1;
 }
 
