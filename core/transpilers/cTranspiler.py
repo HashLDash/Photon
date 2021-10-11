@@ -326,6 +326,9 @@ class Transpiler(BaseTranspiler):
             permanentVars, classInit = self.formatClassInit(className, variable)
             initMethod = expr['value'].replace('{var}',variable) + ';'
             return f'{permanentVars}; {className} {variable} = {classInit};{initMethod}'
+        if varType == self.nativeType('str') + ' ':
+            # if defined with char* it cannot be modified
+            return f'char {variable}[] = {formattedExpr};'
         return f'{varType}{variable} = {formattedExpr};'
 
     def formatExpr(self, value, cast=None, var=None):
@@ -404,8 +407,16 @@ class Transpiler(BaseTranspiler):
             else:
                 tempArray = ''
                 beginScope = ''
-            # tempArray is inside a scope block, must end that when closing the loop
             return f'{self.nativeType(varType)} {self.iterVar[-1]}; {beginScope}{tempArray}; for (int __iteration__=0; __iteration__ < {iterable["value"]}.len; __iteration__++) {{ {self.iterVar[-1]}={iterable["value"]}.values[__iteration__];'
+        elif iterable['type'] == 'str':
+            varType = 'str'
+            self.iterVar.append(variables[0]['value'])
+            self.imports.add('#include <string.h>')
+            if self.iterVar[-1] in self.currentScope:
+                varType = ''
+            else:
+                varType = varType
+            return f"char {self.iterVar[-1]}[] = \" \"; for (int __iteration__=0; __iteration__ < 5; __iteration__++) {{ {self.iterVar[-1]}[0]={iterable['value']}[__iteration__];"
         else:
             raise SyntaxError(f'Format for with iterable {iterable["type"]} not suported yet.')
     
