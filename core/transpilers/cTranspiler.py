@@ -29,7 +29,8 @@ class Transpiler(BaseTranspiler):
             self.links.add('-g')
         self.listTypes = set()
         self.dictTypes = set()
-        self.instanceCounter = 0
+        self.permVarCounter = 0
+        self.tempVarCounter = 0
         self.iterVar = []
         self.nativeTypes = {
             'float': 'double',
@@ -170,9 +171,9 @@ class Transpiler(BaseTranspiler):
         for arg in args+kwargs:
             if arg['type'] == 'array':
                 if '{var}' in arg['value']:
-                    permanentVars += f"{arg['value'].format(var=f'__permVar{self.instanceCounter}__')}; "
-                    arguments += f'__permVar{self.instanceCounter}__, '
-                    self.instanceCounter += 1
+                    permanentVars += f"{arg['value'].format(var=f'__permVar{self.permVarCounter}__')}; "
+                    arguments += f'__permVar{self.permVarCounter}__, '
+                    self.permVarCounter += 1
                 else:
                     arguments += f"{arg['value']}, "
                 
@@ -182,11 +183,11 @@ class Transpiler(BaseTranspiler):
                 else:
                     cast = ''
                 if f"{arg['type']}_new(" in arg['value']:
-                    argPermVars, argInit = self.formatClassInit(arg['type'], f'__permVar{self.instanceCounter}__')
-                    arg['value'] = arg['value'].format(var=f'__permVar{self.instanceCounter}__')
-                    permanentVars += f"{argPermVars} {arg['type']} __permVar{self.instanceCounter}__ = {argInit}; {arg['value']};"
-                    arguments += f"{cast}&__permVar{self.instanceCounter}__, "
-                    self.instanceCounter += 1
+                    argPermVars, argInit = self.formatClassInit(arg['type'], f'__permVar{self.permVarCounter}__')
+                    arg['value'] = arg['value'].format(var=f'__permVar{self.permVarCounter}__')
+                    permanentVars += f"{argPermVars} {arg['type']} __permVar{self.permVarCounter}__ = {argInit}; {arg['value']};"
+                    arguments += f"{cast}&__permVar{self.permVarCounter}__, "
+                    self.permVarCounter += 1
                 elif self.inFunc:
                     arguments += f"{cast}{arg['value']}, "
                 else:
@@ -328,7 +329,11 @@ class Transpiler(BaseTranspiler):
             return f'{permanentVars}; {className} {variable} = {classInit};{initMethod}'
         if varType == self.nativeType('str') + ' ':
             # if defined with char* it cannot be modified
-            return f'char {variable}[] = {formattedExpr};'
+            if '__tempVar' in formattedExpr:
+                # Already allocated memory, just reassign
+                return f'char* {variable} = {formattedExpr};'
+            else:
+                return f'char {variable}[] = {formattedExpr};'
         return f'{varType}{variable} = {formattedExpr};'
 
     def formatExpr(self, value, cast=None, var=None):
@@ -497,9 +502,9 @@ class Transpiler(BaseTranspiler):
                 #defaultValues.append(f'malloc(sizeof({attrClassName}))')
                 # Get initVals of the attribute class
                 argPermVars, argInit = self.formatClassInit(a['variable']['type'], f'{variable}.{a["variable"]["value"]}')
-                permanentVars += f"{argPermVars} {a['variable']['type']} __permVar{self.instanceCounter}__ = {argInit}; "
-                defaultValues.append(f'&__permVar{self.instanceCounter}__')
-                self.instanceCounter += 1
+                permanentVars += f"{argPermVars} {a['variable']['type']} __permVar{self.permVarCounter}__ = {argInit}; "
+                defaultValues.append(f'&__permVar{self.permVarCounter}__')
+                self.permVarCounter += 1
             elif a['variable']['type'] == 'array':
                 defaultValues.append(self.formatArrayInit(a['expr']))
                 initVals += ';'.join(v.format(var=f"{variable}.{a['variable']['value']}") for v in a['expr']['value'].split(';')[1:]) + ';'
@@ -582,6 +587,7 @@ class Transpiler(BaseTranspiler):
 
     def sortedImports(self):
         ''' Imports must be sorted to avoid definition errors or conflicts '''
+        #TODO USE IF DEF GUARDS INSTEAD
         # Lists must be imported before dicts
         imports = sorted(list(self.imports), reverse=True)
         try:
@@ -594,6 +600,21 @@ class Transpiler(BaseTranspiler):
             if aspIndex > index:
                 imports[index], imports[aspIndex] = imports[aspIndex], imports[index]
         return imports
+
+    def add(self, arg1, arg2):
+        t1 = arg1['type']
+        t2 = arg2['type']
+        if t1 == 'str' or t2 == 'str':
+            self.imports.add('#include "asprintf.h"')
+            self.imports.add('#include <string.h>')
+
+            self.insertCode(f'char* __tempVar{self.tempVarCounter}__ = malloc(strlen({arg1["value"]}) + strlen({arg2["value"]}));')
+            self.insertCode(f'asprintf(&__tempVar{self.tempVarCounter}__, "%s%s", {arg1["value"]}, {arg2["value"]});')
+            self.tempVarCounter += 1
+
+            return {'value':f'__tempVar0__', 'type':'str'}
+        else:
+            return super().add(arg1, arg2)
                 
     def write(self):
         boilerPlateStart = [
