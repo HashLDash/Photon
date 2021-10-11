@@ -790,7 +790,7 @@ class BaseTranspiler():
                         },
                         'expr':{
                             'args':[
-                                {'value':kw['value'], 'type':kw['type']},
+                                self.getValAndType(kw)
                             ],
                             'ops':[]
                         }
@@ -847,7 +847,7 @@ class BaseTranspiler():
                     },
                     'expr':{
                         'args':[
-                            {'value':kw['value'], 'type':kw['type']},
+                            self.getValAndType(kw)
                         ],
                         'ops':[]
                     }

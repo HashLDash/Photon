@@ -24,6 +24,9 @@ class Transpiler(BaseTranspiler):
         self.methodsInsideClass = False
         self.notOperator = '!'
         self.links = set()
+        if self.debug:
+            # compile with debug symbols for gdb
+            self.links.add('-g')
         self.listTypes = set()
         self.dictTypes = set()
         self.instanceCounter = 0
@@ -71,9 +74,8 @@ class Transpiler(BaseTranspiler):
                     if self.inFunc:
                         value['value'] = '.'.join(dotAccess + [instance, value['value']]).replace('->.','->')
                     else:
-                        # if outside, call the function directly
-                        # and not by the pointer
-                        value['value'] = '.'.join([value['value']]).replace('->.','->')
+                        # if outside, use . instead
+                        value['value'] = value['value'].replace('!@instance@!', instance + '.')
                     dotAccess = [value['value']]
                 else:
                     value = self.processCall(v)
@@ -197,9 +199,9 @@ class Transpiler(BaseTranspiler):
                 name = f'{name}_new'
             else:
                 return ''
-        className = '' if className is None else f'{className}_'
+        instance = '' if className is None else f'!@instance@!'
         if tempVars or permanentVars:
-            return f'{permanentVars} {{ {tempVars}{className}{name}({arguments}); {freeVars} }}'
+            return f'{permanentVars} {{ {tempVars}{instance}{name}({arguments}); {freeVars} }}'
         return f'{name}({arguments})'
     
     def formatIndexAccess(self, token):
