@@ -617,18 +617,18 @@ class Transpiler(BaseTranspiler):
                 if line:
                     if line[0] == '}':
                         indent -= 4
-                if self.debug:
-                    # pretty output
-                    for l in line.replace('/*def*/','').split(';'):
-                        l = l.strip()
-                        if l:
-                            f.write(' ' * indent + l + ';\n')
-                    f.write('\n')
-                else:
-                    # Ugly, but faster
-                    f.write(' ' * indent + line.replace('/*def*/', '') + '\n')
-                if self.isBlock(line):
-                    indent += 4
+                    if self.debug:
+                        # pretty output
+                        for l in line.replace('/*def*/','').split(';'):
+                            l = l.strip()
+                            if l:
+                                f.write(' ' * indent + l + ';\n')
+                        f.write('\n')
+                    else:
+                        # Ugly, but faster
+                        f.write(' ' * indent + line.replace('/*def*/', '') + '\n')
+                    if self.isBlock(line):
+                        indent += 4
         debug('Generated ' + self.filename)
 
     def run(self):
