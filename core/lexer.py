@@ -28,7 +28,11 @@ def comment(i, t):
             return 'continue'
         if token['token'] == 'hashtag':
             # remove all tokens after the hashtag
-            t[n]['token'] = 'comment'
+            if n == 1:
+                # It's a line of comments
+                t[n]['token'] = 'comment'
+                return t[:n+1]
+            # There is code and comment. Ignore the comment for now
             return t[:n]
 
 def operator(i, t):
