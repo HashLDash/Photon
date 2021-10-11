@@ -12,16 +12,16 @@ class Engine():
 
     def process(self, token):
         self.transpiler.process(token)
-        source = self.transpiler.outOfMain + self.transpiler.source
+        source = list(self.transpiler.imports) + self.transpiler.outOfMain + self.transpiler.source
         code = ''
         indent = 0
         for line in source:
             if line:
                 if line.startswith('#end'):
                     indent -= 4
-            code += ' '*indent+line+'\n'
-            if self.transpiler.isBlock(line):
-                indent += 4
+                code += ' '*indent+line+'\n'
+                if self.transpiler.isBlock(line):
+                    indent += 4
         try:
             if token['token'] in {'expr'}:
                 if code[-2] == ';':
@@ -35,3 +35,4 @@ class Engine():
             print(f'RuntimeError: {e}')
         self.transpiler.source = []
         self.transpiler.outOfMain = []
+        self.transpiler.imports = set()

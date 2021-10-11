@@ -40,7 +40,7 @@ class Transpiler(BaseTranspiler):
     def formatSystemLibImport(self, expr):
         module = self.getValAndType(expr)['value']
         self.imports.add(f'from {module} import *')
-        return ''
+        return
 
     def formatVarInit(self, name, varType):
         if varType:
