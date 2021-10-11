@@ -416,7 +416,7 @@ class Transpiler(BaseTranspiler):
                 varType = ''
             else:
                 varType = varType
-            return f"char {self.iterVar[-1]}[] = \" \"; for (int __iteration__=0; __iteration__ < 5; __iteration__++) {{ {self.iterVar[-1]}[0]={iterable['value']}[__iteration__];"
+            return f"int __iterVarLen__ = strlen({iterable['value']}); char {self.iterVar[-1]}[] = \" \"; for (int __iteration__=0; __iteration__ < __iterVarLen__; __iteration__++) {{ {self.iterVar[-1]}[0]={iterable['value']}[__iteration__];"
         else:
             raise SyntaxError(f'Format for with iterable {iterable["type"]} not suported yet.')
     
