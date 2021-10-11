@@ -876,10 +876,15 @@ class BaseTranspiler():
         folder = None
         if token['expr']['args'][0]['token'] == 'var':
             name = token['expr']['args'][0]['name']
-            if f"{name}.w" in os.listdir(folder):
-                # Local module import
+            if f"{name}.w" in os.listdir(folder) + os.listdir(self.standardLibs):
+                if f"{name}.w" in os.listdir(self.standardLibs):
+                    # Photon module import
+                    filename = f'{self.standardLibs}{name}.w'
+                else:
+                    # Local module import
+                    filename = f'{name}.w'
                 interpreter = Interpreter(
-                        filename=f'{name}.w',
+                        filename=filename,
                         lang=self.lang,
                         target=self.target,
                         module=True,
@@ -893,9 +898,6 @@ class BaseTranspiler():
                 self.links = self.links.union(interpreter.engine.links)
                 self.outOfMain += interpreter.engine.outOfMain
                 self.source += interpreter.engine.source
-            elif f"{name}.w" in os.listdir(self.standardLibs):
-                # Photon module import
-                raise SyntaxError('Photon module import not implemented yet.')
             elif f"{name}.{self.libExtension}" in os.listdir(self.standardLibs + f'/native/{self.lang}/'):
                 # Native Photon lib module import
                 raise SyntaxError('Native Photon module import not implemented yet.')
