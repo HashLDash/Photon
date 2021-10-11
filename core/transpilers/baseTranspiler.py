@@ -329,17 +329,9 @@ class BaseTranspiler():
 
         return token['args'][0]
 
-    def processClassAttribute(self, token, inherited=False):
-        if 'returnType' in token:
-            # Its a method
-            return
-        #TODO: Handle dict types
-        if inherited:
-            variable = token['variable']
-            expr = {'args':[token['expr']], 'ops':[]}
-        else:
-            variable = self.processVar(token['target'])
-            expr = token['expr']
+    def processClassAttribute(self, token):
+        variable = self.processVar(token['target'])
+        expr = token['expr']
             
         for attr in self.classes[self.inClass]['attributes']:
             if 'returnType' in attr:
@@ -670,12 +662,7 @@ class BaseTranspiler():
                     break
         for inherited in inheritedClasses:
             if inherited in self.classes:
-                self.classes[name]['inherited'].append(inherited)
-                for attr in self.classes[inherited]['attributes']:
-                    self.processClassAttribute(attr, inherited=True)
-                for method in self.classes[inherited]['methods']:
-                    if method != 'new' or not newDefined:
-                        self.processClassMethods(self.classes[inherited]['methods'][method]['tokens'])
+                self.classes[name] = deepcopy(self.classes[inherited])
 
         for c in token['block']:
             if c['token'] == 'assign':
