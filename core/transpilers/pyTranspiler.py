@@ -174,6 +174,8 @@ class Transpiler(BaseTranspiler):
         return ','.join([ f'{arg["value"]}: {self.nativeType(arg["type"])}' for arg in args ])
 
     def formatFunc(self, name, returnType, args, kwargs):
+        if name == 'new':
+            name = self.constructorName
         kwargs = [{'value':kw['name'], 'type':kw['type']} for kw in kwargs]
         args = self.formatArgs(args+kwargs)
         returnType = self.nativeType(returnType)

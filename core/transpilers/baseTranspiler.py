@@ -716,7 +716,7 @@ class BaseTranspiler():
         name = token['name']
         if name == "new":
             # Only change the name for transpilation
-            token['name'] = self.constructorName
+            #token['name'] = self.constructorName
             # add kwargs from inherited class
             try:
                 inherited = self.classes[self.inClass]['inherited'][0]

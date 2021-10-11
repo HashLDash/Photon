@@ -183,6 +183,8 @@ class Transpiler(BaseTranspiler):
         return ', '.join([ f'{arg["value"]}' for arg in args if not arg['value'] == 'self'])
 
     def formatFunc(self, name, returnType, args, kwargs):
+        if name == 'new':
+            name = self.constructorName
         kwargs = [{'value':kw['name'], 'type':kw['type']} for kw in kwargs]
         args = self.formatArgs(args+kwargs)
         if self.inClass:
