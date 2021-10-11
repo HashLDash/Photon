@@ -27,6 +27,7 @@ class Transpiler(BaseTranspiler):
         if self.debug:
             # compile with debug symbols for gdb
             self.links.add('-g')
+        self.expressionBuffer = None
         self.listTypes = set()
         self.dictTypes = set()
         self.permVarCounter = 0
@@ -142,7 +143,8 @@ class Transpiler(BaseTranspiler):
         return  f'{message}{initInternal} __inputStr__ = photonInput();'
 
     def formatStr(self, string, expressions):
-        string = '"' + string[1:-1].replace('"', '\\"').replace('%', '%%') + '"'
+        if string[0] in {'"', "'"}:
+            string = '"' + string[1:-1].replace('"', '\\"').replace('%', '%%') + '"'
         exprs = []
         if '{' in string:
             self.imports.add('#include "asprintf.h"')
@@ -333,7 +335,7 @@ class Transpiler(BaseTranspiler):
                 # Already allocated memory, just reassign
                 return f'char* {variable} = {formattedExpr};'
             else:
-                return f'char {variable}[] = {formattedExpr};'
+                return f'char* {variable} = {formattedExpr};'
         return f'{varType}{variable} = {formattedExpr};'
 
     def formatExpr(self, value, cast=None, var=None):
@@ -607,12 +609,11 @@ class Transpiler(BaseTranspiler):
         if t1 == 'str' or t2 == 'str':
             self.imports.add('#include "asprintf.h"')
             self.imports.add('#include <string.h>')
-
-            self.insertCode(f'char* __tempVar{self.tempVarCounter}__ = malloc(strlen({arg1["value"]}) + strlen({arg2["value"]}));')
+            self.insertCode(f'char* __tempVar{self.tempVarCounter}__ = malloc(strlen({arg1["value"]}) + strlen({arg2["value"]}) + 1);')
             self.insertCode(f'asprintf(&__tempVar{self.tempVarCounter}__, "%s%s", {arg1["value"]}, {arg2["value"]});')
             self.tempVarCounter += 1
 
-            return {'value':f'__tempVar0__', 'type':'str'}
+            return {'value':f'__tempVar{self.tempVarCounter - 1}__', 'type':'str', 'expressions':[]}
         else:
             return super().add(arg1, arg2)
                 
