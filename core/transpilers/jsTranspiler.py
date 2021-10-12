@@ -279,7 +279,7 @@ class Transpiler(BaseTranspiler):
         debug(f'Running {self.filename}')
         try:
             if not 'node_modules' in os.listdir():
-                print('Linking libraries. This will only run once per project.')
+                debug('Linking libraries. This will only run once per project.')
                 for module in self.links:
                     check_call(['npm', 'link', module])
             check_call(['node', f'Sources/js/{self.filename}'])

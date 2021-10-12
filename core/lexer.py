@@ -567,6 +567,17 @@ def forLoop(i, t):
     del t[i+1] # beginBlock
     return t
 
+def forTarget(i, t):
+    ''' Check if its a valid for target token and return it if it is '''
+    if not t[i+1]['args'][0]['token'] == 'var':
+        # not valid for target
+        raise SyntaxError("The token {t[i+1]['args'][0]['token']} is not a valid target token.")
+    t[i]['token'] = 'forTarget'
+    t[i]['target'] = t[i+1]['args'][0]['name']
+    del t[i+1] # target
+    del t[i+1] # beginBlock
+    return t
+    
 def whileLoop(i, t):
     ''' Create a while token '''
     # token will have a block field

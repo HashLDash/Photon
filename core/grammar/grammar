@@ -60,6 +60,8 @@ ifelif = (ifStatement elifStatement) expr beginBlock
 
 forLoop = forStatement expr inStatement (range expr) beginBlock
 
+forTarget = forStatement expr beginBlock
+
 whileLoop = whileStatement expr beginBlock
 
 args = (args expr) comma (args expr)

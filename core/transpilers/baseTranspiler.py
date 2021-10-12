@@ -23,6 +23,7 @@ class BaseTranspiler():
             'if': self.processIf,
             'while': self.processWhile,
             'for': self.processFor,
+            'forTarget': self.processForTarget,
             'func': self.processFunc,
             'class': self.processClass,
             'return': self.processReturn,
@@ -518,6 +519,14 @@ class BaseTranspiler():
         for c in token['block']:
             self.process(c)
         self.insertCode(self.formatEndFor())
+
+    def processForTarget(self, token):
+        var = token['target'].lower().replace('python', 'py')
+        lang = self.lang.lower().replace('python', 'py')
+        target = self.target.lower()
+        if var == lang or var == target:
+            for tok in token['block']:
+                self.process(tok)
 
     def processArgs(self, tokens, inferType=False):
         args = []

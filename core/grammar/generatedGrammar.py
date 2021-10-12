@@ -66,6 +66,7 @@ patterns = {
   ('elifStatement', 'expr', 'beginBlock'): ifelif,
   ('forStatement', 'expr', 'inStatement', 'range', 'beginBlock'): forLoop,
   ('forStatement', 'expr', 'inStatement', 'expr', 'beginBlock'): forLoop,
+  ('forStatement', 'expr', 'beginBlock'): forTarget,
   ('whileStatement', 'expr', 'beginBlock'): whileLoop,
   ('args', 'comma', 'args'): args,
   ('args', 'comma', 'expr'): args,
