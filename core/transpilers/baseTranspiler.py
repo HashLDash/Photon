@@ -557,13 +557,13 @@ class BaseTranspiler():
         callType = name['type']
         # Put kwargs in the right order
         if not className is None:
-            kws = self.classes[className]['scope'][name['value']]['kwargs']
-            ags = self.classes[className]['scope'][name['value']]['args']
+            kws = self.classes[className]['methods'][name['value']]['kwargs']
+            ags = self.classes[className]['methods'][name['value']]['args']
         elif name['value'] in self.classes:
             callType = name['value']
-            if 'new' in self.classes[callType]['scope']:
-                kws = self.classes[callType]['scope']['new']['kwargs']
-                ags = self.classes[callType]['scope']['new']['args']
+            if 'new' in self.classes[callType]['methods']:
+                kws = self.classes[callType]['methods']['new']['kwargs']
+                ags = self.classes[callType]['methods']['new']['args']
             else:
                 kws = []
                 ags = []
@@ -677,7 +677,7 @@ class BaseTranspiler():
             if c['token'] == 'assign':
                 self.processClassAttribute(c)
             elif c['token'] == 'func':
-                self.processClassMethods(c)
+                self.processClassMethod(c)
             elif c['token'] == 'comment':
                 self.processComment(c)
             else:
@@ -686,13 +686,13 @@ class BaseTranspiler():
         # Include methods, args/kwargs
         args = self.processArgs(token['args'])
         self.insertCode(self.formatClass(name, args), index)
-        for attr in self.classes[self.inClass]['attributes']:
+        for attr in self.classes[name]['attributes']:
             self.insertCode(self.formatClassAttribute(attr))
         if not self.methodsInsideClass:
             # Close class definition before writing methods
             self.insertCode(self.formatEndClass())
         # Write methods code
-        for methodName, info in self.classes[self.inClass]['methods'].items():
+        for methodName, info in self.classes[name]['methods'].items():
             self.insertCode('')
             self.classes[name]['scope'][methodName] = info['scope'][methodName]
             for c in info['code']:
@@ -702,7 +702,7 @@ class BaseTranspiler():
             self.insertCode(self.formatEndClass())
         self.inClass = None
 
-    def processClassMethods(self, token):
+    def processClassMethod(self, token):
         selfArg = {
             'token': 'expr',
             'type': self.inClass,
