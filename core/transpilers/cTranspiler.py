@@ -74,7 +74,8 @@ class Transpiler(BaseTranspiler):
                     v['args'] = [{'value':instance.replace('->',''), 'type':currentType, 'pointer':True}] + v['args']
                     value = self.processCall(v, className=currentType)
                     if self.inFunc:
-                        value['value'] = '.'.join(dotAccess + [instance, value['value']]).replace('->.','->')
+                        call = value['value'].replace('!@instance@!', '')
+                        value['value'] = '.'.join(dotAccess + [instance, call]).replace('->.','->')
                     else:
                         # if outside, use . instead
                         value['value'] = value['value'].replace('!@instance@!', instance + '.')
@@ -206,7 +207,7 @@ class Transpiler(BaseTranspiler):
         instance = '' if className is None else f'!@instance@!'
         if tempVars or permanentVars:
             return f'{permanentVars} {{ {tempVars}{instance}{name}({arguments}); {freeVars} }}'
-        return f'{name}({arguments})'
+        return f'{instance}{name}({arguments})'
     
     def formatIndexAccess(self, token):
         if token['type'] == 'array':
@@ -525,7 +526,9 @@ class Transpiler(BaseTranspiler):
             argsTypes = []
             for a in args:
                 attrType = self.nativeType(a['type'])
-                if a['type'] in self.classes:
+                if attrType == 'array':
+                    argsTypes.append(f"list_{a['elementType']}")
+                elif a['type'] in self.classes:
                     argsTypes.append(f'struct {attrType}*')
                 else:
                     argsTypes.append(attrType)

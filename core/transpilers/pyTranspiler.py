@@ -106,24 +106,33 @@ class Transpiler(BaseTranspiler):
         return f'{name} += {expr};'
 
     def formatAssign(self, target, expr, inMemory=False):
-        cast = None
         if target['token'] == 'var':
             variable = target['name']
             if variable in self.currentScope:
-                if self.typeKnown(target['type']):
-                    # Casting to a different type
-                    varType = self.nativeType(target['type'])
-                    cast = varType
-                else:
-                    varType = ''
+                varType = self.currentScope[variable]['type']
+            elif self.typeKnown(target['type']):
+                # Type was explicit
+                varType = self.nativeType(target['type'])
             else:
-                if self.typeKnown(target['type']):
-                    # Type was explicit
-                    varType = self.nativeType(target['type'])
-                else:
-                    varType = self.nativeType(self.inferType(expr))
+                varType = self.nativeType(self.inferType(expr))
+        elif target['token'] == 'dotAccess':
+            v = self.getValAndType(target)
+            variable = v['value']
+            varType = v['type']
         else:
             raise SyntaxError(f'Format assign with variable {target} not implemented yet.')
+        if 'format' in expr:
+            # It's a format string
+            formatstr = expr['format']
+            values = ','.join(expr['values'])
+            varType = self.nativeType(varType)
+            return f'{varType} {variable}; asprintf(&{variable}, {formatstr},{values});'
+        if expr['type'] == 'array' and expr['elementType'] != self.currentScope[variable]['elementType']:
+            cast = self.nativeType(varType)
+        elif self.typeKnown(expr['type']) and expr['type'] != varType:
+            cast = self.nativeType(varType)
+        else:
+            cast = None
         formattedExpr = self.formatExpr(expr, cast=cast)
         if varType and not inMemory:
             varType = self.nativeType(varType)
@@ -135,8 +144,12 @@ class Transpiler(BaseTranspiler):
         return f'{name}({arguments})'
 
     def formatExpr(self, value, cast=None):
-        #TODO: implement cast to type
-        return value['value']
+        if cast is None:
+            return value['value']
+        elif cast in {'str', 'int', 'float'}:
+            return f"{cast}({value['value']})"
+        else:
+            raise NotImplemented
     
     def formatIf(self, expr):
         return f'if {expr["value"]}:'
