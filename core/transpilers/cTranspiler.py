@@ -317,9 +317,9 @@ class Transpiler(BaseTranspiler):
             varType = self.nativeType(varType) + ' '
         try:
             if expr['token'] == 'inputFunc' and not cast is None:
-                return formattedExpr
+                return formattedExpr.format(cast=varType)
             elif expr['token'] == 'inputFunc':
-                return formattedExpr + f'{varType}{variable}; {variable} = __inputStr__;'
+                return formattedExpr.format(cast=varType) + f'{varType}{variable}; {variable} = __inputStr__;'
         except KeyError:
             pass
         if expr['type'] in {'array', 'map'}:
@@ -343,7 +343,7 @@ class Transpiler(BaseTranspiler):
         if not cast is None:
             if cast == 'long':
                 if 'token' in value and value['token'] == 'inputFunc':
-                    return f'{value["value"]} {cast} {var} = strtol(__inputStr__, NULL, 10);'
+                    return f'{value["value"]} {{cast}} {var} = strtol(__inputStr__, NULL, 10);'
                 elif value['type'] == 'str':
                     return f'strtol({value["value"]}, NULL, 10)'
                 elif value['type'] == 'float':
@@ -352,7 +352,7 @@ class Transpiler(BaseTranspiler):
                     raise SyntaxError(f'Convert from type {value["type"]} to type {cast} not implemented')
             elif cast == 'double':
                 if 'token' in value and value['token'] == 'inputFunc':
-                    return f'{value["value"]} {cast} {var} = strtod(__inputStr__, NULL);'
+                    return f'{value["value"]} {{cast}} {var} = strtod(__inputStr__, NULL);'
                 elif value['type'] == 'str':
                     return f'strtod({value["value"]}, NULL)'
                 elif value['type'] == 'int':
