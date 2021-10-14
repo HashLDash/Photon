@@ -170,7 +170,7 @@ class Transpiler(BaseTranspiler):
     def formatCall(self, name, returnType, args, kwargs, className):
         # Handle function arguments. Kwargs are in the right order
         if name in self.classes:
-            args.append({'value':'{var}', 'type':name})
+            args.insert(0, {'value':'{var}', 'type':name})
         arguments = ''
         permanentVars = ''
         tempVars = ''
