@@ -207,7 +207,7 @@ class Transpiler(BaseTranspiler):
     def formatClassDefaultValue(self, kwarg):
         name = kwarg['name']
         value = kwarg['value']
-        return f'{self.self}.{name} = {value}'
+        return f'{self.self}.{name} = {name}'
 
     def formatClassAttribute(self, attr):
         if 'returnType' in attr:

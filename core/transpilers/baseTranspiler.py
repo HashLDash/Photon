@@ -672,6 +672,7 @@ class BaseTranspiler():
         for inherited in inheritedClasses:
             if inherited in self.classes:
                 self.classes[name] = deepcopy(self.classes[inherited])
+                self.classes[name]['inherited'] = [inherited]
 
         for c in token['block']:
             if c['token'] == 'assign':
