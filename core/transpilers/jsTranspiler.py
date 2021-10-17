@@ -21,6 +21,7 @@ class Transpiler(BaseTranspiler):
         self.null = 'null'
         self.self = 'this'
         self.notOperator = '!'
+        self.iterVar = []
         self.nativeTypes = {
             'float':'float',
             'int':'int',
@@ -110,24 +111,33 @@ class Transpiler(BaseTranspiler):
         return f'{name} += {expr};'
 
     def formatAssign(self, target, expr, inMemory=False):
-        cast = None
         if target['token'] == 'var':
             variable = target['name']
             if variable in self.currentScope:
-                if self.typeKnown(target['type']):
-                    # Casting to a different type
-                    varType = self.nativeType(target['type'])
-                    cast = varType
-                else:
-                    varType = ''
+                varType = self.currentScope[variable]['type']
+            elif self.typeKnown(target['type']):
+                # Type was explicit
+                varType = self.nativeType(target['type'])
             else:
-                if self.typeKnown(target['type']):
-                    # Type was explicit
-                    varType = self.nativeType(target['type'])
-                else:
-                    varType = self.nativeType(self.inferType(expr))
+                varType = self.nativeType(self.inferType(expr))
+        elif target['token'] == 'dotAccess':
+            v = self.getValAndType(target)
+            variable = v['value']
+            varType = v['type']
         else:
             raise SyntaxError(f'Format assign with variable {target} not implemented yet.')
+        if 'format' in expr:
+            # It's a format string
+            formatstr = expr['format']
+            values = ','.join(expr['values'])
+            varType = self.nativeType(varType)
+            return f'{varType} {variable}; asprintf(&{variable}, {formatstr},{values});'
+        if expr['type'] == 'array' and expr['elementType'] != self.currentScope[variable]['elementType']:
+            cast = self.nativeType(varType)
+        elif self.typeKnown(expr['type']) and expr['type'] != varType:
+            cast = self.nativeType(varType)
+        else:
+            cast = None
         formattedExpr = self.formatExpr(expr, cast=cast)
         return f'var {variable} = {formattedExpr};'
 
@@ -136,9 +146,14 @@ class Transpiler(BaseTranspiler):
         return f'{name}({arguments})'
 
     def formatExpr(self, value, cast=None):
-        #TODO: implement cast to type
         if value['type'] in self.classes:
             return f'new {value["value"]}'
+        elif cast == 'int':
+            return f'parseInt({value["value"]})'
+        elif cast == 'float':
+            return f'parseFloat({value["value"]})'
+        elif cast == 'str':
+            return f'{value["value"]}.toString()'
         return value['value']
     
     def formatIf(self, expr):
@@ -163,20 +178,20 @@ class Transpiler(BaseTranspiler):
     def formatFor(self, variables, iterable):
         self.step = 0
         if 'from' in iterable:
-            self.var.append(variables[0]['value'])
+            self.iterVar.append(variables[0]['value'])
             fromVal = iterable['from']['value']
             self.step = iterable['step']['value']
             toVal = iterable['to']['value']
-            return f'for (var {self.var[-1]} = {fromVal}; {self.var[-1]} < {toVal}; {self.var[-1]} += {self.step}) {{'
+            return f'for (var {self.iterVar[-1]} = {fromVal}; {self.iterVar[-1]} < {toVal}; {self.iterVar[-1]} += {self.step}) {{'
         elif iterable['type'] == 'array':
-            self.var.append(variables[0]['value'])
-            return f'var {self.var[-1]}; for (var __iteration__ = 0; __iteration__ < {iterable["value"]}.length; __iteration__++) {{ {self.var[-1]} = {iterable["value"]}[__iteration__];'
+            self.iterVar.append(variables[0]['value'])
+            return f'var {self.iterVar[-1]}; for (var __iteration__ = 0; __iteration__ < {iterable["value"]}.length; __iteration__++) {{ {self.iterVar[-1]} = {iterable["value"]}[__iteration__];'
 
     def formatEndFor(self):
         if self.step:
-            return f'}} {self.var.pop()} -= {self.step};'
+            return f'}} {self.iterVar.pop()} -= {self.step};'
         # consume iter var for this loop
-        self.var.pop()
+        self.iterVar.pop()
         return '}'
 
     def formatArgs(self, args):
