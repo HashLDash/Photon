@@ -40,6 +40,22 @@ void list_int_append(list_int* list, int value) {
     list->len += 1;
 }
 
+void list_int_removeAll(list_int* list, int value) {
+    int removedItems = 0;
+    int listLen = list->len;
+    for (int i=0; i<listLen; i++) {
+        if (list->values[i] == value) {
+            removedItems++;
+        }
+        list->values[i] = list->values[i+removedItems];
+    }
+    list->len -= removedItems;
+    if (list->size >= 4*list->len) {
+        list->size = list->size / 2;
+        list->values = realloc(list->values, sizeof(int) * list->size);
+    }
+}
+
 void list_int_inc(list_int* list, int index, int value) {
     if (index < 0) {
         // -1 is equivalent to the last element

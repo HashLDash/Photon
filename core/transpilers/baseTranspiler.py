@@ -454,6 +454,11 @@ class BaseTranspiler():
                     self.insertCode(self.formatIncrement(variable, expr))
                 else:
                     raise SyntaxError(f'AugAssign with type {variable["type"]} not implemented yet.')
+            if op == '-':
+                if variable['type'] == 'array':
+                    self.insertCode(self.formatArrayRemoveAll(variable, expr))
+                else:
+                    raise NotImplemented
         else:
             raise SyntaxError(f'AugAssign with variable {token["target"]} not supported yet.')
 

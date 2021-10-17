@@ -285,6 +285,12 @@ class Transpiler(BaseTranspiler):
         expr = self.formatExpr(expr)
         return f'{name} += {expr};'
 
+    def formatArrayRemoveAll(self, target, expr):
+        name = target['value']
+        varType = target['elementType']
+        expr = self.formatExpr(expr)
+        return f'list_{varType}_removeAll(&{name}, {expr});'
+
     def formatAssign(self, target, expr, inMemory = False):
         if target['token'] == 'var':
             variable = target['name']
