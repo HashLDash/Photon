@@ -239,6 +239,9 @@ class Transpiler(BaseTranspiler):
     def orOperator(self, arg1, arg2):
         return {'value':f'{arg1["value"]} or {arg2["value"]}', 'type':'bool'}
 
+    def formatDelete(self, expr):
+        return f'del {expr["value"]}'
+
     def formatPrint(self, value):
         return f'print({value["value"]})'
 

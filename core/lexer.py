@@ -770,3 +770,8 @@ def dotAccess(i, t):
     
     del t[i+1] # var or dotAccess
     return t
+
+def delete(i, t):
+    t[i] = {'token':'delete', 'expr':t[i+1]}
+    del t[i+1]
+    return t

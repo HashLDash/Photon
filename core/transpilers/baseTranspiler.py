@@ -44,6 +44,7 @@ class BaseTranspiler():
             '!=': self.notEqual,
             'and': self.andOperator,
             'or': self.orOperator,
+            'delete': self.delete,
         }
         self.terminator = ';'
         self.currentScope = {}
@@ -1013,6 +1014,10 @@ class BaseTranspiler():
         else:
             op = ''
         return {'value':f'{op}({expr["value"]})', 'type':expr['type']}
+
+    def delete(self, token):
+        expr = self.processExpr(token['expr'])
+        self.insertCode(self.formatDelete(expr))
 
     def isBlock(self, line):
         for b in self.block:

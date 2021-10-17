@@ -18,11 +18,11 @@ syntax region wString start=/\v"/ skip=/\v(\\[\\"]){-1}/ end=/\v"/
 syntax region wString start=/\v'/ end=/\v'/
 syntax match wComment " *#.*$"
 syntax match wFuncName "\v[[:alpha:]_.]+\ze(\s?\()"
-syntax keyword wStatement class def cdef if elif else for in return not while and or break continue
+syntax keyword wStatement class def cdef if elif else for in return not while and or break continue del
 syntax match wBuiltinFunc "\v(len|print|time|collidedRecs|collidedPointRec|uniform|randInt|choose|post|chop|exitApp|localSetItem|localGetItem|localClear|abs|decimal|pass)+\ze(\s?\()"
 syntax keyword wBuiltinFunc import
 syntax keyword wTypes str cstr int float func struct const char double
-syntax keyword wPlatforms android, html5, linux
+syntax keyword wPlatforms android Android HTML5 html5 linux Linux Web C c Python python Py py JS js JavaScript
 
 hi def link wVar ModeMsg
 hi def link wNumber Number

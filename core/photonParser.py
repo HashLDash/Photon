@@ -6,7 +6,7 @@
 import re
 from lexer import *
 
-statements = ['if','else','elif','def','cdef','for','in','as','return','import','class','while','break','continue','try']
+statements = ['if','else','elif','def','cdef','for','in','as','return','import','class','while','break','continue','try', 'del']
 operators = ['+','-','%','/','*','**','<','>','not','and','or','is', '&']
 builtins = ['print','input','sizeof','addr']
 types = ['str','cstr','const','struct','char','int','float','double','struct', 'func','uint','ulong','ubyte']
@@ -107,7 +107,8 @@ def token2word(tokens):
                 'while','forStatement','inStatement','for','range','defStatement',
                 'func','returnStatement','return','breakStatement','comment',
                 'augAssign','classStatement','class','dotAccess', 'importStatement',
-                'import', 'kwargs','keyVal','keyVals','forTarget'}:
+                'import', 'kwargs','keyVal','keyVals','forTarget', 'delStatement',
+                'delete'}:
             phrase += t['token']
         else:
             raise Exception(f'Cannot convert the token {t["token"]} to a word')

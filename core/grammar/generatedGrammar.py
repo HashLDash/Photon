@@ -78,6 +78,7 @@ patterns = {
   ('kwargs', 'comma', 'kwargs'): kwargs,
   ('expr', 'operator', 'equal', 'expr'): augAssign,
   ('expr', 'equal', 'expr'): assign,
+  ('delStatement', 'expr'): delete,
   ('defStatement', 'expr', 'lparen', 'expr', 'rparen', 'beginBlock'): function,
   ('defStatement', 'expr', 'lparen', 'args', 'rparen', 'beginBlock'): function,
   ('defStatement', 'expr', 'lparen', 'assign', 'rparen', 'beginBlock'): function,
