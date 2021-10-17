@@ -181,7 +181,7 @@ class Transpiler(BaseTranspiler):
             return f'for {variables[0]["value"]} in {iterable["value"]}:'
 
     def formatEndFor(self):
-        return '#end'
+        return "#end"
 
     def formatArgs(self, args):
         return ','.join([ f'{arg["value"]}: {self.nativeType(arg["type"])}' for arg in args ])
@@ -195,7 +195,12 @@ class Transpiler(BaseTranspiler):
         return f'def {name}({args}) -> {returnType}:'
 
     def formatEndFunc(self):
-        return '#end'
+        if self.inFunc or self.inClass:
+            if 'def ' in self.outOfMain[-1]:
+                self.insertCode("pass")
+        elif 'def ' in self.source[-1]:
+            self.insertCode("pass")
+        return "#end"
 
     def formatClass(self, name, args):
         self.className = name

@@ -7,5 +7,8 @@ def drawText(str text, float x, float y, int fontSize, Color color):
         DrawText(text.encode(), x, y, fontSize, color)
 
 def measureText(str text, int fontSize):
-    int width = MeasureText(text, fontSize)
+    for C:
+        int width = MeasureText(text, fontSize)
+    for Python:
+        int width = MeasureText(text.encode(), fontSize)
     return width
