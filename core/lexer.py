@@ -370,7 +370,7 @@ def args(i, t):
     ''' Return an args token '''
     args = []
     try:
-        if t[i+3]['token'] == 'equal':
+        if t[i+3]['token'] in {'equal', 'lparen'}:
             # Probably a kwargs token. Not ready to proceed.
             return 'continue'
     except IndexError:
