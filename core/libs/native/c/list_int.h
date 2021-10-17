@@ -56,6 +56,18 @@ void list_int_removeAll(list_int* list, int value) {
     }
 }
 
+void list_int_del(list_int* list, int index) {
+    int listLen = list->len;
+    for (int i=index; i<listLen; i++) {
+        list->values[i] = list->values[i+1];
+    }
+    list->len -= 1;
+    if (list->size >= 4*list->len) {
+        list->size = list->size / 2;
+        list->values = realloc(list->values, sizeof(int) * list->size);
+    }
+}
+
 void list_int_inc(list_int* list, int index, int value) {
     if (index < 0) {
         // -1 is equivalent to the last element

@@ -630,6 +630,13 @@ class Transpiler(BaseTranspiler):
         else:
             return super().add(arg1, arg2)
                 
+    def formatDelete(self, expr):
+        valType = expr['type']
+        if f'list_{valType}_get(' in expr['value']:
+            return expr['value'].replace(f'list_{valType}_get(', f'list_{valType}_del(') + ';'
+        else:
+            raise NotImplemented
+
     def write(self):
         boilerPlateStart = [
             'int main() {',
