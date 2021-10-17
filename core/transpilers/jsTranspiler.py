@@ -139,6 +139,8 @@ class Transpiler(BaseTranspiler):
         else:
             cast = None
         formattedExpr = self.formatExpr(expr, cast=cast)
+        if inMemory:
+            return f'{variable} = {formattedExpr};'
         return f'var {variable} = {formattedExpr};'
 
     def formatCall(self, name, returnType, args, kwargs, className):
