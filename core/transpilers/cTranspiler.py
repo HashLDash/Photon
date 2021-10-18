@@ -130,12 +130,12 @@ class Transpiler(BaseTranspiler):
             raise SyntaxError(f'Dict of type {className} not implemented yet.')
         size = 10
         if elements:
-            initValues = ';'.join(f'{{var}}.keys.values[{i}] = {v[0]["value"]}; {{var}}.values.values[{i}] = {v[1]["value"]}' for i, v in enumerate(elements))
+            initValues = ';'.join(f'dict_{keyType}_{valType}_set(&{{var}}, {v[0]}, {v[1]})' for v in elements)
         else:
             initValues = ''
-        keyType = self.nativeType(keyType)
-        valType = self.nativeType(valType)
-        return f"{className} {{var}} = {{{{ {{{{ {len(elements)}, {size}, malloc(sizeof({keyType})*{size}) }}}}, {{{{ {len(elements)}, {size}, malloc(sizeof({valType})*{size}) }}}} }}}}; {initValues};"
+        #keyType = self.nativeType(keyType)
+        #valType = self.nativeType(valType)
+        return f"{className} {{var}} = {{{{ 0, {size}, malloc(sizeof(int)*{size}), malloc(sizeof(dict_{keyType}_{valType}_entry)*{size}) }}}}; for(int i=0; i<{size}; i++) {{{{ {{var}}.indices[i]=-1; }}}} {initValues};"
 
     def formatInput(self, expr):
         self.imports.add('#include "photonInput.h"')

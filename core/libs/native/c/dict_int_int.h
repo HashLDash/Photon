@@ -1,26 +1,59 @@
+typedef struct dict_int_int_entry {
+    int prehash;
+    int key;
+    int val;
+} dict_int_int_entry;
+
 typedef struct dict_int_int {
-    list_int keys;
-    list_int values;
+    int len;
+    int size;
+    int* indices;
+    dict_int_int_entry* entries;
 } dict_int_int;
 
 int dict_int_int_get(dict_int_int* self, int key) {
-    int k;
-    for (int n=0; n<self->keys.len; n++) {
-        k = list_int_get(&self->keys,n);
-        if (key == k) {
-            return list_int_get(&self->values,n);
+    int size = self->size;
+    int index = key % size;
+    while (self->entries[self->indices[index]].key != key) {
+        printf("aa%d\n", key);
+        index = (index + 1) % size;
+        while (self->indices[index] != -1) {
+            index = (index + 1) % size;
         }
     }
+    return self->entries[self->indices[index]].val;
     printf("KeyError: The key %ld was not found.\n", key);
     exit(-1);
 }
+
 void dict_int_int_set(dict_int_int* self, int key,int value) {
-    for (int n=1; n<self->keys.len; n++) {
-        if (key == list_int_get(&self->keys, n)) {
-            list_int_set(&self->values, n, value);
-            return;
+    int dictLen = self->len;
+    self->entries[dictLen].prehash = key; 
+    self->entries[dictLen].key = key; 
+    self->entries[dictLen].val = value; 
+    self->len += 1;
+    if (dictLen+1 == self->size) {
+        self->size *= 2;
+        int size = self->size;
+        // recompute entries
+        self->indices = realloc(self->indices, sizeof(int)*size);
+        self->entries = realloc(self->entries, sizeof(dict_int_int_entry)*size);
+        for (int i=0; i<size; i++) {
+            self->indices[i] = -1; // -1 is None
         }
+        for (int i=0; i<dictLen+1; i++) {
+            int index = self->entries[i].prehash % size;
+            while (self->indices[index] != -1) {
+                index = (index + 1) % size;
+            }
+            self->indices[index] = i;
+        }
+    } else {
+        int size = self->size;
+        int index = key % size;
+        while (self->indices[index] != -1) {
+            index = (index + 1) % size;
+        }
+        self->indices[index] = dictLen;
     }
-    list_int_append(&self->keys,key);
-    list_int_append(&self->values,value);
 }
