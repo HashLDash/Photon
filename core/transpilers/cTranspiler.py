@@ -632,8 +632,11 @@ class Transpiler(BaseTranspiler):
                 
     def formatDelete(self, expr):
         valType = expr['type']
+        keyType = expr['indexAccess']['type']
         if f'list_{valType}_get(' in expr['value']:
             return expr['value'].replace(f'list_{valType}_get(', f'list_{valType}_del(') + ';'
+        elif f'dict_{keyType}_{valType}_get(' in expr['value']:
+            return expr['value'].replace(f'dict_{keyType}_{valType}_get(', f'dict_{keyType}_{valType}_del(') + ';'
         else:
             raise NotImplemented
 

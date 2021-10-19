@@ -55,3 +55,16 @@ void dict_int_int_set(dict_int_int* self, int key,int value) {
         self->indices[index] = dictLen;
     }
 }
+
+void dict_int_int_del(dict_int_int* self, int key) {
+    int size = self->size;
+    int index = key % size;
+    while (self->entries[self->indices[index]].key != key) {
+        index = (index + 1) % size;
+        if (self->indices[index] != -1) {
+            printf("KeyError: The key %d was not found.\n", key);
+            exit(-1);
+        }
+    }
+    self->indices[index] = -2;
+}
