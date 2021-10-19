@@ -24,7 +24,7 @@ int dict_int_int_get(dict_int_int* self, int key) {
     return self->entries[self->indices[index]].val;
 }
 
-void dict_int_int_set(dict_int_int* self, int key,int value) {
+void dict_int_int_set(dict_int_int* self, int key, int value) {
     int dictLen = self->len;
     self->entries[dictLen].prehash = key; 
     self->entries[dictLen].key = key; 
@@ -50,6 +50,10 @@ void dict_int_int_set(dict_int_int* self, int key,int value) {
         int size = self->size;
         int index = key % size;
         while (self->indices[index] != -1) {
+            if (self->entries[self->indices[index]].key == key) {
+                self->entries[self->indices[index]].val = value;
+                return;
+            }
             index = (index + 1) % size;
         }
         self->indices[index] = dictLen;
