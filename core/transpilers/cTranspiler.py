@@ -119,7 +119,7 @@ class Transpiler(BaseTranspiler):
 
     def formatMap(self, elements, keyType, valType):
         className = f'dict_{keyType.replace("*", "ptr")}_{valType.replace("*", "ptr")}'
-        self.dictTypes.add(className)
+        self.dictTypes.add((keyType, valType))
         self.listTypes.add(keyType)
         self.listTypes.add(valType)
         if keyType in {'int', 'float', 'str'} and valType in {'int', 'float', 'str'}:
@@ -638,6 +638,15 @@ class Transpiler(BaseTranspiler):
         else:
             raise NotImplemented
 
+    def renderDictTemplate(self, keyType, valType):
+        formatCodes = {'int':'%ld', 'str':'%s', 'float':'%lf'}
+        with open(f'{self.standardLibs}/native/c/dict_{keyType}.template') as template:
+            dictLib = template.read()
+        valNativeType = self.nativeType(valType)
+        dictLib = dictLib.replace('!@valType@!', valType).replace('!@valNativeType@!', valNativeType).replace('!@formatCode@!', formatCodes[valType])
+        with open(f'Sources/c/dict_{keyType}_{valType}.h', 'w') as lib:
+            lib.write(dictLib)
+
     def write(self):
         boilerPlateStart = [
             'int main() {',
@@ -670,6 +679,8 @@ class Transpiler(BaseTranspiler):
                 if not f'{module}.c' in os.listdir('Sources/c'):
                     # native import
                     f.write(imp + '\n')
+                for keyType, valType in self.dictTypes:
+                    self.renderDictTemplate(keyType, valType)
             for line in [''] + self.outOfMain + [''] + boilerPlateStart + self.source + boilerPlateEnd:
                 if line:
                     if line[0] == '}':
