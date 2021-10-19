@@ -15,15 +15,13 @@ int dict_int_int_get(dict_int_int* self, int key) {
     int size = self->size;
     int index = key % size;
     while (self->entries[self->indices[index]].key != key) {
-        printf("aa%d\n", key);
         index = (index + 1) % size;
-        while (self->indices[index] != -1) {
-            index = (index + 1) % size;
+        if (self->indices[index] != -1) {
+            printf("KeyError: The key %d was not found.\n", key);
+            exit(-1);
         }
     }
     return self->entries[self->indices[index]].val;
-    printf("KeyError: The key %ld was not found.\n", key);
-    exit(-1);
 }
 
 void dict_int_int_set(dict_int_int* self, int key,int value) {
