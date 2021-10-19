@@ -124,8 +124,6 @@ class Transpiler(BaseTranspiler):
         self.listTypes.add(valType)
         if keyType in {'int', 'float', 'str'} and valType in {'int', 'float', 'str'}:
             self.imports.add(f'#include "{className}.h"')
-            self.imports.add(f'#include "list_{keyType.replace("*", "ptr")}.h"')
-            self.imports.add(f'#include "list_{valType.replace("*", "ptr")}.h"')
         else:
             raise SyntaxError(f'Dict of type {className} not implemented yet.')
         size = 10

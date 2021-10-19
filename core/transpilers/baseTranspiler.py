@@ -262,7 +262,7 @@ class BaseTranspiler():
                 valType = valTypes.pop()
             else:
                 raise SyntaxError('Map with dynamic types not implemented yet.')
-        return {'value':self.formatMap(elements, valType, keyType),
+        return {'value':self.formatMap(elements, keyType, valType),
             'type':'map', 'elements':elements, 'valType':valType,
             'keyType':keyType}
 
