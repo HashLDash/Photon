@@ -1017,6 +1017,8 @@ class BaseTranspiler():
 
     def delete(self, token):
         expr = self.processExpr(token['expr'])
+        if 'indexAccess' in expr:
+            expr['indexAccess'] = self.processExpr(expr['indexAccess'])
         self.insertCode(self.formatDelete(expr))
 
     def isBlock(self, line):
