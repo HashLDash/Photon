@@ -616,6 +616,10 @@ class Transpiler(BaseTranspiler):
         elif value['type'] == 'array':
             elementType = value['elementType']
             return f'list_{elementType}_repr(&{value["value"]});'
+        elif value['type'] == 'map':
+            keyType = value['keyType']
+            valType = value['valType']
+            return f'dict_{keyType}_{valType}_repr(&{value["value"]});'
         else:
             raise SyntaxError(f'Print function with token {value} not supported yet.')
 
@@ -660,7 +664,7 @@ class Transpiler(BaseTranspiler):
             raise NotImplemented
 
     def renderDictTemplate(self, keyType, valType):
-        formatCodes = {'int':'%ld', 'str':'%s', 'float':'%lf'}
+        formatCodes = {'int':'%ld', 'str':'\\"%s\\"', 'float':'%lf'}
         with open(f'{self.standardLibs}/native/c/dict_{keyType}.template') as template:
             dictLib = template.read()
         valNativeType = self.nativeType(valType)
