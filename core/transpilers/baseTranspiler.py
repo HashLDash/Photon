@@ -515,13 +515,15 @@ class BaseTranspiler():
             iterable = self.processExpr(token['iterable'])
         else:
             iterable = self.processRange(token['iterable'])
-        variables = [ self.processVar(v) for v in token['vars'] ]
+        variables = [ self.processVar(v)['value'] for v in token['vars'] ]
         self.insertCode(self.formatFor(variables, iterable))
         #TODO: Handle dict iteration and multivar for loop
         if iterable['type'] == 'array':
-            self.currentScope[variables[-1]['value']] = {'type':iterable['elementType']}
+            if len(variables) == 2:
+                self.currentScope[variables[0]] = {'type':'int'}
+            self.currentScope[variables[-1]] = {'type':iterable['elementType']}
         else:
-            self.currentScope[variables[-1]['value']] = {'type':iterable['type']}
+            self.currentScope[variables[-1]] = {'type':iterable['type']}
         for c in token['block']:
             self.process(c)
         self.insertCode(self.formatEndFor())

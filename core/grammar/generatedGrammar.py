@@ -64,6 +64,8 @@ patterns = {
   ('expr', 'dot', 'dot', 'expr', 'dot', 'dot', 'expr'): rangeExpr,
   ('ifStatement', 'expr', 'beginBlock'): ifelif,
   ('elifStatement', 'expr', 'beginBlock'): ifelif,
+  ('forStatement', 'args', 'inStatement', 'range', 'beginBlock'): forLoop,
+  ('forStatement', 'args', 'inStatement', 'expr', 'beginBlock'): forLoop,
   ('forStatement', 'expr', 'inStatement', 'range', 'beginBlock'): forLoop,
   ('forStatement', 'expr', 'inStatement', 'expr', 'beginBlock'): forLoop,
   ('forStatement', 'expr', 'beginBlock'): forTarget,

@@ -58,7 +58,7 @@ rangeExpr = expr dot dot expr
 
 ifelif = (ifStatement elifStatement) expr beginBlock
 
-forLoop = forStatement expr inStatement (range expr) beginBlock
+forLoop = forStatement (args expr) inStatement (range expr) beginBlock
 
 forTarget = forStatement expr beginBlock
 

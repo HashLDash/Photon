@@ -7,5 +7,7 @@ dict_int[2] = 4
 dict_int[3] = 9
 dict_int[4] = 16
 
+print(dict_int.len)
+
 for i in 1..5:
     print("The key {i} contains the value {dict_int[i]}")

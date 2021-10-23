@@ -555,11 +555,19 @@ def forLoop(i, t):
     ''' Check if its a valid for token and return the token if it is '''
     #token will have a block field
     #TODO: include args for key val unpacking
-    if not t[i+1]['args'][0]['token'] == 'var':
-        # not valid for loop
-        return 'continue'
     t[i]['token'] = 'for'
-    t[i]['vars'] = [t[i+1]['args'][0]]
+    if t[i+1]['token'] == 'expr':
+        if t[i+1]['args'][0]['token'] == 'var':
+            t[i]['vars'] = [t[i+1]['args'][0]]
+        else:
+            raise SyntaxError("Iteration variable cannot be {t[i+1]['args'][0]['token']}")
+    elif t[i+1]['token'] == 'args':
+        t[i]['vars'] = []
+        for expr in t[i+1]['args']:
+            if expr['args'][0]['token'] == 'var':
+                t[i]['vars'].append(expr['args'][0])
+            else:
+                raise SyntaxError("Iteration variable cannot be {expr['args'][0]['token']}")
     t[i]['iterable'] = t[i+3]
     del t[i+1] # var
     del t[i+1] # in

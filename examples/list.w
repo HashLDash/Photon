@@ -11,3 +11,6 @@ list_str += "n"
 
 for i in 0..(list_str.len):
     print("The key {i} contains the value {list_str[i]}")
+
+for n, letra in list_str:
+    print('{n} {letra}')

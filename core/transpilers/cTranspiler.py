@@ -396,7 +396,7 @@ class Transpiler(BaseTranspiler):
         self.freeTempArray = ''
         if 'from' in iterable:
             # For with range
-            self.iterVar.append(variables[0]['value'])
+            self.iterVar = variables
             varType = iterable['type']
             fromVal = iterable['from']['value']
             self.step = iterable['step']['value']
@@ -408,7 +408,7 @@ class Transpiler(BaseTranspiler):
             return f'{varType}{self.iterVar[-1]} = {fromVal}; for (; {self.iterVar[-1]} < {toVal}; {self.iterVar[-1]} += {self.step}) {{'
         elif iterable['type'] == 'array':
             varType = iterable['elementType']
-            self.iterVar.append(variables[0]['value'])
+            self.iterVar = variables
             if self.iterVar[-1] in self.currentScope:
                 varType = ''
             else:
@@ -423,7 +423,12 @@ class Transpiler(BaseTranspiler):
             else:
                 tempArray = ''
                 beginScope = ''
-            return f'{self.nativeType(varType)} {self.iterVar[-1]}; {beginScope}{tempArray}; for (int __iteration__=0; __iteration__ < {iterable["value"]}.len; __iteration__++) {{ {self.iterVar[-1]}={iterable["value"]}.values[__iteration__];'
+            if len(variables) == 2:
+                counterVar = variables[0]
+            else:
+                counterVar = '__tempVar{self.tempVarCounter}__'
+                self.tempVarCounter += 1
+            return f'{self.nativeType(varType)} {self.iterVar[-1]}; {beginScope}{tempArray}; for (int {counterVar}=0; {counterVar} < {iterable["value"]}.len; {counterVar}++) {{ {self.iterVar[-1]}={iterable["value"]}.values[{counterVar}];'
         elif iterable['type'] == 'str':
             varType = 'str'
             self.iterVar.append(variables[0]['value'])
