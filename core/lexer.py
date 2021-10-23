@@ -736,7 +736,7 @@ def dotAccess(i, t):
         if it is.
     '''
     if t[i]['token'] == 'dot':
-        if not t[i-1]['token'] in {'var', 'dotAccess'}\
+        if not t[i-1]['token'] in {'dot', 'var', 'dotAccess'}\
                 and t[i+1]['args'][0]['token'] in {'var', 'dotAccess'}:
             # Its a self. shorthand notation
             names = [{'token':'var', 'type':'unknown', 'name':'self'}]
