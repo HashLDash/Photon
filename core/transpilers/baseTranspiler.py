@@ -522,6 +522,10 @@ class BaseTranspiler():
             if len(variables) == 2:
                 self.currentScope[variables[0]] = {'type':'int'}
             self.currentScope[variables[-1]] = {'type':iterable['elementType']}
+        elif 'from' in iterable:
+            if len(variables) == 2:
+                self.currentScope[variables[0]] = {'type':'int'}
+            self.currentScope[variables[-1]] = {'type':iterable['type']}
         else:
             self.currentScope[variables[-1]] = {'type':iterable['type']}
         for c in token['block']:

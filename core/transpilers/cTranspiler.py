@@ -405,7 +405,11 @@ class Transpiler(BaseTranspiler):
                 varType = ''
             else:
                 varType = varType + ' '
-            return f'{varType}{self.iterVar[-1]} = {fromVal}; for (; {self.iterVar[-1]} < {toVal}; {self.iterVar[-1]} += {self.step}) {{'
+            if len(variables) == 2:
+                counterVar = variables[0]
+                return f'{varType}{self.iterVar[-1]} = {fromVal}; for (int {counterVar}=-1; {self.iterVar[-1]} < {toVal}; {self.iterVar[-1]} += {self.step}) {{ {counterVar}++;'
+            else:
+                return f'{varType}{self.iterVar[-1]} = {fromVal}; for (; {self.iterVar[-1]} < {toVal}; {self.iterVar[-1]} += {self.step}) {{'
         elif iterable['type'] == 'array':
             varType = iterable['elementType']
             self.iterVar = variables
