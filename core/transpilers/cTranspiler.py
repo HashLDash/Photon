@@ -337,6 +337,8 @@ class Transpiler(BaseTranspiler):
             className = expr["type"]
             permanentVars, classInit = self.formatClassInit(className, variable)
             initMethod = expr['value'].replace('{var}',variable) + ';'
+            if inMemory:
+                return f'{permanentVars};{initMethod}'
             return f'{permanentVars}; {className} {variable} = {classInit};{initMethod}'
         if varType == self.nativeType('str') + ' ':
             # if defined with char* it cannot be modified
