@@ -14,3 +14,6 @@ for i in 0..(list_str.len):
 
 for n, letra in list_str:
     print('{n} {letra}')
+
+for n, letra in "Photon":
+    print('{n} {letra}')
