@@ -1,5 +1,8 @@
 
-# list = [1,2,3,4]
+list = [1,2,3,4]
+print(list)
+
+print()
 
 str list_str = []
 list_str += "P"
@@ -9,11 +12,15 @@ list_str += "t"
 list_str += "o"
 list_str += "n"
 
-for i in 0..(list_str.len):
+for i in 0..list_str.len:
     print("The key {i} contains the value {list_str[i]}")
 
-for n, letra in list_str:
-    print('{n} {letra}')
+print()
 
-for n, letra in "Photon":
-    print('{n} {letra}')
+for key, value in list_str:
+    print("The key {key} contains the value {value}")
+
+print()
+
+for index, caracter in "Photon":
+    print('The {index + 1}st character of the string is: {caracter}')
