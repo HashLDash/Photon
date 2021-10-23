@@ -79,3 +79,16 @@ void list_int_inc(list_int* list, int index, int value) {
     }
     list->values[index] += value;
 }
+
+void list_int_repr(list_int* list) {
+    int listLen = list->len;
+    printf("[");
+    for (int i=0; i<listLen-1; i++) {
+        printf("%ld, ", list->values[i]);
+    }
+    if (listLen > 0) {
+        printf("%ld]\n", list->values[listLen-1]);
+    } else {
+        printf("]");
+    }
+}

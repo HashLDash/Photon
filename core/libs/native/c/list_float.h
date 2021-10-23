@@ -51,3 +51,16 @@ void list_float_inc(list_float* list, int index, double value) {
     }
     list->values[index] += value;
 }
+
+void list_float_repr(list_float* list) {
+    int listLen = list->len;
+    printf("[");
+    for (int i=0; i<listLen-1; i++) {
+        printf("%lf, ", list->values[i]);
+    }
+    if (listLen > 0) {
+        printf("%lf]\n", list->values[listLen-1]);
+    } else {
+        printf("]");
+    }
+}

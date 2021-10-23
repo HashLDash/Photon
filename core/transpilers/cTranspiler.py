@@ -611,6 +611,9 @@ class Transpiler(BaseTranspiler):
             return f'printf("%s\\n", ({value["value"]}) ? "True" : "False");'
         elif value['type'] == 'null':
             return 'printf("\\n");'
+        elif value['type'] == 'array':
+            elementType = value['elementType']
+            return f'list_{elementType}_repr(&{value["value"]});'
         else:
             raise SyntaxError(f'Print function with token {value} not supported yet.')
 

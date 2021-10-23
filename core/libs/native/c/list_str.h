@@ -54,3 +54,16 @@ void list_str_inc(list_str* list, int index, char* value) {
     }
     asprintf(&list->values[index], "%s%s", list->values[index], value);
 }
+
+void list_str_repr(list_str* list) {
+    int listLen = list->len;
+    printf("[");
+    for (int i=0; i<listLen-1; i++) {
+        printf("\"%s\", ", list->values[i]);
+    }
+    if (listLen > 0) {
+        printf("\"%s\"]\n", list->values[listLen-1]);
+    } else {
+        printf("]");
+    }
+}
