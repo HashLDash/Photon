@@ -630,7 +630,7 @@ class BaseTranspiler():
                     else:
                         varType = currentType
                         tokens[n]['type'] = varType
-            elif currentType == 'array' and v['name'] == 'len':
+            elif currentType in {'array', 'map'} and v['name'] == 'len':
                 tokens[n]['type'] = 'int'
                 currentType = 'int'
                 varType = 'int'
