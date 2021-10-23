@@ -522,7 +522,7 @@ class BaseTranspiler():
             if len(variables) == 2:
                 self.currentScope[variables[0]] = {'type':'int'}
             self.currentScope[variables[-1]] = {'type':iterable['elementType']}
-        elif 'from' in iterable:
+        elif iterable['type'] == 'str' or 'from' in iterable:
             if len(variables) == 2:
                 self.currentScope[variables[0]] = {'type':'int'}
             self.currentScope[variables[-1]] = {'type':iterable['type']}

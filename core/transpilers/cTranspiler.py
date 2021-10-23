@@ -430,18 +430,25 @@ class Transpiler(BaseTranspiler):
             if len(variables) == 2:
                 counterVar = variables[0]
             else:
-                counterVar = '__tempVar{self.tempVarCounter}__'
+                counterVar = f'__tempVar{self.tempVarCounter}__'
                 self.tempVarCounter += 1
             return f'{self.nativeType(varType)} {self.iterVar[-1]}; {beginScope}{tempArray}; for (int {counterVar}=0; {counterVar} < {iterable["value"]}.len; {counterVar}++) {{ {self.iterVar[-1]}={iterable["value"]}.values[{counterVar}];'
         elif iterable['type'] == 'str':
             varType = 'str'
-            self.iterVar.append(variables[0]['value'])
+            self.iterVar = variables
             self.imports.add('#include <string.h>')
             if self.iterVar[-1] in self.currentScope:
-                varType = ''
+                varCreation = f''
             else:
-                varType = varType
-            return f"int __iterVarLen__ = strlen({iterable['value']}); char {self.iterVar[-1]}[] = \" \"; for (int __iteration__=0; __iteration__ < __iterVarLen__; __iteration__++) {{ {self.iterVar[-1]}[0]={iterable['value']}[__iteration__];"
+                varCreation = f'char {self.iterVar[-1]}[] = \" \"'
+            if len(variables) == 2:
+                counterVar = variables[0]
+            else:
+                counterVar = f'__tempVar{self.tempVarCounter}__'
+                self.tempVarCounter += 1
+            iterVarLen = f'__tempVar{self.tempVarCounter}__'
+            self.tempVarCounter += 1
+            return f"int {iterVarLen} = strlen({iterable['value']}); {varCreation}; for (int {counterVar}=0; {counterVar} < {iterVarLen}; {counterVar}++) {{ {self.iterVar[-1]}[0]={iterable['value']}[{counterVar}];"
         else:
             raise SyntaxError(f'Format for with iterable {iterable["type"]} not suported yet.')
     
