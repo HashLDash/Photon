@@ -108,7 +108,7 @@ def token2word(tokens):
                 'func','returnStatement','return','breakStatement','comment',
                 'augAssign','classStatement','class','dotAccess', 'importStatement',
                 'import', 'kwargs','keyVal','keyVals','forTarget', 'delStatement',
-                'delete'}:
+                'delete', 'asStatement'}:
             phrase += t['token']
         else:
             raise Exception(f'Cannot convert the token {t["token"]} to a word')
