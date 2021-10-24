@@ -730,7 +730,7 @@ class Transpiler(BaseTranspiler):
         debug(f'Running {self.filename}')
         try:
             debug(' '.join(['gcc', '-O2', '-std=c99', f'Sources/c/{self.filename}'] + list(self.links) + ['-o', 'Sources/c/main']))
-            check_call(['gcc', '-Ofast', '-std=c99', f'Sources/c/{self.filename}'] + list(self.links) + ['-o', 'Sources/c/main'])
+            check_call(['gcc', '-Ofast', '-frename-registers', '-funroll-loops', '-std=c99', f'Sources/c/{self.filename}'] + list(self.links) + ['-o', 'Sources/c/main'])
         except Exception as e:
             print(e)
             print('Compilation error. Check errors above.')
