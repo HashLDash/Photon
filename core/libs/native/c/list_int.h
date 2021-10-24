@@ -41,9 +41,17 @@ void list_int_append(list_int* list, int value) {
 }
 
 void list_int_removeAll(list_int* list, int value) {
-    int removedItems = 0;
+    int removedItems=0;
     int listLen = list->len;
-    for (int i=0; i<listLen-removedItems; i++) {
+    int firstIndex;
+    for (int i=0; i<listLen; i++) {
+        if (list->values[i] == value) {
+            firstIndex = i;
+            removedItems = 1;
+            break;
+        }
+    }
+    for (int i=firstIndex; i<listLen-removedItems; i++) {
         if (list->values[i] == value) {
             removedItems++;
         }
