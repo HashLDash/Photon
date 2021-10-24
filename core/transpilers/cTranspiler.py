@@ -510,7 +510,7 @@ class Transpiler(BaseTranspiler):
         elementType = self.nativeType(elementType)
         size = array['size']
         if size == 'unknown':
-            size = 10
+            size = 8
         return f"{{ {len(elements)}, {size}, malloc(sizeof({elementType})*{size}) }}"
 
     def formatClassDefaultValue(self, kwarg):
@@ -730,7 +730,7 @@ class Transpiler(BaseTranspiler):
         debug(f'Running {self.filename}')
         try:
             debug(' '.join(['gcc', '-O2', '-std=c99', f'Sources/c/{self.filename}'] + list(self.links) + ['-o', 'Sources/c/main']))
-            check_call(['gcc', '-O2', '-std=c99', f'Sources/c/{self.filename}'] + list(self.links) + ['-o', 'Sources/c/main'])
+            check_call(['gcc', '-Ofast', '-frename-registers', '-funroll-loops', '-std=c99', f'Sources/c/{self.filename}'] + list(self.links) + ['-o', 'Sources/c/main'])
         except Exception as e:
             print(e)
             print('Compilation error. Check errors above.')
