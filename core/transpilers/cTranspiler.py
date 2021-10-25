@@ -442,15 +442,39 @@ class Transpiler(BaseTranspiler):
             if self.iterVar[-1] in self.currentScope:
                 varCreation = f''
             else:
-                varCreation = f'char {self.iterVar[-1]}[] = \" \"'
+                varCreation = f'char {self.iterVar[-1]}[] = \" \";'
             if len(variables) == 2:
-                counterVar = variables[0]
+                counterVarUpdate = f'{variables[0]}++;'
+                if variables[0] in self.currentScope:
+                    counterVarCreation = f'{variables[0]} = -1;'
+                else:
+                    counterVarCreation = f"int {variables[0]} = -1;"
             else:
-                counterVar = f'__tempVar{self.tempVarCounter}__'
-                self.tempVarCounter += 1
-            iterVarLen = f'__tempVar{self.tempVarCounter}__'
+                counterVarCreation = ''
+                counterVarUpdate = ''
+            charLen = f'__tempVar{self.tempVarCounter}__'
             self.tempVarCounter += 1
-            return f"int {iterVarLen} = strlen({iterable['value']}); {varCreation}; for (int {counterVar}=0; {counterVar} < {iterVarLen}; {counterVar}++) {{ {self.iterVar[-1]}[0]={iterable['value']}[{counterVar}];"
+            if iterable['value'].startswith('"'):
+                iterableVar = f'__tempVar{self.tempVarCounter}__'
+                self.tempVarCounter += 1
+                iterableVarCreation = f"char* {iterableVar}  = {iterable['value']};"
+            else:
+                iterableVarCreation = "";
+                iterableVar = iterable['value']
+            pos = f'__tempVar{self.tempVarCounter}__'
+            self.tempVarCounter += 1
+            return f"""{iterableVarCreation}
+    int {pos} = 0;
+    int {charLen};
+    {varCreation}
+    {counterVarCreation}
+    while ({iterableVar}[{pos}] != '\\0' && ({charLen} = mblen({iterableVar}+{pos}, 2))) {{
+        for (int i=0; i<{charLen}; i++) {{
+            {self.iterVar[-1]}[i] = {iterableVar}[{pos}+i];
+        }}
+        {self.iterVar[-1]}[{charLen}] = '\\0';
+        {pos} += {charLen};
+        {counterVarUpdate}"""
         else:
             raise SyntaxError(f'Format for with iterable {iterable["type"]} not suported yet.')
     
