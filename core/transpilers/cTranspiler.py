@@ -172,7 +172,6 @@ class Transpiler(BaseTranspiler):
         arguments = ''
         permanentVars = ''
         tempVars = ''
-        freeVars = ''
         for arg in args+kwargs:
             if arg['type'] == 'array':
                 if '{var}' in arg['value']:
@@ -208,7 +207,9 @@ class Transpiler(BaseTranspiler):
                 return ''
         instance = '' if className is None else f'!@instance@!'
         if tempVars or permanentVars:
-            return f'{permanentVars} {{ {tempVars}{instance}{name}({arguments}); {freeVars} }}'
+            self.insertCode(permanentVars)
+            self.insertCode(tempVars)
+            return f'{instance}{name}({arguments})'
         return f'{instance}{name}({arguments})'
     
     def formatIndexAccess(self, token):
