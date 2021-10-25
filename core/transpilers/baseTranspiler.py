@@ -552,9 +552,11 @@ class BaseTranspiler():
                 args.append( {'type':tok['type'], 'value':arg['value']} )
         return args
 
-    def processKwargs(self, tokens):
+    def processKwargs(self, tokens, inferType=False):
         kwargs = []
         for tok in tokens:
+            if tok['expr']['type'] == 'array' and not self.typeKnown(tok['expr']['args'][0]['elementType']):
+                tok['expr']['args'][0]['elementType'] = tok['target']['type']
             kw = self.getValAndType(tok['expr'])
             name = tok['target']['name']
             kw['name'] = name
@@ -584,7 +586,7 @@ class BaseTranspiler():
             ags = self.currentScope[name['value']]['args']
         else:
             # Call signature not defined, use the order it was passed
-            kws = self.processKwargs(token['kwargs'])
+            kws = self.processKwargs(token['kwargs'], inferType=True)
             ags = args
 
         kwargs = []
