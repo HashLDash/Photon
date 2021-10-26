@@ -18,4 +18,5 @@ src/_black_version.py
 .hypothesis/
 venv/
 examples/Sources/
+examples/future/
 tests/Sources/

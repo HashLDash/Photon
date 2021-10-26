@@ -61,6 +61,6 @@ void list_float_repr(list_float* list) {
     if (listLen > 0) {
         printf("%lf]\n", list->values[listLen-1]);
     } else {
-        printf("]");
+        printf("]\n");
     }
 }
