@@ -221,7 +221,9 @@ class Transpiler(BaseTranspiler):
         return {'value':f'Math.pow({arg1["value"]}, {arg2["value"]})', 'type':varType}
 
     def formatPrint(self, value, terminator='\\n'):
-        return f'process.stdout.write({value["value"]}+"{terminator}");'
+        if value['value']:
+            return f'process.stdout.write({value["value"]}+"{terminator}");'
+        return f'process.stdout.write("{terminator}");'
 
     def write(self):
         boilerPlateStart = [
