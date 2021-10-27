@@ -216,7 +216,9 @@ class Transpiler(BaseTranspiler):
         return f'del {expr["value"]}'
 
     def formatPrint(self, value, terminator='\\n'):
-        return f'print({value["value"]}, end="{terminator}")'
+        if value['value']:
+            return f'print({value["value"]}, end="{terminator}")'
+        return f'print(end="{terminator}")'
 
     def write(self):
         boilerPlateStart = [
