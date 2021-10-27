@@ -11,7 +11,7 @@ typedef struct dict_int_!@valType@! {
     dict_int_!@valType@!_entry* entries;
 } dict_int_!@valType@!;
 
-!@valNativeType@! dict_int_!@valType@!_get(dict_int_!@valType@!* self, int key) {
+!@valNativeType@! dict_int_!@valType@!_get(dict_int_!@valType@!* self, long key) {
     int size = self->size;
     int index = key % size;
     while (self->entries[self->indices[index]].key != key) {
@@ -24,7 +24,7 @@ typedef struct dict_int_!@valType@! {
     return self->entries[self->indices[index]].val;
 }
 
-void dict_int_!@valType@!_set(dict_int_!@valType@!* self, int key, !@valNativeType@! value) {
+void dict_int_!@valType@!_set(dict_int_!@valType@!* self, long key, !@valNativeType@! value) {
     int dictLen = self->len;
     self->entries[dictLen].prehash = key; 
     self->entries[dictLen].key = key; 
@@ -61,7 +61,7 @@ void dict_int_!@valType@!_set(dict_int_!@valType@!* self, int key, !@valNativeTy
     }
 }
 
-void dict_int_!@valType@!_del(dict_int_!@valType@!* self, int key) {
+void dict_int_!@valType@!_del(dict_int_!@valType@!* self, long key) {
     int size = self->size;
     int index = key % size;
     while (self->entries[self->indices[index]].key != key) {
