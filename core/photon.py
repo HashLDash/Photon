@@ -11,8 +11,12 @@ def photonConfigLang(defineLang = None):
     if not '.photon' in os.listdir(home):
         os.mkdir(f'{home}/.photon')
     if 'photon.conf' in os.listdir(f'{home}/.photon'):
-        with open(f'{home}/.photon/photon.conf', 'r') as conf:
-            defaultConfig = json.load(conf)
+        try:
+            with open(f'{home}/.photon/photon.conf', 'r') as conf:
+                defaultConfig = json.load(conf)
+        except json.decoder.JSONDecodeError:
+            print('Seems like your photon.conf is corrupted. Please fix it and try again.')
+            exit(-1)
     else:
         defaultConfig = {}
         if defineLang != '' and defineLang != None:
