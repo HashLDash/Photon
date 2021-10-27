@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include "asprintf.h"
 
 typedef struct list_int {
     int len;  // number of element stored
@@ -99,4 +100,18 @@ void list_int_repr(list_int* list) {
     } else {
         printf("]\n");
     }
+}
+
+char* list_int_str(list_int* list) {
+    int listLen = list->len;
+    char* out = "[";
+    for (int i=0; i<listLen-1; i++) {
+        asprintf(&out, "%s%ld, ", out, list->values[i]);
+    }
+    if (listLen > 0) {
+        asprintf(&out, "%s%ld]", out, list->values[listLen-1]);
+    } else {
+        asprintf(&out, "%s]", out);
+    }
+    return out;
 }

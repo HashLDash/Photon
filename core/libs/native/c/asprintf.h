@@ -1,3 +1,6 @@
+#ifndef __asprintf
+# define __asprintf
+
 #include <stdio.h> /* needed for vsnprintf */
 #include <stdlib.h> /* needed for malloc-free */
 #include <stdarg.h> /* needed for va_list */
@@ -38,3 +41,4 @@
     }
 #endif
 // asprintf
+#endif
