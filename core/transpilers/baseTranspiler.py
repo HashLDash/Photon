@@ -970,7 +970,7 @@ class BaseTranspiler():
                     terminator = kwargs[0]['value'][1:-1]
                 else:
                     raise ValueError('end parameter on print can only be of type str.')
-        self.insertCode(self.formatPrint(value, terminator))
+        self.insertCode(self.formatPrint(value, terminator=terminator))
 
     def add(self, arg1, arg2):
         t1 = arg1['type']

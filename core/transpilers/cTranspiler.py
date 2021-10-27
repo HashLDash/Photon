@@ -604,7 +604,7 @@ class Transpiler(BaseTranspiler):
         else:
             return {'value':f'{arg1["value"]} == {arg2["value"]}', 'type':'bool'}
 
-    def formatPrint(self, value, terminator):
+    def formatPrint(self, value, terminator='\\n'):
         if value['type'] == 'int':
             return f'printf("%ld{terminator}", {value["value"]});'
         elif value['type'] == 'float':
