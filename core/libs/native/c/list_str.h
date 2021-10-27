@@ -64,6 +64,6 @@ void list_str_repr(list_str* list) {
     if (listLen > 0) {
         printf("\"%s\"]\n", list->values[listLen-1]);
     } else {
-        printf("]");
+        printf("]\n");
     }
 }

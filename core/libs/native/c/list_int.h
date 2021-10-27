@@ -97,6 +97,6 @@ void list_int_repr(list_int* list) {
     if (listLen > 0) {
         printf("%ld]\n", list->values[listLen-1]);
     } else {
-        printf("]");
+        printf("]\n");
     }
 }
