@@ -1,15 +1,11 @@
 
-# A dictionary can be described a double list
-# Where a first list is responsible for storing the keys and
-# the second list for storing the value associated with each key in the first list
+# The dictionary structure is a way of relating a key to a value.
+# Where the pair (key:value) must have their respective types.
 
-# To create a dictionary it is necessary to inform the data type
-# of the list of keys and the data type of the list of values
-# The type of the list of keys:The type of the list of values
-# Examples:
-#   int:int `dictionary name`
-#   int:float `dictionary name`
-#   int:str `dictionary name`
+# Type examples for (key:value dictionary_name):
+#   int:int `dictionary_name`
+#   int:float `dictionary_name`
+#   int:str `dictionary_name`
 
 # Example of creating and assigning keys and values ​​to the dictionary
 #int:int my_dict = { 1:1, 2:4, 3:9, 4:16 }
