@@ -110,34 +110,7 @@ class Transpiler(BaseTranspiler):
         expr = self.formatExpr(expr)
         return f'{name} += {expr};'
 
-    def formatAssign(self, target, expr, inMemory=False):
-        if target['token'] == 'var':
-            variable = target['name']
-            if variable in self.currentScope:
-                varType = self.currentScope[variable]['type']
-            elif self.typeKnown(target['type']):
-                # Type was explicit
-                varType = self.nativeType(target['type'])
-            else:
-                varType = self.nativeType(self.inferType(expr))
-        elif target['token'] == 'dotAccess':
-            v = self.getValAndType(target)
-            variable = v['value']
-            varType = v['type']
-        else:
-            raise SyntaxError(f'Format assign with variable {target} not implemented yet.')
-        if 'format' in expr:
-            # It's a format string
-            formatstr = expr['format']
-            values = ','.join(expr['values'])
-            varType = self.nativeType(varType)
-            return f'{varType} {variable}; asprintf(&{variable}, {formatstr},{values});'
-        if expr['type'] == 'array' and expr['elementType'] != self.currentScope[variable]['elementType']:
-            cast = self.nativeType(varType)
-        elif self.typeKnown(expr['type']) and expr['type'] != varType:
-            cast = self.nativeType(varType)
-        else:
-            cast = None
+    def formatAssign(self, variable, varType, cast, expr, inMemory=False):
         formattedExpr = self.formatExpr(expr, cast=cast)
         if inMemory:
             return f'{variable} = {formattedExpr};'

@@ -433,11 +433,34 @@ class BaseTranspiler():
                 #        raise SyntaxError(f'Array with unknown type not implemented yet.')
                 #    self.currentScope[variable['value']]['size'] = expr['size']
                 target['type'] = varType
-        #if 'indexAccess' in target:
+
+        if target['token'] == 'var':
+            variableName = target['name']
+            if variableName in self.currentScope:
+                varType = self.currentScope[variableName]['type']
+            elif self.typeKnown(target['type']):
+                # Type was explicit
+                varType = self.nativeType(target['type'])
+            else:
+                varType = self.nativeType(self.inferType(expr))
+        elif target['token'] == 'dotAccess':
+            v = self.getValAndType(target)
+            variableName = v['value']
+            varType = v['type']
+        else:
+            raise SyntaxError(f'Format assign with variableName {target} not implemented yet.')
+
+        if expr['type'] == 'array' and expr['elementType'] != self.currentScope[variableName]['elementType']:
+            cast = self.nativeType(varType)
+        elif self.typeKnown(expr['type']) and expr['type'] != varType:
+            cast = self.nativeType(varType)
+        else:
+            cast = None
+
         if 'indexAccess' in variable:
             self.insertCode(self.formatIndexAssign(target, expr, inMemory=inMemory))
         else:
-            self.insertCode(self.formatAssign(target, expr, inMemory=inMemory))
+            self.insertCode(self.formatAssign(variableName, varType, cast, expr, inMemory=inMemory))
 
     def processAugAssign(self, token):
         op = token['operator']
