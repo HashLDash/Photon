@@ -163,7 +163,7 @@ class Transpiler(BaseTranspiler):
                     string = string.replace('{}', '%f', 1)
                 elif valType == 'array':
                     string = string.replace('{}', '%s', 1)
-                    exprs[-1] = f'list_int_str(&{exprs[-1]})'
+                    exprs[-1] = f'list_{expr["elementType"]}_str(&{exprs[-1]})'
                 else:
                     raise SyntaxError(f'Cannot format {valType} in formatStr')
         return string, exprs

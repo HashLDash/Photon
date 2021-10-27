@@ -67,3 +67,17 @@ void list_str_repr(list_str* list) {
         printf("]\n");
     }
 }
+
+char* list_str_str(list_str* list) {
+    int listLen = list->len;
+    char* out = "[";
+    for (int i=0; i<listLen-1; i++) {
+        asprintf(&out, "%s\"%s\", ", out, list->values[i]);
+    }
+    if (listLen > 0) {
+        asprintf(&out, "%s\"%s\"]", out, list->values[listLen-1]);
+    } else {
+        asprintf(&out, "%s]", out);
+    }
+    return out;
+}
