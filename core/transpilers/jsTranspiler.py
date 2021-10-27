@@ -276,4 +276,4 @@ class Transpiler(BaseTranspiler):
                     check_call(['npm', 'link', module])
             check_call(['node', f'Sources/js/{self.filename}'])
         except Exception as e:
-            print('Compilation error {e}. Check errors above.')
+            print(f'Compilation error {e}. Check errors above.')
