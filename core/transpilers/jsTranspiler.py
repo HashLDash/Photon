@@ -275,5 +275,5 @@ class Transpiler(BaseTranspiler):
                 for module in self.links:
                     check_call(['npm', 'link', module])
             check_call(['node', f'Sources/js/{self.filename}'])
-        except:
-            print('Compilation error. Check errors above.')
+        except Exception as e:
+            print('Compilation error {e}. Check errors above.')
