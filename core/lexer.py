@@ -433,9 +433,14 @@ def call(i, t):
         del t[i+1] # kwargs
     else:
         raise SyntaxError(f'Call with arg {t[i+2]} not supported')
-    if t[i+2]['token'] == 'kwargs':
-        kwargs = t[i+2]['kwargs']
-        del t[i+1] # kwargs
+    if t[i+2]['token'] == 'comma':
+        if t[i+3]['token'] == 'assign':
+            kwargs += [t[i+3]]
+            del t[i+3] # assign
+        elif t[i+3]['token'] == 'kwargs':
+            kwargs += t[i+3]['kwargs']
+            del t[i+3] # kwargs
+        del t[i+2]
 
     if t[i]['args'][0]['token'] == 'dotAccess':
         t[i]['args'][0]['dotAccess'][-1] = {
@@ -464,21 +469,6 @@ def call(i, t):
     del t[i+1] # rparen
     del t[i+1] # lparen
     return t
-
-#def printFunc(i, t):
-#    ''' Return a printFunc token
-#    '''
-#    if t[i+2]['token'] == 'rparen':
-#        t[i] = {'token':'printFunc'}
-#    elif t[i+2]['token'] == 'expr':
-#        t[i] = {'token':'printFunc', 'expr':t[i+2]}
-#        del t[i+1] # expr
-#    else:
-#        t[i] = {'token':'printFunc', 'expr':convertToExpr(t[i+2])}
-#        del t[i+1] # expr
-#    del t[i+1] # lparen
-#    del t[i+1] # rparen
-#    return t
 
 def inputFunc(i, t):
     ''' Return an inputFunc token

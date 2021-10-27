@@ -26,7 +26,7 @@ operator = (equal operator) (equal operator)
 
 call = expr lparen rparen
      | expr lparen (expr args assign kwargs) rparen
-     | expr lparen (expr args) kwargs rparen
+     | expr lparen (expr args) comma (assign kwargs) rparen
 
 expr = num
      | floatNumber

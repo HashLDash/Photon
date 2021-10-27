@@ -966,7 +966,10 @@ class BaseTranspiler():
         if token['kwargs']:
             kwargs = self.processKwargs(token['kwargs'])
             if kwargs[0]['name'] == 'end':
-                terminator = kwargs[0]['value']
+                if kwargs[0]['type'] == 'str':
+                    terminator = kwargs[0]['value'][1:-1]
+                else:
+                    raise ValueError('end parameter on print can only be of type str.')
         self.insertCode(self.formatPrint(value, terminator))
 
     def add(self, arg1, arg2):
