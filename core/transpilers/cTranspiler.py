@@ -601,22 +601,22 @@ class Transpiler(BaseTranspiler):
         else:
             return {'value':f'{arg1["value"]} == {arg2["value"]}', 'type':'bool'}
 
-    def formatPrint(self, value):
+    def formatPrint(self, value, terminator):
         if value['type'] == 'int':
-            return f'printf("%ld\\n", {value["value"]});'
+            return f'printf("%ld{terminator}", {value["value"]});'
         elif value['type'] == 'float':
-            return f'printf("%f\\n", {value["value"]});'
+            return f'printf("%f{terminator}", {value["value"]});'
         elif value['type'] == 'str':
             if 'format' in value:
                 # It's a format string
-                formatstr = value['format'][:-1] + '\\n' + value['format'][-1:]
+                formatstr = value['format'][:-1] + terminator + value['format'][-1:]
                 values = ', '.join(value['values'])
                 return f'printf({formatstr}, {values});'
-            return f'printf("%s\\n", {value["value"]});'
+            return f'printf("%s{terminator}", {value["value"]});'
         elif value['type'] == 'bool':
-            return f'printf("%s\\n", ({value["value"]}) ? "True" : "False");'
+            return f'printf("%s{terminator}", ({value["value"]}) ? "True" : "False");'
         elif value['type'] == 'null':
-            return 'printf("\\n");'
+            return f'printf("{terminator}");'
         elif value['type'] == 'array':
             elementType = value['elementType']
             return f'list_{elementType}_repr(&{value["value"]});'

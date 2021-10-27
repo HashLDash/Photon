@@ -15,7 +15,7 @@ class BaseTranspiler():
 
         self.operators = ['**','*','%','/','-','+','==','!=','>','<','>=','<=','is','in','andnot','and','or','&', '<<', '>>'] # in order 
         self.instructions = {
-            'printFunc': self.printFunc,
+            'printFunc': self.processPrint,
             'inputFunc': self.processInput,
             'expr': self.processExpression,
             'assign': self.processAssign,
@@ -282,6 +282,8 @@ class BaseTranspiler():
             return self.processExpr(token)
         elif token['token'] == 'call':
             return self.processCall(token)
+        elif token['token'] == 'printFunc':
+            return self.processPrint(token)
         elif token['token'] == 'group':
             return self.processGroup(token)
         elif token['token'] == 'var':
@@ -955,12 +957,17 @@ class BaseTranspiler():
                 # System library import
                 self.insertCode(self.formatSystemLibImport(token['expr']))
 
-    def printFunc(self, token):
-        if 'expr' in token:
-            value = self.processExpr(token['expr'])
+    def processPrint(self, token):
+        if token['args']:
+            value = self.getValAndType(token['args'][0])
         else:
             value = {'value':'','type':'null'}
-        self.insertCode(self.formatPrint(value))
+        terminator = '\\n'
+        if token['kwargs']:
+            kwargs = self.processKwargs(token['kwargs'])
+            if kwargs[0]['name'] == 'end':
+                terminator = kwargs[0]['value']
+        self.insertCode(self.formatPrint(value, terminator))
 
     def add(self, arg1, arg2):
         t1 = arg1['type']

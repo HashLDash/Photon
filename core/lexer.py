@@ -295,7 +295,7 @@ def convertToExpr(token):
         else:
             varType = 'float'
         return {'token':'expr', 'type':varType, 'args':[token], 'ops':[]}
-    elif token['token'] in {'var','group','inputFunc','call', 'array', 'dotAccess', 'map'}:
+    elif token['token'] in {'var','group','inputFunc', 'call', 'array', 'dotAccess', 'map'}:
         return {'token':'expr', 'type':token['type'], 'args':[token], 'ops':[]}
     else:
         raise SyntaxError(f'Cant convert token {token} to expr')
@@ -446,32 +446,39 @@ def call(i, t):
             'kwargs':kwargs,
         }
     else:
+        if t[i]['args'][0]['name'] == 'print':
+            tokenName = 'printFunc'
+        else:
+            tokenName = 'call'
         callToken = {
-            'token':'call',
+            'token':tokenName,
             'type':t[i]['args'][0]['type'],
             'name':t[i]['args'][0],
             'args':arguments,
             'kwargs':kwargs,
         }
-        t[i] = convertToExpr(callToken)
+        if tokenName != 'printFunc':
+            t[i] = convertToExpr(callToken)
+        else:
+            t[i] = callToken
     del t[i+1] # rparen
     del t[i+1] # lparen
     return t
 
-def printFunc(i, t):
-    ''' Return a printFunc token
-    '''
-    if t[i+2]['token'] == 'rparen':
-        t[i] = {'token':'printFunc'}
-    elif t[i+2]['token'] == 'expr':
-        t[i] = {'token':'printFunc', 'expr':t[i+2]}
-        del t[i+1] # expr
-    else:
-        t[i] = {'token':'printFunc', 'expr':convertToExpr(t[i+2])}
-        del t[i+1] # expr
-    del t[i+1] # lparen
-    del t[i+1] # rparen
-    return t
+#def printFunc(i, t):
+#    ''' Return a printFunc token
+#    '''
+#    if t[i+2]['token'] == 'rparen':
+#        t[i] = {'token':'printFunc'}
+#    elif t[i+2]['token'] == 'expr':
+#        t[i] = {'token':'printFunc', 'expr':t[i+2]}
+#        del t[i+1] # expr
+#    else:
+#        t[i] = {'token':'printFunc', 'expr':convertToExpr(t[i+2])}
+#        del t[i+1] # expr
+#    del t[i+1] # lparen
+#    del t[i+1] # rparen
+#    return t
 
 def inputFunc(i, t):
     ''' Return an inputFunc token
