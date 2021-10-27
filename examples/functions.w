@@ -46,7 +46,7 @@ print("Add [1, 2, 3] = {add_list(list=list)}")
 # Line break
 #print()
 
-#def test(cb callback):
+#def test(func callback):
 #   print(callback(1, 2))
 
 #test(add)
