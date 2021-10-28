@@ -1,7 +1,7 @@
 <h1 align="center">Photon</h1>
 
 <p align="center"><img src="https://img.shields.io/badge/Installing%20on-Windows%20%7C%20Linux%20%7C%20macOS-informational" alt="Install on">
-<img src="https://img.shields.io/badge/Converting%20to-Python%20%7C%20C%20%7C%20D%20%7C%20Dart%20%7C%20Haxe%20%7C%20JavaScript-blue" alt="Convert to">
+<img src="https://img.shields.io/badge/Converting%20to-Python%20%7C%20C%20%7C%20D%20%7C%20Dart%20%7C%20Haxe%20%7C%20JavaScript%20%7C%20TypeScript-blue" alt="Convert to">
 <img src="https://img.shields.io/badge/Running-Everywhere-success" alt="Run in"></p>
 
 <p align="center"><a href="https://www.youtube.com/channel/UCjxrE6D_P9X_HnSW2mpw1BQ"><img src="https://img.shields.io/youtube/channel/subscribers/UCjxrE6D_P9X_HnSW2mpw1BQ?label=HashLDash&style=social" alt="PT-BR Channel"></a>

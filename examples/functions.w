@@ -39,9 +39,9 @@ example(b = 1, a = 2) # Do like this
 # Line break
 print()
 
-int list = [1, 2, 3]
+int list = [1, 2, 3, 4]
 
-print("Add [1, 2, 3] = {add_list(list=list)}")
+print("Add {list} = {add_list(list=list)}")
 
 # Line break
 #print()

@@ -30,7 +30,7 @@ def photonConfigLang(defineLang = None):
     return defaultConfig['lang']
 
 if __name__ == "__main__":
-    langs = ['c', 'd', 'js', 'dart', 'haxe', 'py']
+    langs = ['c', 'd', 'js', 'ts', 'dart', 'haxe', 'py']
     platforms = ['web', 'linux', 'flutter-android']
     PHOTON_INSTALL_PATH = getattr(sys, '_MEIPASS', os.path.dirname(os.path.realpath(__file__)))
     sys.path.insert(0, PHOTON_INSTALL_PATH)

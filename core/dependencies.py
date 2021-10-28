@@ -125,6 +125,7 @@ linux_cmds = {'dmd': 'curl https://dlang.org/install.sh | bash -s || (mkdir -p ~
                      '~/dlang/install.sh)'}
 linux_cmds['node prompt-sync'] = 'sudo npm install -g prompt-sync'
 win_cmds = {'node prompt-sync': 'npm install prompt-sync'}
+linux_cmds['deno'] = 'curl -fsSL https://deno.land/x/install/install.sh | sudo DENO_INSTALL=/usr/local sh'
 if os.path.exists('/etc/debian_version'):  # debian, ubuntu, pop!_os, zorin os
     linux_cmds['before'] = 'sudo apt-get update'
     linux_cmds['gcc'] = 'sudo apt install build-essential'
@@ -145,6 +146,7 @@ elif os.path.exists('/etc/arch-release'):  # arch, manjaro
     linux_cmds['dmd'] = 'sudo pacman -S dmd'
     linux_cmds['haxe'] = 'sudo pacman -S haxe'
     linux_cmds['nodejs'] = 'sudo pacman -S nodejs'
+    linux_cmds['deno'] = 'sudo pacman -S deno'
     linux_cmds['npm'] = 'sudo pacman -S npm'
     linux_cmds['dart'] = 'sudo pacman -S dart'
 elif os.path.exists('/etc/gentoo-release'):  # gentoo
@@ -208,6 +210,10 @@ def resolveJsLinux():
     ''' Install nodejs and deps '''
     return linuxInstaller('nodejs') and linuxInstaller('npm') and linuxInstaller('node prompt-sync')
 
+def resolveTsLinux():
+    ''' Install deno and deps '''
+    return linuxInstaller('deno')
+
 def resolveDartLinux():
     ''' Install dart '''
     return linuxInstaller('dart')
@@ -238,6 +244,11 @@ def resolveJsWin32():
     chocoInstaller("nodejs") # npm is also installed with nodejs
     os.system(win_cmds["node prompt-sync"])
     return programIsInstalled("node") and programIsInstalled("npm")
+
+def resolveTsWin32():
+    ''' Install deno '''
+    chocoInstaller("deno")
+    return programIsInstalled("deno")
 
 def resolveDartWin32():
     ''' Install dart '''
@@ -272,6 +283,11 @@ def resolveJsDarwin():
     os.system(linux_cmds["node prompt-sync"])
     return programIsInstalled("node") and programIsInstalled("npm")
 
+def resolveTsDarwin():
+    ''' Install deno '''
+    brewInstaller("deno")
+    return programIsInstalled("deno")
+
 def resolveDartDarwin():
     ''' Install dart '''
     brewInstaller("dart")
@@ -293,6 +309,9 @@ solver = {
     ('js', 'linux'): resolveJsLinux,
     ('js', 'win32'): resolveJsWin32,
     ('js', 'darwin'): resolveJsDarwin,
+    ('ts', 'linux'): resolveTsLinux,
+    ('ts', 'win32'): resolveTsWin32,
+    ('ts', 'darwin'): resolveTsDarwin,
     ('dart', 'linux'): resolveDartLinux,
     ('dart', 'win32'): resolveDartWin32,
     ('dart', 'darwin'): resolveDartDarwin,
@@ -314,6 +333,9 @@ deps = {
     ('js', 'linux'): ['node','npm'],
     ('js', 'win32'): ['node','npm'],
     ('js', 'darwin'): ['node','npm'],
+    ('ts', 'linux'): ['deno'],
+    ('ts', 'win32'): ['deno'],
+    ('ts', 'darwin'): ['deno'],
     ('dart', 'linux'): ['dart'],
     ('dart', 'win32'): ['dart'],
     ('dart', 'darwin'): ['dart'],

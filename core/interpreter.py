@@ -21,6 +21,8 @@ class Interpreter():
             from transpilers.dartTranspiler import Transpiler
         elif lang == 'js':
             from transpilers.jsTranspiler import Transpiler
+        elif lang == 'ts':
+            from transpilers.tsTranspiler import Transpiler
         elif lang == 'haxe':
             from transpilers.haxeTranspiler import Transpiler
         elif lang == 'd':

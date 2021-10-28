@@ -1,11 +1,13 @@
 
 # The list starts with index 0
 list = [1, 2, 3, 4]
-print(list)
+print("List: {list}")
 
 # Removing the second element from the list
 del list[2]
-print(list)
+print("The element in index 2 has been removed.")
+
+print("List: {list}")
 
 # Line break
 print()
