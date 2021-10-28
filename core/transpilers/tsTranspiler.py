@@ -13,8 +13,8 @@ class Transpiler(JSTranspiler):
 
     def formatPrint(self, value, terminator='\\n'):
         if value['value']:
-            return f'Deno.writeAll(Deno.stdout, new TextEncoder().encode({value["value"]}+"{terminator}"))'
-        return f'Deno.writeAll(Deno.stdout, "{terminator}")'
+            return f'Deno.writeAll(Deno.stdout, new TextEncoder().encode(JSON.stringify({value["value"]})+"{terminator}"))'
+        return f'Deno.writeAll(Deno.stdout, new TextEncoder().encode("{terminator}"))'
 
     def write(self):
         boilerPlateStart = [
