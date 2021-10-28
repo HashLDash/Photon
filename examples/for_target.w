@@ -11,6 +11,10 @@ for D:
 for JS:
     print("Target JavaScript")
 
+# On the `TS` target, do:
+for TS:
+    print("Target TypeScript")
+
 # On the `DART` target, do:
 for DART:
     print("Target Dart")
