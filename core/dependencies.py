@@ -124,7 +124,7 @@ linux_cmds = {'dmd': 'curl https://dlang.org/install.sh | bash -s || (mkdir -p ~
                      'https://dlang.org/install.sh -O ~/dlang/install.sh && chmod +x ~/dlang/install.sh && '
                      '~/dlang/install.sh)'}
 linux_cmds['node prompt-sync'] = 'sudo npm install -g prompt-sync'
-win_cmds = {'node prompt-sync': 'npm install -g prompt-sync'}
+win_cmds = {'node prompt-sync': 'npm install prompt-sync'}
 if os.path.exists('/etc/debian_version'):  # debian, ubuntu, pop!_os, zorin os
     linux_cmds['before'] = 'sudo apt-get update'
     linux_cmds['gcc'] = 'sudo apt install build-essential'
