@@ -1,5 +1,6 @@
 from transpilers.baseTranspiler import BaseTranspiler
 import os
+import sys
 from string import Formatter
 
 def debug(*args):
@@ -270,10 +271,14 @@ class Transpiler(BaseTranspiler):
         self.write()
         debug(f'Running {self.filename}')
         try:
-            if not 'node_modules' in os.listdir():
+            if not 'node_modules' in os.listdir('Sources/js/'):
                 debug('Linking libraries. This will only run once per project.')
-                for module in self.links:
-                    check_call(['npm', 'link', module])
+                if sys.platform in {'linux', 'linux2', 'darwin'}:
+                    os.popen('cd Sources/js/; npm install prompt-sync').read()
+                elif os.name == "nt" or os.environ.get('OS', '') != 'Windows_NT' or sys.platform in {'win32', 'cygwin', 'msys'}:
+                    os.popen('cd Sources/js/ & npm install prompt-sync').read()
+                #for module in self.links:
+                #    check_call(['npm', 'link', module])
             check_call(['node', f'Sources/js/{self.filename}'])
         except Exception as e:
             print(f'Compilation error {e}. Check errors above.')
