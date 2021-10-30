@@ -5,7 +5,7 @@
 typedef struct list_int {
     int len;  // number of element stored
     int size; // allocated array size
-    int* values;
+    long* values;
 } list_int;
 
 int list_int_get(list_int* list, int index) {
@@ -20,7 +20,7 @@ int list_int_get(list_int* list, int index) {
     return list->values[index];
 }
 
-void list_int_set(list_int* list, int index, int value) {
+void list_int_set(list_int* list, int index, long value) {
     if (index < 0) {
         // -1 is equivalent to the last element
         index = list->len + index;
@@ -32,16 +32,16 @@ void list_int_set(list_int* list, int index, int value) {
     list->values[index] = value;
 }
 
-void list_int_append(list_int* list, int value) {
+void list_int_append(list_int* list, long value) {
     if (list->len >= list->size) {
         list->size = list->size * 2;
-        list->values = realloc(list->values, sizeof(int) * list->size);
+        list->values = realloc(list->values, sizeof(long) * list->size);
     }
     list->values[list->len] = value;
     list->len += 1;
 }
 
-void list_int_removeAll(list_int* list, int value) {
+void list_int_removeAll(list_int* list, long value) {
     int removedItems=0;
     int listLen = list->len;
     int firstIndex;
@@ -61,7 +61,7 @@ void list_int_removeAll(list_int* list, int value) {
     list->len -= removedItems;
     if (list->size >= 4*list->len) {
         list->size = list->size / 2;
-        list->values = realloc(list->values, sizeof(int) * list->size);
+        list->values = realloc(list->values, sizeof(long) * list->size);
     }
 }
 
@@ -73,11 +73,11 @@ void list_int_del(list_int* list, int index) {
     list->len -= 1;
     if (list->size >= 4*list->len) {
         list->size = list->size / 2;
-        list->values = realloc(list->values, sizeof(int) * list->size);
+        list->values = realloc(list->values, sizeof(long) * list->size);
     }
 }
 
-void list_int_inc(list_int* list, int index, int value) {
+void list_int_inc(list_int* list, int index, long value) {
     if (index < 0) {
         // -1 is equivalent to the last element
         index = list->len + index;
