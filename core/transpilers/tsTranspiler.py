@@ -11,6 +11,11 @@ class Transpiler(JSTranspiler):
         self.filename = self.filename.replace('.w','.ts')
         self.lang = 'ts'
 
+    def formatInput(self, expr):
+        message = expr['value']
+        message = message[:-2] + '"'
+        return f'prompt({message})'
+
     def formatPrint(self, value, terminator='\\n'):
         if value['value']:
             return f'Deno.writeAll(Deno.stdout, new TextEncoder().encode(JSON.stringify({value["value"]})+"{terminator}"))'
