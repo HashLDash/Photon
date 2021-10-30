@@ -392,7 +392,7 @@ class Transpiler(BaseTranspiler):
                 varType = varType + ' '
             if len(variables) == 2:
                 counterVar = variables[0]
-                return f'{varType}{self.iterVar[-1][-1]} = {fromVal}; for (int {counterVar}=-1; {self.iterVar[-1][-1]} < {toVal}; {self.iterVar[-1][-1]} += {self.step}) {{ {counterVar}++;'
+                return f'{varType}{self.iterVar[-1][-1]} = {fromVal}; for (long {counterVar}=-1; {self.iterVar[-1][-1]} < {toVal}; {self.iterVar[-1][-1]} += {self.step}) {{ {counterVar}++;'
             else:
                 return f'{varType}{self.iterVar[-1][-1]} = {fromVal}; for (; {self.iterVar[-1][-1]} < {toVal}; {self.iterVar[-1][-1]} += {self.step}) {{'
         elif iterable['type'] == 'array':
@@ -416,7 +416,7 @@ class Transpiler(BaseTranspiler):
             else:
                 counterVar = f'__tempVar{self.tempVarCounter}__'
                 self.tempVarCounter += 1
-            return f'{self.nativeType(varType)} {self.iterVar[-1][-1]}; {beginScope}{tempArray}; for (int {counterVar}=0; {counterVar} < {iterable["value"]}.len; {counterVar}++) {{ {self.iterVar[-1][-1]}={iterable["value"]}.values[{counterVar}];'
+            return f'{self.nativeType(varType)} {self.iterVar[-1][-1]}; {beginScope}{tempArray}; for (long {counterVar}=0; {counterVar} < {iterable["value"]}.len; {counterVar}++) {{ {self.iterVar[-1][-1]}={iterable["value"]}.values[{counterVar}];'
         elif iterable['type'] == 'str':
             varType = 'str'
             self.imports.add('#include <string.h>')
@@ -429,7 +429,7 @@ class Transpiler(BaseTranspiler):
                 if variables[0] in self.currentScope:
                     counterVarCreation = f'{variables[0]} = -1;'
                 else:
-                    counterVarCreation = f"int {variables[0]} = -1;"
+                    counterVarCreation = f"long {variables[0]} = -1;"
             else:
                 counterVarCreation = ''
                 counterVarUpdate = ''
@@ -445,7 +445,7 @@ class Transpiler(BaseTranspiler):
             pos = f'__tempVar{self.tempVarCounter}__'
             self.tempVarCounter += 1
             return f"""{iterableVarCreation}
-    int {pos} = 0;
+    long {pos} = 0;
     int {charLen};
     {varCreation}
     {counterVarCreation}
@@ -731,11 +731,16 @@ class Transpiler(BaseTranspiler):
 
     def run(self):
         from subprocess import call, check_call
+        import sys
         self.write()
         debug(f'Running {self.filename}')
         try:
+            if sys.platforms == 'darwin':
+                optimizationFlags = ['-Ofast']
+            else:
+                optimizationFlags = ['-Ofast', '-frename-registers', '-funroll-loops']
             debug(' '.join(['gcc', '-O2', '-std=c99', f'Sources/c/{self.filename}'] + list(self.links) + ['-o', 'Sources/c/main']))
-            check_call(['gcc', '-Ofast', '-frename-registers', '-funroll-loops', '-std=c99', f'Sources/c/{self.filename}'] + list(self.links) + ['-o', 'Sources/c/main'])
+            check_call(['gcc'] + optimizationFlags + '-std=c99', f'Sources/c/{self.filename}'] + list(self.links) + ['-o', 'Sources/c/main'])
         except Exception as e:
             print(e)
             print('Compilation error. Check errors above.')
