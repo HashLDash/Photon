@@ -121,7 +121,13 @@ class Transpiler(BaseTranspiler):
         else:
             cast = None
         expr = self.formatExpr(expr, cast=cast)
-        return f'{name} += {expr};'
+        return f'{name} += {expr}'
+
+    def formatArrayRemoveAll(self, target, expr):
+        name = target['value']
+        varType = target['elementType']
+        expr = self.formatExpr(expr)
+        return f'{name} = [x for x in {name} if x != {expr}]'
 
     def formatAssign(self, variable, varType, cast, expr, inMemory=False):
         formattedExpr = self.formatExpr(expr, cast=cast)

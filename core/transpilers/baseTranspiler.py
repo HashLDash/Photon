@@ -1068,8 +1068,18 @@ class BaseTranspiler():
 
     def isBlock(self, line):
         for b in self.block:
-            if b in line and not line.startswith(self.commentSymbol):
-                return True
+            # remove comment
+            try:
+                line = line[:line.index('#')]
+            except ValueError:
+                pass
+            if b in line:
+                if b == 'for ':
+                    if ('[' in line and ']' in line) and (line.index('[') < line.index('for ') < line.index(']')):
+                        # its a list comprehension
+                        continue
+                    else:
+                        return True
         return False
 
     def run(self):
