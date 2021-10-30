@@ -130,6 +130,12 @@ class Transpiler(BaseTranspiler):
         expr = self.formatExpr(expr)
         return f'{name} += {expr};'
 
+    def formatArrayRemoveAll(self, target, expr):
+        name = target['value']
+        varType = target['elementType']
+        expr = self.formatExpr(expr)
+        return f'{name} = {name}.filter(__temp__ => __temp__ !== {expr})'
+
     def formatAssign(self, variable, varType, cast, expr, inMemory=False):
         formattedExpr = self.formatExpr(expr, cast=cast)
         if inMemory:
