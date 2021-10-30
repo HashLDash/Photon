@@ -50,6 +50,9 @@ if [ "$installDeps" == "true" ]; then
     elif [ -f '/etc/redhat-release' ]; then
         ($SUDO dnf check-update && $SUDO dnf install python3 gcc git) ||
         ($SUDO yum check-update && $SUDO yum install python3 gcc git)
+    elif [ "$(uname)" == "Darwin" ]; then
+        $SUDO /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
+        $SUDO brew install gcc git python3
     else
         printf "${red}Automatic installation in this system is not supported yet.\n${normal}"
         printf "Photon needs Python>=3.6, gcc and git on your PATH to work properly."
