@@ -379,26 +379,25 @@ class Transpiler(BaseTranspiler):
     def formatFor(self, variables, iterable):
         self.step = 0
         self.freeTempArray = ''
+        self.iterVar.append(variables)
         if 'from' in iterable:
             # For with range
-            self.iterVar = variables
             varType = iterable['type']
             fromVal = iterable['from']['value']
             self.step = iterable['step']['value']
             toVal = iterable['to']['value']
-            if self.iterVar[-1] in self.currentScope:
+            if self.iterVar[-1][-1] in self.currentScope:
                 varType = ''
             else:
                 varType = varType + ' '
             if len(variables) == 2:
                 counterVar = variables[0]
-                return f'{varType}{self.iterVar[-1]} = {fromVal}; for (int {counterVar}=-1; {self.iterVar[-1]} < {toVal}; {self.iterVar[-1]} += {self.step}) {{ {counterVar}++;'
+                return f'{varType}{self.iterVar[-1][-1]} = {fromVal}; for (int {counterVar}=-1; {self.iterVar[-1][-1]} < {toVal}; {self.iterVar[-1][-1]} += {self.step}) {{ {counterVar}++;'
             else:
-                return f'{varType}{self.iterVar[-1]} = {fromVal}; for (; {self.iterVar[-1]} < {toVal}; {self.iterVar[-1]} += {self.step}) {{'
+                return f'{varType}{self.iterVar[-1][-1]} = {fromVal}; for (; {self.iterVar[-1][-1]} < {toVal}; {self.iterVar[-1][-1]} += {self.step}) {{'
         elif iterable['type'] == 'array':
             varType = iterable['elementType']
-            self.iterVar = variables
-            if self.iterVar[-1] in self.currentScope:
+            if self.iterVar[-1][-1] in self.currentScope:
                 varType = ''
             else:
                 varType = varType
@@ -417,15 +416,14 @@ class Transpiler(BaseTranspiler):
             else:
                 counterVar = f'__tempVar{self.tempVarCounter}__'
                 self.tempVarCounter += 1
-            return f'{self.nativeType(varType)} {self.iterVar[-1]}; {beginScope}{tempArray}; for (int {counterVar}=0; {counterVar} < {iterable["value"]}.len; {counterVar}++) {{ {self.iterVar[-1]}={iterable["value"]}.values[{counterVar}];'
+            return f'{self.nativeType(varType)} {self.iterVar[-1][-1]}; {beginScope}{tempArray}; for (int {counterVar}=0; {counterVar} < {iterable["value"]}.len; {counterVar}++) {{ {self.iterVar[-1][-1]}={iterable["value"]}.values[{counterVar}];'
         elif iterable['type'] == 'str':
             varType = 'str'
-            self.iterVar = variables
             self.imports.add('#include <string.h>')
-            if self.iterVar[-1] in self.currentScope:
+            if self.iterVar[-1][-1] in self.currentScope:
                 varCreation = f''
             else:
-                varCreation = f'char {self.iterVar[-1]}[] = \" \";'
+                varCreation = f'char {self.iterVar[-1][-1]}[] = \" \";'
             if len(variables) == 2:
                 counterVarUpdate = f'{variables[0]}++;'
                 if variables[0] in self.currentScope:
@@ -453,9 +451,9 @@ class Transpiler(BaseTranspiler):
     {counterVarCreation}
     while ({iterableVar}[{pos}] != '\\0' && ({charLen} = mblen({iterableVar}+{pos}, 2))) {{
         for (int i=0; i<{charLen}; i++) {{
-            {self.iterVar[-1]}[i] = {iterableVar}[{pos}+i];
+            {self.iterVar[-1][-1]}[i] = {iterableVar}[{pos}+i];
         }}
-        {self.iterVar[-1]}[{charLen}] = '\\0';
+        {self.iterVar[-1][-1]}[{charLen}] = '\\0';
         {pos} += {charLen};
         {counterVarUpdate}"""
         else:
@@ -464,7 +462,7 @@ class Transpiler(BaseTranspiler):
     def formatEndFor(self):
         if self.step:
             # Must also close the tempArray scope block
-            return f'}} {self.iterVar.pop()} -= {self.step};{self.freeTempArray}'
+            return f'}} {self.iterVar.pop()[-1]} -= {self.step};{self.freeTempArray}'
         else:
             # consume the iterVar of this loop
             self.iterVar.pop()

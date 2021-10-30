@@ -22,6 +22,7 @@ class Transpiler(BaseTranspiler):
         self.self = 'this'
         self.notOperator = '!'
         self.iterVar = []
+        self.tempVarCounter = 0
         self.nativeTypes = {
             'float':'float',
             'int':'int',
@@ -170,18 +171,26 @@ class Transpiler(BaseTranspiler):
 
     def formatFor(self, variables, iterable):
         self.step = 0
+        self.iterVar.append(variables)
         if 'from' in iterable:
-            self.iterVar.append(variables)
             fromVal = iterable['from']['value']
             self.step = iterable['step']['value']
             toVal = iterable['to']['value']
-            return f'for (var {self.iterVar[-1][-1]} = {fromVal}; {self.iterVar[-1][-1]} < {toVal}; {self.iterVar[-1][-1]} += {self.step}) {{'
+            if len(variables) == 2:
+                return f'var {self.iterVar[-1][0]}; var {self.iterVar[-1][-1]}; for ({self.iterVar[-1][-1]} = {fromVal}, {self.iterVar[-1][0]} = 0; {self.iterVar[-1][-1]} < {toVal}; {self.iterVar[-1][-1]} += {self.step}, {self.iterVar[-1][0]} += 1) {{'
+            return f'var {self.iterVar[-1][-1]}; for ({self.iterVar[-1][-1]} = {fromVal}; {self.iterVar[-1][-1]} < {toVal}; {self.iterVar[-1][-1]} += {self.step}) {{'
         elif iterable['type'] == 'array':
-            self.iterVar.append(variables)
-            return f'var {self.iterVar[-1][-1]}; for (var __iteration__ = 0; __iteration__ < {iterable["value"]}.length; __iteration__++) {{ {self.iterVar[-1][-1]} = {iterable["value"]}[__iteration__];'
+            if len(variables) == 2:
+                return f'var {self.iterVar[-1][-1]}; for ([{self.iterVar[-1][0]}, {self.iterVar[-1][-1]}] of {iterable["value"]}.entries()) {{'
+            iteration = f'__tempVar{self.tempVarCounter}__'
+            self.tempVarCounter += 1
+            return f'var {self.iterVar[-1][-1]}; for (var {iteration} = 0; {iteration} < {iterable["value"]}.length; {iteration}++) {{ {self.iterVar[-1][-1]} = {iterable["value"]}[{iteration}];'
         elif iterable['type'] == 'str':
-            self.iterVar.append(variables)
-            return f'var {self.iterVar[-1][-1]}; for (var __iteration__ = 0; __iteration__ < {iterable["value"]}.length; __iteration__++) {{ {self.iterVar[-1][-1]} = {iterable["value"]}[__iteration__];'
+            if len(variables) == 2:
+                return f'var {self.iterVar[-1][-1]}; for ([{self.iterVar[-1][0]}, {self.iterVar[-1][-1]}] of Array.from({iterable["value"]}).entries()) {{'
+            iteration = f'__tempVar{self.tempVarCounter}__'
+            self.tempVarCounter += 1
+            return f'var {self.iterVar[-1][-1]}; for (var {iteration} = 0; {iteration} < {iterable["value"]}.length; {iteration}++) {{ {self.iterVar[-1][-1]} = {iterable["value"]}[{iteration}];'
         else:
             raise SyntaxError(f'For loop with token {iterable} not implemented yet.')
 
