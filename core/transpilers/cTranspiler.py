@@ -735,7 +735,7 @@ class Transpiler(BaseTranspiler):
         self.write()
         debug(f'Running {self.filename}')
         try:
-            if sys.platforms == 'darwin':
+            if sys.platform == 'darwin':
                 optimizationFlags = ['-Ofast']
             else:
                 optimizationFlags = ['-Ofast', '-frename-registers', '-funroll-loops']
