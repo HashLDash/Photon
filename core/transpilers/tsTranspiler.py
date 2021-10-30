@@ -16,6 +16,13 @@ class Transpiler(JSTranspiler):
         message = message[:-2] + '"'
         return f'prompt({message})'
 
+    def formatFor(self, variables, iterable):
+        if iterable['type'] in {'array', 'str'}:
+            jsFormatFor = super().formatFor(variables, iterable)
+            # now self.iterVar is updated, we can use it
+            return f'var {self.iterVar[-1][0]}; ' + jsFormatFor
+        return super().formatFor(variables, iterable)
+
     def formatPrint(self, value, terminator='\\n'):
         if value['value']:
             return f'Deno.writeAll(Deno.stdout, new TextEncoder().encode(JSON.stringify({value["value"]})+"{terminator}"))'
