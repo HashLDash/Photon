@@ -42,21 +42,19 @@ void list_int_append(list_int* list, long value) {
 }
 
 void list_int_removeAll(list_int* list, long value) {
-    int removedItems=0;
+    int removedItems = 0;
     int listLen = list->len;
-    int firstIndex;
     for (int i=0; i<listLen; i++) {
         if (list->values[i] == value) {
-            firstIndex = i;
             removedItems = 1;
+            for (i=i; i<listLen-removedItems; i++) {
+                if (list->values[i] == value) {
+                    removedItems++;
+                }
+                list->values[i] = list->values[i+removedItems];
+            }
             break;
         }
-    }
-    for (int i=firstIndex; i<listLen-removedItems; i++) {
-        if (list->values[i] == value) {
-            removedItems++;
-        }
-        list->values[i] = list->values[i+removedItems];
     }
     list->len -= removedItems;
     if (list->size >= 4*list->len) {
