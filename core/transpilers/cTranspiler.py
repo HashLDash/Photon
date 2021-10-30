@@ -740,7 +740,7 @@ class Transpiler(BaseTranspiler):
             else:
                 optimizationFlags = ['-Ofast', '-frename-registers', '-funroll-loops']
             debug(' '.join(['gcc', '-O2', '-std=c99', f'Sources/c/{self.filename}'] + list(self.links) + ['-o', 'Sources/c/main']))
-            check_call(['gcc'] + optimizationFlags + '-std=c99', f'Sources/c/{self.filename}'] + list(self.links) + ['-o', 'Sources/c/main'])
+            check_call(['gcc'] + optimizationFlags + ['-std=c99', f'Sources/c/{self.filename}'] + list(self.links) + ['-o', 'Sources/c/main'])
         except Exception as e:
             print(e)
             print('Compilation error. Check errors above.')
