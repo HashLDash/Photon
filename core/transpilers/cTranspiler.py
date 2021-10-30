@@ -27,6 +27,7 @@ class Transpiler(BaseTranspiler):
         if self.debug:
             # compile with debug symbols for gdb
             self.links.add('-g')
+            self.links.add('-Wall')
         self.expressionBuffer = None
         self.listTypes = set()
         self.dictTypes = set()
@@ -389,7 +390,7 @@ class Transpiler(BaseTranspiler):
             if self.iterVar[-1][-1] in self.currentScope:
                 varType = ''
             else:
-                varType = varType + ' '
+                varType = self.nativeType(varType) + ' '
             if len(variables) == 2:
                 counterVar = variables[0]
                 return f'{varType}{self.iterVar[-1][-1]} = {fromVal}; for (long {counterVar}=-1; {self.iterVar[-1][-1]} < {toVal}; {self.iterVar[-1][-1]} += {self.step}) {{ {counterVar}++;'
@@ -400,7 +401,7 @@ class Transpiler(BaseTranspiler):
             if self.iterVar[-1][-1] in self.currentScope:
                 varType = ''
             else:
-                varType = varType
+                varType = self.nativeType(varType)
             if '{var}' in iterable['value']:
                 # Temp array, must be initialized first
                 tempArray = iterable['value'].format(var="__tempArray__")
@@ -416,7 +417,7 @@ class Transpiler(BaseTranspiler):
             else:
                 counterVar = f'__tempVar{self.tempVarCounter}__'
                 self.tempVarCounter += 1
-            return f'{self.nativeType(varType)} {self.iterVar[-1][-1]}; {beginScope}{tempArray}; for (long {counterVar}=0; {counterVar} < {iterable["value"]}.len; {counterVar}++) {{ {self.iterVar[-1][-1]}={iterable["value"]}.values[{counterVar}];'
+            return f'{varType} {self.iterVar[-1][-1]}; {beginScope}{tempArray}; for (long {counterVar}=0; {counterVar} < {iterable["value"]}.len; {counterVar}++) {{ {self.iterVar[-1][-1]}={iterable["value"]}.values[{counterVar}];'
         elif iterable['type'] == 'str':
             varType = 'str'
             self.imports.add('#include <string.h>')

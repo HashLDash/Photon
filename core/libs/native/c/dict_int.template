@@ -1,6 +1,6 @@
 typedef struct dict_int_!@valType@!_entry {
     int prehash;
-    int key;
+    long key;
     !@valNativeType@! val;
 } dict_int_!@valType@!_entry;
 
@@ -17,7 +17,7 @@ typedef struct dict_int_!@valType@! {
     while (self->entries[self->indices[index]].key != key) {
         index = (index + 1) % size;
         if (self->indices[index] == -1) {
-            printf("KeyError: The key !@formatCode@! was not found.\n", key);
+            printf("KeyError: The key %ld was not found.\n", key);
             exit(-1);
         }
     }
@@ -67,7 +67,7 @@ void dict_int_!@valType@!_del(dict_int_!@valType@!* self, long key) {
     while (self->entries[self->indices[index]].key != key) {
         index = (index + 1) % size;
         if (self->indices[index] == -1) {
-            printf("KeyError: The key !@formatCode@! was not found.", key);
+            printf("KeyError: The key %ld was not found.", key);
             exit(-1);
         }
     }
