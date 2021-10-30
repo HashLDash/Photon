@@ -660,12 +660,12 @@ class Transpiler(BaseTranspiler):
         else:
             return super().add(arg1, arg2)
                 
-    def formatDelete(self, expr):
+    def formatDelete(self, expr, name, varType):
         valType = expr['type']
         keyType = expr['indexAccess']['type']
-        if f'list_{valType}_get(' in expr['value']:
+        if varType == 'array':
             return expr['value'].replace(f'list_{valType}_get(', f'list_{valType}_del(') + ';'
-        elif f'dict_{keyType}_{valType}_get(' in expr['value']:
+        elif varType == 'map':
             return expr['value'].replace(f'dict_{keyType}_{valType}_get(', f'dict_{keyType}_{valType}_del(') + ';'
         else:
             raise NotImplemented

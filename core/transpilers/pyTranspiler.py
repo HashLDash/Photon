@@ -48,7 +48,25 @@ class Transpiler(BaseTranspiler):
         return f'{name} = None'
 
     def formatDotAccess(self, tokens):
-        return '.'.join(self.getValAndType(v)['value'] for v in tokens)
+        currentType = None
+        names = []
+        for tok in tokens:
+            v = self.getValAndType(tok) 
+            if currentType == 'map':
+                if v['value'] == 'len':
+                    names = [f"len({'.'.join(names)})"]
+                else:
+                    names.append(v['value'])
+            elif currentType == 'array':
+                if v['value'] == 'len':
+                    names = [f"len({'.'.join(names)})"]
+                else:
+                    names.append(v['value'])
+            else:
+                currentType = v['type']
+                names.append(v['value'])
+
+        return '.'.join(names)
 
     def formatInput(self, expr):
         message = expr['value']
@@ -145,13 +163,18 @@ class Transpiler(BaseTranspiler):
 
     def formatFor(self, variables, iterable):
         if 'from' in iterable:
-            var = variables[0]['value']
+            var = ', '.join(variables)
             fromVal = iterable['from']['value']
             step = iterable['step']['value']
             toVal = iterable['to']['value']
+            if len(variables) == 2:
+                return f'for {var} in enumerate(range({fromVal}, {toVal}, {step})):'
             return f'for {var} in range({fromVal}, {toVal}, {step}):'
         else:
-            return f'for {variables[0]["value"]} in {iterable["value"]}:'
+            if len(variables) == 2:
+                var = ', '.join(variables)
+                return f'for {var} in enumerate({iterable["value"]}):'
+            return f'for {variables[0]} in {iterable["value"]}:'
 
     def formatEndFor(self):
         return "#end"
@@ -212,7 +235,7 @@ class Transpiler(BaseTranspiler):
     def orOperator(self, arg1, arg2):
         return {'value':f'{arg1["value"]} or {arg2["value"]}', 'type':'bool'}
 
-    def formatDelete(self, expr):
+    def formatDelete(self, expr, name, varType):
         return f'del {expr["value"]}'
 
     def formatPrint(self, value, terminator='\\n'):
