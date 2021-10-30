@@ -1057,10 +1057,14 @@ class BaseTranspiler():
         return {'value':f'{op}({expr["value"]})', 'type':expr['type']}
 
     def delete(self, token):
-        expr = self.processExpr(token['expr'])
-        if 'indexAccess' in expr:
+        t = deepcopy(token['expr'])
+        if 'indexAccess' in t['args'][-1]:
+            del t['args'][-1]['indexAccess']
+            v = self.processExpr(t)
+            name, varType = v['value'], v['type']
+            expr = self.processExpr(token['expr'])
             expr['indexAccess'] = self.processExpr(expr['indexAccess'])
-        self.insertCode(self.formatDelete(expr))
+        self.insertCode(self.formatDelete(expr, name, varType))
 
     def isBlock(self, line):
         for b in self.block:

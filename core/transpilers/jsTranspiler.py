@@ -46,7 +46,25 @@ class Transpiler(BaseTranspiler):
         return f'var {name} = {self.null}'
 
     def formatDotAccess(self, tokens):
-        return '.'.join(self.getValAndType(v)['value'] for v in tokens).replace('self.','this.')
+        currentType = None
+        names = []
+        for tok in tokens:
+            v = self.getValAndType(tok) 
+            if currentType == 'map':
+                if v['value'] == 'len':
+                    names = [f"Object.keys({'.'.join(names)}).length"]
+                else:
+                    names.append(v['value'])
+            elif currentType == 'array':
+                if v['value'] == 'len':
+                    names = [f"{'.'.join(names)}.length"]
+                else:
+                    names.append(v['value'])
+            else:
+                currentType = v['type']
+                names.append(v['value'])
+
+        return '.'.join(names).replace('self.','this.')
     
     def formatInput(self, expr):
         if not self.target == 'web':
@@ -153,18 +171,23 @@ class Transpiler(BaseTranspiler):
     def formatFor(self, variables, iterable):
         self.step = 0
         if 'from' in iterable:
-            self.iterVar.append(variables[0]['value'])
+            self.iterVar.append(variables)
             fromVal = iterable['from']['value']
             self.step = iterable['step']['value']
             toVal = iterable['to']['value']
-            return f'for (var {self.iterVar[-1]} = {fromVal}; {self.iterVar[-1]} < {toVal}; {self.iterVar[-1]} += {self.step}) {{'
+            return f'for (var {self.iterVar[-1][-1]} = {fromVal}; {self.iterVar[-1][-1]} < {toVal}; {self.iterVar[-1][-1]} += {self.step}) {{'
         elif iterable['type'] == 'array':
-            self.iterVar.append(variables[0]['value'])
-            return f'var {self.iterVar[-1]}; for (var __iteration__ = 0; __iteration__ < {iterable["value"]}.length; __iteration__++) {{ {self.iterVar[-1]} = {iterable["value"]}[__iteration__];'
+            self.iterVar.append(variables)
+            return f'var {self.iterVar[-1][-1]}; for (var __iteration__ = 0; __iteration__ < {iterable["value"]}.length; __iteration__++) {{ {self.iterVar[-1][-1]} = {iterable["value"]}[__iteration__];'
+        elif iterable['type'] == 'str':
+            self.iterVar.append(variables)
+            return f'var {self.iterVar[-1][-1]}; for (var __iteration__ = 0; __iteration__ < {iterable["value"]}.length; __iteration__++) {{ {self.iterVar[-1][-1]} = {iterable["value"]}[__iteration__];'
+        else:
+            raise SyntaxError(f'For loop with token {iterable} not implemented yet.')
 
     def formatEndFor(self):
         if self.step:
-            return f'}} {self.iterVar.pop()} -= {self.step};'
+            return f'}} {self.iterVar.pop()[-1]} -= {self.step};'
         # consume iter var for this loop
         self.iterVar.pop()
         return '}'
@@ -220,9 +243,16 @@ class Transpiler(BaseTranspiler):
             varType = 'float'
         return {'value':f'Math.pow({arg1["value"]}, {arg2["value"]})', 'type':varType}
 
+    def formatDelete(self, expr, name, varType):
+        if varType == 'array':
+            return f'{name}.splice({expr["indexAccess"]["value"]}, 1)'
+        return f'delete {expr["value"]}'
+
     def formatPrint(self, value, terminator='\\n'):
         if value['value']:
-            return f'process.stdout.write({value["value"]}+"{terminator}");'
+            if terminator == '\\n':
+                return f'console.log({value["value"]});'
+            return f'process.stdout.write(JSON.stringify({value["value"]})+"{terminator}");'
         return f'process.stdout.write("{terminator}");'
 
     def write(self):

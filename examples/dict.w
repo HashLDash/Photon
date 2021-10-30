@@ -7,7 +7,7 @@
 #   int:float `dictionary_name`
 #   int:str `dictionary_name`
 
-# Example of creating and assigning keys and values ​​to the dictionary
+# Example of creating and assigning keys and values to the dictionary
 #int:int my_dict = { 1:1, 2:4, 3:9, 4:16 }
 
 int:int dict_int = {}
