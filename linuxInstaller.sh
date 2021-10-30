@@ -53,7 +53,7 @@ if [ "$installDeps" == "true" ]; then
     elif [ "$(uname)" == "Darwin" ]; then
         if ! command -v brew &> /dev/null
         then
-            echo "brew could not be found"
+            echo "brew could not be found. Installing it..."
             $SUDO /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
         fi
         $SUDO brew install gcc git python3
