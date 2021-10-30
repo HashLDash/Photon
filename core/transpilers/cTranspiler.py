@@ -27,6 +27,7 @@ class Transpiler(BaseTranspiler):
         if self.debug:
             # compile with debug symbols for gdb
             self.links.add('-g')
+            self.links.add('-Wall')
         self.expressionBuffer = None
         self.listTypes = set()
         self.dictTypes = set()
@@ -379,29 +380,28 @@ class Transpiler(BaseTranspiler):
     def formatFor(self, variables, iterable):
         self.step = 0
         self.freeTempArray = ''
+        self.iterVar.append(variables)
         if 'from' in iterable:
             # For with range
-            self.iterVar = variables
             varType = iterable['type']
             fromVal = iterable['from']['value']
             self.step = iterable['step']['value']
             toVal = iterable['to']['value']
-            if self.iterVar[-1] in self.currentScope:
+            if self.iterVar[-1][-1] in self.currentScope:
                 varType = ''
             else:
-                varType = varType + ' '
+                varType = self.nativeType(varType) + ' '
             if len(variables) == 2:
                 counterVar = variables[0]
-                return f'{varType}{self.iterVar[-1]} = {fromVal}; for (int {counterVar}=-1; {self.iterVar[-1]} < {toVal}; {self.iterVar[-1]} += {self.step}) {{ {counterVar}++;'
+                return f'{varType}{self.iterVar[-1][-1]} = {fromVal}; for (long {counterVar}=-1; {self.iterVar[-1][-1]} < {toVal}; {self.iterVar[-1][-1]} += {self.step}) {{ {counterVar}++;'
             else:
-                return f'{varType}{self.iterVar[-1]} = {fromVal}; for (; {self.iterVar[-1]} < {toVal}; {self.iterVar[-1]} += {self.step}) {{'
+                return f'{varType}{self.iterVar[-1][-1]} = {fromVal}; for (; {self.iterVar[-1][-1]} < {toVal}; {self.iterVar[-1][-1]} += {self.step}) {{'
         elif iterable['type'] == 'array':
             varType = iterable['elementType']
-            self.iterVar = variables
-            if self.iterVar[-1] in self.currentScope:
+            if self.iterVar[-1][-1] in self.currentScope:
                 varType = ''
             else:
-                varType = varType
+                varType = self.nativeType(varType)
             if '{var}' in iterable['value']:
                 # Temp array, must be initialized first
                 tempArray = iterable['value'].format(var="__tempArray__")
@@ -417,24 +417,24 @@ class Transpiler(BaseTranspiler):
             else:
                 counterVar = f'__tempVar{self.tempVarCounter}__'
                 self.tempVarCounter += 1
-            return f'{self.nativeType(varType)} {self.iterVar[-1]}; {beginScope}{tempArray}; for (int {counterVar}=0; {counterVar} < {iterable["value"]}.len; {counterVar}++) {{ {self.iterVar[-1]}={iterable["value"]}.values[{counterVar}];'
+            return f'{varType} {self.iterVar[-1][-1]}; {beginScope}{tempArray}; for (long {counterVar}=0; {counterVar} < {iterable["value"]}.len; {counterVar}++) {{ {self.iterVar[-1][-1]}={iterable["value"]}.values[{counterVar}];'
         elif iterable['type'] == 'str':
             varType = 'str'
-            self.iterVar = variables
             self.imports.add('#include <string.h>')
-            if self.iterVar[-1] in self.currentScope:
+            if self.iterVar[-1][-1] in self.currentScope:
                 varCreation = f''
             else:
-                varCreation = f'char {self.iterVar[-1]}[] = \" \";'
+                varCreation = f'char {self.iterVar[-1][-1]}[] = \" \";'
             if len(variables) == 2:
-                counterVarUpdate = f'{variables[0]}++;'
+                counterVar = f'{variables[0]}'
                 if variables[0] in self.currentScope:
-                    counterVarCreation = f'{variables[0]} = -1;'
+                    counterVarType = ''
                 else:
-                    counterVarCreation = f"int {variables[0]} = -1;"
+                    counterVarType = self.nativeType('int')
             else:
-                counterVarCreation = ''
-                counterVarUpdate = ''
+                counterVar = f'__tempVar{self.tempVarCounter}'
+                self.tempVarCounter += 1
+                counterVarType = self.nativeType('int')
             charLen = f'__tempVar{self.tempVarCounter}__'
             self.tempVarCounter += 1
             if iterable['value'].startswith('"'):
@@ -446,25 +446,27 @@ class Transpiler(BaseTranspiler):
                 iterableVar = iterable['value']
             pos = f'__tempVar{self.tempVarCounter}__'
             self.tempVarCounter += 1
+            temp = f'__tempVar{self.tempVarCounter}__'
+            self.tempVarCounter += 1
             return f"""{iterableVarCreation}
-    int {pos} = 0;
+    long {pos} = 0;
     int {charLen};
     {varCreation}
-    {counterVarCreation}
+    {counterVarType} {counterVar} = -1;
     while ({iterableVar}[{pos}] != '\\0' && ({charLen} = mblen({iterableVar}+{pos}, 2))) {{
-        for (int i=0; i<{charLen}; i++) {{
-            {self.iterVar[-1]}[i] = {iterableVar}[{pos}+i];
+        for (int {temp} = 0; {temp}<{charLen}; {temp}++) {{
+            {self.iterVar[-1][-1]}[{temp}] = {iterableVar}[{pos}+{temp}];
         }}
-        {self.iterVar[-1]}[{charLen}] = '\\0';
+        {self.iterVar[-1][-1]}[{charLen}] = '\\0';
         {pos} += {charLen};
-        {counterVarUpdate}"""
+        {counterVar}++;"""
         else:
             raise SyntaxError(f'Format for with iterable {iterable["type"]} not suported yet.')
     
     def formatEndFor(self):
         if self.step:
             # Must also close the tempArray scope block
-            return f'}} {self.iterVar.pop()} -= {self.step};{self.freeTempArray}'
+            return f'}} {self.iterVar.pop()[-1]} -= {self.step};{self.freeTempArray}'
         else:
             # consume the iterVar of this loop
             self.iterVar.pop()
@@ -660,12 +662,12 @@ class Transpiler(BaseTranspiler):
         else:
             return super().add(arg1, arg2)
                 
-    def formatDelete(self, expr):
+    def formatDelete(self, expr, name, varType):
         valType = expr['type']
         keyType = expr['indexAccess']['type']
-        if f'list_{valType}_get(' in expr['value']:
+        if varType == 'array':
             return expr['value'].replace(f'list_{valType}_get(', f'list_{valType}_del(') + ';'
-        elif f'dict_{keyType}_{valType}_get(' in expr['value']:
+        elif varType == 'map':
             return expr['value'].replace(f'dict_{keyType}_{valType}_get(', f'dict_{keyType}_{valType}_del(') + ';'
         else:
             raise NotImplemented
@@ -733,11 +735,16 @@ class Transpiler(BaseTranspiler):
 
     def run(self):
         from subprocess import call, check_call
+        import sys
         self.write()
         debug(f'Running {self.filename}')
         try:
+            if sys.platform == 'darwin':
+                optimizationFlags = ['-Ofast']
+            else:
+                optimizationFlags = ['-Ofast', '-frename-registers', '-funroll-loops']
             debug(' '.join(['gcc', '-O2', '-std=c99', f'Sources/c/{self.filename}'] + list(self.links) + ['-o', 'Sources/c/main']))
-            check_call(['gcc', '-Ofast', '-frename-registers', '-funroll-loops', '-std=c99', f'Sources/c/{self.filename}'] + list(self.links) + ['-o', 'Sources/c/main'])
+            check_call(['gcc'] + optimizationFlags + ['-std=c99', f'Sources/c/{self.filename}'] + list(self.links) + ['-o', 'Sources/c/main'])
         except Exception as e:
             print(e)
             print('Compilation error. Check errors above.')
