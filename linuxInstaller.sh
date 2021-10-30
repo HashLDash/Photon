@@ -9,7 +9,7 @@ printf "Checking Photon dependencies...\n"
 
 installDeps="false";
 
-if ! command -v gita &> /dev/null
+if ! command -v git &> /dev/null
 then
     echo "git could not be found"
     installDeps="true";
