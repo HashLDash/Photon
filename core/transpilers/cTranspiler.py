@@ -426,14 +426,15 @@ class Transpiler(BaseTranspiler):
             else:
                 varCreation = f'char {self.iterVar[-1][-1]}[] = \" \";'
             if len(variables) == 2:
-                counterVarUpdate = f'{variables[0]}++;'
+                counterVar = f'{variables[0]}'
                 if variables[0] in self.currentScope:
-                    counterVarCreation = f'{variables[0]} = -1;'
+                    counterVarType = ''
                 else:
-                    counterVarCreation = f"long {variables[0]} = -1;"
+                    counterVarType = self.nativeType('int')
             else:
-                counterVarCreation = ''
-                counterVarUpdate = ''
+                counterVar = f'__tempVar{self.tempVarCounter}'
+                self.tempVarCounter += 1
+                counterVarType = self.nativeType('int')
             charLen = f'__tempVar{self.tempVarCounter}__'
             self.tempVarCounter += 1
             if iterable['value'].startswith('"'):
@@ -445,18 +446,20 @@ class Transpiler(BaseTranspiler):
                 iterableVar = iterable['value']
             pos = f'__tempVar{self.tempVarCounter}__'
             self.tempVarCounter += 1
+            temp = f'__tempVar{self.tempVarCounter}__'
+            self.tempVarCounter += 1
             return f"""{iterableVarCreation}
     long {pos} = 0;
     int {charLen};
     {varCreation}
-    {counterVarCreation}
+    {counterVarType} {counterVar} = -1;
     while ({iterableVar}[{pos}] != '\\0' && ({charLen} = mblen({iterableVar}+{pos}, 2))) {{
-        for (int i=0; i<{charLen}; i++) {{
-            {self.iterVar[-1][-1]}[i] = {iterableVar}[{pos}+i];
+        for (int {temp} = 0; {temp}<{charLen}; {temp}++) {{
+            {self.iterVar[-1][-1]}[{temp}] = {iterableVar}[{pos}+{temp}];
         }}
         {self.iterVar[-1][-1]}[{charLen}] = '\\0';
         {pos} += {charLen};
-        {counterVarUpdate}"""
+        {counterVar}++;"""
         else:
             raise SyntaxError(f'Format for with iterable {iterable["type"]} not suported yet.')
     

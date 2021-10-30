@@ -1,2 +1,4 @@
-for i in "asdasd":
-    print(' {i}')
+for i in "bbb":
+    print(i)
+for n, i in "asddsddddd":
+    print('{n} {i}')
