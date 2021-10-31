@@ -1,11 +1,11 @@
 from interpreter import Interpreter
 
 class BaseToolchain():
-    def __init__(self, platform, test=False, standardLibs=''):
+    def __init__(self, platform, filename='main.w', test=False, standardLibs=''):
         self.standardLibs = standardLibs
         self.platform = platform
         self.test = test
-        self.interpreter = Interpreter('main.w', standardLibs=standardLibs, transpileOnly=True)
+        self.interpreter = Interpreter(filename, standardLibs=standardLibs, transpileOnly=True)
 
     def logcat(self):
         pass

@@ -6,15 +6,16 @@
 import sys
 
 class Builder():
-    def __init__(self, platform, standardLibs='', **kwargs):
+    def __init__(self, platform, filename="main.w", standardLibs='', **kwargs):
         print(f'Platform: {platform}')
+        print(f'Filename: {filename}')
         if platform == 'shared':
             from toolchains.shared import Toolchain
         else:
             print('This platform is not supported yet.')
             sys.exit()
-        Toolchain(platform, standardLibs=standardLibs).getBuildFiles()
-        Toolchain(platform, standardLibs=standardLibs).transpile()
-        Toolchain(platform, standardLibs=standardLibs).prepare()
-        Toolchain(platform, standardLibs=standardLibs).make()
-        Toolchain(platform, standardLibs=standardLibs).runProject()
+        Toolchain(platform, filename=filename, standardLibs=standardLibs).getBuildFiles()
+        Toolchain(platform, filename=filename, standardLibs=standardLibs).transpile()
+        Toolchain(platform, filename=filename, standardLibs=standardLibs).prepare()
+        Toolchain(platform, filename=filename, standardLibs=standardLibs).make()
+        Toolchain(platform, filename=filename, standardLibs=standardLibs).runProject()
