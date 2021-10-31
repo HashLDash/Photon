@@ -56,7 +56,10 @@ if __name__ == "__main__":
         print(f'Photon Version {__version__}')
     elif first == '--build' or first == '-b':
         try:
-            Builder(platform = sys.argv[2], standardLibs = os.path.join(PHOTON_INSTALL_PATH, 'libs/'), debug=DEBUG)
+            filename = "main.w"
+            if "shared" != sys.argv[-1] and (sys.argv[-1][-2] + sys.argv[-1][-1]) == ".w":
+                filename = sys.argv[-1]
+            Builder(platform = sys.argv[2], filename = filename, standardLibs = os.path.join(PHOTON_INSTALL_PATH, 'libs/'), debug = DEBUG)
         except IndexError:
             print(f'ERROR: Platform [{(", ".join(platforms))}] not informed.')
     elif first == '--lang' or first == '-l':
