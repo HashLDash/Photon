@@ -525,8 +525,8 @@ class Transpiler(BaseTranspiler):
     def formatClassDefaultValue(self, arg):
         if 'name' in arg:
             # its a kwarg
-            name = kwarg['name']
-            value = kwarg['value']
+            name = arg['name']
+            value = arg['value']
         else:
             # its an arg
             name = arg['value']
@@ -734,7 +734,6 @@ class Transpiler(BaseTranspiler):
                     else:
                         # Ugly, but faster
                         f.write(' ' * indent + line.replace('/*def*/', '') + '\n')
-                    print(self.isBlock(line), line)
                     if self.isBlock(line):
                         indent += 4
         debug('Generated ' + self.filename)
