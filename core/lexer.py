@@ -381,7 +381,6 @@ def args(i, t):
         elif tok['token'] == 'expr':
             # Only valid for self.var
             if 'dotAccess' in tok['args'][0] and len(tok['args'][0]['dotAccess']) == 2:
-                del tok['args'][0]['dotAccess'][0]
                 tok['attribute'] = True
             args.append(tok)
     t[i] = {'token':'args','args':args}

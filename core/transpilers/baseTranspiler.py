@@ -589,6 +589,7 @@ class BaseTranspiler():
                 attr = {'type':tok['type'], 'value':arg['value']}
                 if 'attribute' in tok:
                     attr['default'] = True
+                    attr['value'] = tok['args'][0]['dotAccess'][-1]['name']
                 args.append(attr)
         return args
 
