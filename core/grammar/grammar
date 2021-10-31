@@ -18,6 +18,7 @@ floatNumber = num dot num
             | num dot
 
 dotAccess = expr dot expr
+          | (type expr) space dot expr
           | dot expr
 
 group = lparen expr rparen

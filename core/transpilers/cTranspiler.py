@@ -522,9 +522,14 @@ class Transpiler(BaseTranspiler):
             size = 8
         return f"{{ {len(elements)}, {size}, malloc(sizeof({elementType})*{size}) }}"
 
-    def formatClassDefaultValue(self, kwarg):
-        name = kwarg['name']
-        value = kwarg['value']
+    def formatClassDefaultValue(self, arg):
+        if 'name' in arg:
+            # its a kwarg
+            name = kwarg['name']
+            value = kwarg['value']
+        else:
+            # its an arg
+            name = arg['value']
         return f'{self.self}->{name} = {name};'
 
     def formatClassInit(self, className, variable):
@@ -729,6 +734,7 @@ class Transpiler(BaseTranspiler):
                     else:
                         # Ugly, but faster
                         f.write(' ' * indent + line.replace('/*def*/', '') + '\n')
+                    print(self.isBlock(line), line)
                     if self.isBlock(line):
                         indent += 4
         debug('Generated ' + self.filename)

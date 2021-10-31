@@ -334,6 +334,18 @@ class BaseTranspiler():
         return token['args'][0]
 
     def processClassAttribute(self, token):
+        if 'default' in token:
+            # positional default argument
+            initVals = {
+                'int': '0',
+                'str': '""',
+                'float': '0.0',
+            }
+            self.classes[self.inClass]['scope'][token['value']] = {'type': token['type']}
+            expr = {'value': initVals[token['type']],'type':token['type']}
+            self.classes[self.inClass]['attributes'].append({'variable':token, 'expr':expr})
+            return
+
         variable = self.processVar(token['target'])
         expr = token['expr']
             
@@ -574,7 +586,10 @@ class BaseTranspiler():
             else:
                 # ignore value type because of the scope
                 # Function arguments need explicit type
-                args.append( {'type':tok['type'], 'value':arg['value']} )
+                attr = {'type':tok['type'], 'value':arg['value']}
+                if 'attribute' in tok:
+                    attr['default'] = True
+                args.append(attr)
         return args
 
     def processKwargs(self, tokens, inferType=False):
@@ -809,6 +824,8 @@ class BaseTranspiler():
                 argType = arg['type']
                 argVal = arg['value']
                 self.currentScope[argVal] = {'type':argType}
+                if self.inClass and 'default' in arg:
+                    self.processClassAttribute(arg)
             # put kwargs in scope
             for kw in kwargs:
                 kwType = kw['type']
@@ -865,6 +882,9 @@ class BaseTranspiler():
             argType = arg['type']
             argVal = arg['value']
             self.currentScope[argVal] = {'type':argType}
+            if self.inClass and 'default' in arg:
+                self.insertCode(self.formatClassDefaultValue(arg))
+                self.processClassAttribute(arg)
         # put kwargs in scope
         for kw in kwargs:
             kwType = kw['type']
@@ -1080,6 +1100,7 @@ class BaseTranspiler():
                         continue
                     else:
                         return True
+                return True
         return False
 
     def run(self):

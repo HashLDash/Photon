@@ -379,6 +379,10 @@ def args(i, t):
         if tok['token'] == 'args':
             args += tok['args']
         elif tok['token'] == 'expr':
+            # Only valid for self.var
+            if 'dotAccess' in tok['args'][0] and len(tok['args'][0]['dotAccess']) == 2:
+                del tok['args'][0]['dotAccess'][0]
+                tok['attribute'] = True
             args.append(tok)
     t[i] = {'token':'args','args':args}
     del t[i+1] # comma
@@ -732,6 +736,7 @@ def dotAccess(i, t):
     ''' Verify if its a dotAccess and return a dotAccess token
         if it is.
     '''
+    varType = 'unknown'
     if t[i]['token'] == 'dot':
         if not t[i-1]['token'] in {'dot', 'var', 'dotAccess'}\
                 and t[i+1]['args'][0]['token'] in {'var', 'dotAccess'}:
@@ -743,7 +748,20 @@ def dotAccess(i, t):
             # not a valid shorthand for self.
             return 'continue'
     else:
-        if not t[i]['args'][-1]['token'] in {'var','dotAccess'}\
+        if t[i+1]['token'] == 'space':
+            # First arg is the type and second is self. shorthand notation
+            names = [{'token':'var', 'type':'unknown', 'name':'self'}]
+            if t[i]['token'] == 'var':
+                varType = t[i]['args'][0]['name']
+            elif t[i]['token'] == 'type':
+                varType = t[i]['type']
+            else:
+                raise SyntaxError('Type token {t[i]["token"]} not supported')
+            t[i] = convertToExpr(names[0])
+            secondToken = t[i+3]
+            del t[i+1] # space
+
+        if not t[i]['args'][-1]['token'] in {'var','dotAccess', 'type'}\
             or not t[i+2]['args'][0]['token'] in {'var', 'dotAccess'}:
             # Not a valid dotAccess
             return 'continue'
@@ -772,7 +790,8 @@ def dotAccess(i, t):
     # Update the current expression token
     t[i]['args'] = args
     t[i]['ops'] = ops
-    
+    t[i]['type'] = varType
+    t[i]['args'][0]['type'] = varType
     del t[i+1] # var or dotAccess
     return t
 

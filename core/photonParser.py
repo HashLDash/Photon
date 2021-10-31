@@ -61,7 +61,7 @@ def parse(line, filename='', no=-1, debug=False):
     tokenized = []
     preserveSpace = False
     quote = ''
-    for i in tokens:
+    for n, i in enumerate(tokens):
         if not indentationSet and not (i == ' ' or i == '\t'):
             indentationSet = True
             tokenized.append({'token':'indent','indent':indentation})
@@ -74,6 +74,9 @@ def parse(line, filename='', no=-1, debug=False):
         elif i in types:
             tokenized.append({'token':'type','type':i})
         elif i in symbols:
+            if i == ' ' and tokens[n+1] == '.' and tokenized[-1]['token'] in {'var', 'type'}:
+                tokenized.append({'token':symbols[i], 'symbol':i})
+                continue
             if i == "'" or i == '"':
                 if not preserveSpace:
                     preserveSpace = True

@@ -17,6 +17,8 @@ patterns = {
   ('num', 'dot', 'num'): floatNumber,
   ('num', 'dot'): floatNumber,
   ('expr', 'dot', 'expr'): dotAccess,
+  ('type', 'space', 'dot', 'expr'): dotAccess,
+  ('expr', 'space', 'dot', 'expr'): dotAccess,
   ('dot', 'expr'): dotAccess,
   ('lparen', 'expr', 'rparen'): group,
   ('equal', 'equal'): operator,

@@ -1,7 +1,7 @@
 # Please, consider using the following when contributing
 
 - Variables, functions should use camel case, starting with lower-case
-- Classes should be camel case, starting with upper-case
+- Classes should be pascal case, starting with upper-case
 - Global variables should be all upper-case
 
 # Naming conventions
