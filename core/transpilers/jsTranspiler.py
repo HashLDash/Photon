@@ -232,10 +232,15 @@ class Transpiler(BaseTranspiler):
     def formatEndClass(self):
         return '}'
 
-    def formatClassDefaultValue(self, kwarg):
-        name = kwarg['name']
-        value = kwarg['value']
-        return f'{self.self}.{name} = {value};'
+    def formatClassDefaultValue(self, arg):
+        if 'name' in arg:
+            # it's a kwarg
+            name = arg['name']
+            value = arg['value']
+        else:
+            # it's an arg
+            name = arg['value']
+        return f'{self.self}.{name} = {name}'
 
     def formatClassAttribute(self, attr):
         if 'returnType' in attr:
