@@ -76,7 +76,7 @@ assign = expr equal expr
 delete = delStatement expr
 
 function = defStatement expr lparen (expr args assign kwargs) rparen beginBlock
-         | defStatement expr lparen (expr args) kwargs rparen beginBlock
+         | defStatement expr lparen (expr args) comma (assign kwargs) rparen beginBlock
          | defStatement expr lparen rparen beginBlock
 
 classDefinition = classStatement expr lparen rparen beginBlock
