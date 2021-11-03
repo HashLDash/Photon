@@ -9,8 +9,18 @@
 my_int = 1
 my_float = 3.1415
 my_string = "The name of this programming language is called Photon"
-my_int_array = [1,2,3]
-my_float_array = [1,2,2.4,3.0]
+my_int_array = [1, 2, 3]
+my_float_array = [1.1, 2.1, 3.1]
+my_str_array = ["My name", "is Johann"]
+
+print("Variables typed by inference:")
+print(my_int)
+print(my_float)
+print(my_string)
+print(my_int_array)
+print(my_float_array)
+print(my_str_array)
+print()
 
 #-----------------------------------------------------------------------------------------
 # Explicitly typed variables
@@ -42,3 +52,11 @@ array_float += 3.1
 str array_str = []
 array_str += "My name"
 array_str += "is Johann"
+
+print("Variables explicitly typed:")
+print(number_int)
+print(number_real)
+print(text)
+print(array_int)
+print(array_float)
+print(array_str)
