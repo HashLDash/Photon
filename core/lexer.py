@@ -186,7 +186,7 @@ def mapType(i, t):
     else:
         raise SyntaxError('Map val type tok {t[i]["token"} not implemented.')
 
-    t[i] = {'token':'type', 'type':'map', 'keyType':keyType, 'valType':valType}
+    t[i] = {'token':'type', 'type':'map', 'keyType':keyType, 'valType':valType, 'size':'unknown'}
 
     del t[i+1] #beginBlock
     del t[i+1] #var or type
@@ -259,6 +259,8 @@ def typeDeclaration(i, t):
         t[i]['type'] = 'map'
         t[i]['keyType'] = keyType
         t[i]['valType'] = valType
+        #TODO: Implement map size hint
+        t[i]['size'] = 'unknown'
     for _ in range(n):
         del t[i+1] # type and var types
     return t
@@ -690,7 +692,7 @@ def hashmap(i, t):
         elements = t[i+1]['keyVals']
         del t[i+1] # keyVals
     t[i] = convertToExpr({'token':'map','type':'map','valType':'unknown','keyType':'unknown',
-        'elements':elements})
+        'elements':elements, 'size':'unknown'})
     del t[i+1] # rbrace
     return t
 

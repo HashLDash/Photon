@@ -127,7 +127,7 @@ class Transpiler(BaseTranspiler):
             raise SyntaxError(f'Dict of type {className} not implemented yet.')
         size = 10
         if elements:
-            initValues = ';'.join(f'dict_{keyType}_{valType}_set(&{{var}}, {v[0]}, {v[1]})' for v in elements) + ';'
+            initValues = ';'.join(f'dict_{keyType}_{valType}_set(&{{var}}, {v[0]["value"]}, {v[1]["value"]})' for v in elements) + ';'
         else:
             initValues = ''
         return f"{className} {{var}} = {{{{ 0, {size}, malloc(sizeof(int)*{size}), malloc(sizeof(dict_{keyType}_{valType}_entry)*{size}) }}}}; for(int i=0; i<{size}; i++) {{{{ {{var}}.indices[i]=-1; }}}} {initValues};{initValues}"

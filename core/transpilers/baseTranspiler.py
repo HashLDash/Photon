@@ -264,7 +264,7 @@ class BaseTranspiler():
                 raise SyntaxError('Map with dynamic types not implemented yet.')
         return {'value':self.formatMap(elements, keyType, valType),
             'type':'map', 'elements':elements, 'valType':valType,
-            'keyType':keyType}
+            'keyType':keyType, 'size':'unknown'}
 
     def getValAndType(self, token):
         if 'value' in token and 'type' in token and (self.typeKnown(token['type']) or not self.insertMode):
@@ -437,15 +437,16 @@ class BaseTranspiler():
                     else:
                         raise SyntaxError(f'Array with unknown type not implemented yet.')
                     self.currentScope[variable['value']]['size'] = expr['size']
-                #elif varType == 'map':
-                #    if self.typeKnown(expr['valType']):
-                #        self.currentScope[variable['value']]['keyType'] = expr['keyType']
-                #    elif self.typeKnown(variable['type']):
-                #        self.currentScope[variable['value']]['keyType'] = variable['keyType']
-                #        self.currentScope[variable['value']]['valType'] = variable['valType']
-                #    else:
-                #        raise SyntaxError(f'Array with unknown type not implemented yet.')
-                #    self.currentScope[variable['value']]['size'] = expr['size']
+                elif varType == 'map':
+                    if self.typeKnown(expr['valType']) and self.typeKnown(expr['keyType']):
+                        self.currentScope[variable['value']]['keyType'] = expr['keyType']
+                        self.currentScope[variable['value']]['valType'] = expr['valType']
+                    elif self.typeKnown(variable['type']):
+                        self.currentScope[variable['value']]['keyType'] = variable['keyType']
+                        self.currentScope[variable['value']]['valType'] = variable['valType']
+                    else:
+                        raise SyntaxError(f'Array with unknown type not implemented yet.')
+                    self.currentScope[variable['value']]['size'] = expr['size']
                 target['type'] = varType
 
         if target['token'] == 'var':
