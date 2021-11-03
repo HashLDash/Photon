@@ -8,9 +8,9 @@ print("---------------------------------------------")
 print("# import conditionals_ex")
 import conditionals_ex
 
-#print("---------------------------------------------")
-#print("# import dict_ex")
-#import dict_ex
+print("---------------------------------------------")
+print("# import dict_ex")
+import dict_ex
 
 print("---------------------------------------------")
 print("# import for_target_ex")
