@@ -121,20 +121,16 @@ class Transpiler(BaseTranspiler):
     def formatMap(self, elements, keyType, valType):
         className = f'dict_{keyType.replace("*", "ptr")}_{valType.replace("*", "ptr")}'
         self.dictTypes.add((keyType, valType))
-        self.listTypes.add(keyType)
-        self.listTypes.add(valType)
         if keyType in {'int', 'float', 'str'} and valType in {'int', 'float', 'str'}:
             self.imports.add(f'#include "{className}.h"')
         else:
             raise SyntaxError(f'Dict of type {className} not implemented yet.')
         size = 10
         if elements:
-            initValues = ';'.join(f'dict_{keyType}_{valType}_set(&{{var}}, {v[0]}, {v[1]})' for v in elements)
+            initValues = ';'.join(f'dict_{keyType}_{valType}_set(&{{var}}, {v[0]}, {v[1]})' for v in elements) + ';'
         else:
             initValues = ''
-        #keyType = self.nativeType(keyType)
-        #valType = self.nativeType(valType)
-        return f"{className} {{var}} = {{{{ 0, {size}, malloc(sizeof(int)*{size}), malloc(sizeof(dict_{keyType}_{valType}_entry)*{size}) }}}}; for(int i=0; i<{size}; i++) {{{{ {{var}}.indices[i]=-1; }}}} {initValues};"
+        return f"{className} {{var}} = {{{{ 0, {size}, malloc(sizeof(int)*{size}), malloc(sizeof(dict_{keyType}_{valType}_entry)*{size}) }}}}; for(int i=0; i<{size}; i++) {{{{ {{var}}.indices[i]=-1; }}}} {initValues};{initValues}"
 
     def formatInput(self, expr):
         self.imports.add('#include "photonInput.h"')
