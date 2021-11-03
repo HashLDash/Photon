@@ -381,7 +381,6 @@ def args(i, t):
         elif tok['token'] == 'expr':
             # Only valid for self.var
             if 'dotAccess' in tok['args'][0] and len(tok['args'][0]['dotAccess']) == 2:
-                del tok['args'][0]['dotAccess'][0]
                 tok['attribute'] = True
             args.append(tok)
     t[i] = {'token':'args','args':args}
@@ -628,9 +627,14 @@ def function(i, t):
         pass
     else:
         raise SyntaxError(f'function arg with token {t[i+3]} not supported.')
-    if t[i+3]['token'] == 'kwargs':
-        t[i]['kwargs'] = t[i+3]['kwargs']
-        del t[i+1] # kwargs
+    if t[i+3]['token'] == 'comma':
+        del t[i+3]
+        if t[i+3]['token'] == 'assign':
+            t[i]['kwargs'] += [assign2kwarg(t[i+3])]
+            del t[i+1] # assign
+        elif t[i+3]['token'] == 'kwargs':
+            t[i]['kwargs'] += t[i+3]['kwargs']
+            del t[i+1] # kwargs
     del t[i+1] # var
     del t[i+1] # lparen
     del t[i+1] # rparen
