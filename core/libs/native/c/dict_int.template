@@ -25,12 +25,26 @@ typedef struct dict_int_!@valType@! {
 }
 
 void dict_int_!@valType@!_set(dict_int_!@valType@!* self, long key, !@valNativeType@! value) {
+    // Check if key already exists
+    int size = self->size;
+    int index = key % size;
+    while (self->indices[index] != -1) {
+        if (self->entries[self->indices[index]].key == key) {
+            // found, just update its value
+            self->entries[self->indices[index]].val = value;
+            return;
+        }
+        index = (index + 1) % size;
+    }
+    // Insert new key and val
     int dictLen = self->len;
+    self->indices[index] = dictLen;
     self->entries[dictLen].prehash = key; 
     self->entries[dictLen].key = key; 
     self->entries[dictLen].val = value; 
     self->len += 1;
-    if (dictLen+1 == self->size) {
+    dictLen++;
+    if (dictLen == self->size) {
         self->size *= 2;
         int size = self->size;
         // recompute entries
@@ -40,24 +54,13 @@ void dict_int_!@valType@!_set(dict_int_!@valType@!* self, long key, !@valNativeT
         for (int i=0; i<size; i++) {
             self->indices[i] = -1; // -1 is None
         }
-        for (int i=0; i<dictLen+1; i++) {
+        for (int i=0; i<dictLen; i++) {
             int index = self->entries[i].prehash % size;
             while (self->indices[index] != -1) {
                 index = (index + 1) % size;
             }
             self->indices[index] = i;
         }
-    } else {
-        int size = self->size;
-        int index = key % size;
-        while (self->indices[index] != -1) {
-            if (self->entries[self->indices[index]].key == key) {
-                self->entries[self->indices[index]].val = value;
-                return;
-            }
-            index = (index + 1) % size;
-        }
-        self->indices[index] = dictLen;
     }
 }
 

@@ -414,6 +414,43 @@ class Transpiler(BaseTranspiler):
                 counterVar = f'__tempVar{self.tempVarCounter}__'
                 self.tempVarCounter += 1
             return f'{varType} {self.iterVar[-1][-1]}; {beginScope}{tempArray}; for (long {counterVar}=0; {counterVar} < {iterable["value"]}.len; {counterVar}++) {{ {self.iterVar[-1][-1]}={iterable["value"]}.values[{counterVar}];'
+        elif iterable['type'] == 'map':
+            varType = iterable['keyType']
+            if '{var}' in iterable['value']:
+                # Temp array, must be initialized first
+                #TODO: create dict in memory
+                tempArray = iterable['value'].format(var="__tempArray__")
+                self.freeTempArray = 'free(__tempArray__.values); }'
+                iterable["value"] = "__tempArray__"
+                self.listTypes.add(varType)
+            else:
+                tempArray = ''
+            if len(variables) == 3:
+                counterVar, keyVar, valVar = variables
+                if counterVar in self.currentScope:
+                    counterVarType = ''
+                else:
+                    counterVarType = 'long'
+            else:
+                if len(variables) == 2:
+                    keyVar, valVar = variables
+                else:
+                    keyVar = variables[0]
+                counterVar = f'__tempVar{self.tempVarCounter}__'
+                self.tempVarCounter += 1
+                counterVarType = 'long'
+            if keyVar in self.currentScope:
+                varType = ''
+            else:
+                varType = self.nativeType(varType)
+            if len(variables) >= 2:
+                if self.iterVar[-1][-1] in self.currentScope:
+                    valVarType = ''
+                else:
+                    valVarType = self.nativeType(varType)
+                return f'{varType} {keyVar};{valVarType} {valVar}; {tempArray}; for ({counterVarType} {counterVar}=0; {counterVar} < {iterable["value"]}.len; {counterVar}++) {{ {keyVar}={iterable["value"]}.entries[{counterVar}].key; {valVar}={iterable["value"]}.entries[{counterVar}].val;'
+            else:
+                return f'{varType} {keyVar}; {tempArray}; for (long {counterVar}=0; {counterVar} < {iterable["value"]}.len; {counterVar}++) {{ {keyVar}={iterable["value"]}.entries[{counterVar}].key;'
         elif iterable['type'] == 'str':
             varType = 'str'
             self.imports.add('#include <string.h>')
