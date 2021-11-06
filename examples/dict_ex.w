@@ -16,18 +16,20 @@ dict_int[2] = 4
 dict_int[3] = 9
 dict_int[4] = 16
 
-# This structure only works if the list key is a sequence of integers
-for i in 1..dict_int.len+1:
+print("# Iterating by index")
+# This structure only works if the key is a sequence of integers.
+for i in 1..dict_int.len + 1:
     print("The key {i} contains the value {dict_int[i]}")
 
 # Deletes an element from the dictionary using the entered key
 del dict_int[2]
 
-# This structure does not work in the list-only dictionary
-for key, value in dict_int:
-   print("The key {key} contains the value {value}")
+# Line break
+print()
 
-#print(dict_int[2])
+print("# Gets the key and value in each dictionary iteration")
+for key, value in dict_int:
+    print("The key {key} contains the value {value}")
 
 # Line break
 print()
