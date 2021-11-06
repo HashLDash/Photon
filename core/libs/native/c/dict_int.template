@@ -53,7 +53,6 @@ void dict_int_!@valType@!_set(dict_int_!@valType@!* self, long key, !@valNativeT
         self->size *= 2;
         int size = self->size;
         // recompute entries
-        printf("%d\n", size);
         self->indices = realloc(self->indices, sizeof(int)*size);
         self->entries = realloc(self->entries, sizeof(dict_int_!@valType@!_entry)*size);
         for (int i=0; i<size; i++) {
@@ -86,22 +85,21 @@ void dict_int_!@valType@!_del(dict_int_!@valType@!* self, long key) {
             exit(-1);
         }
     }
-    self->indices[index] = -2;
-
-    if (self->len > 10 && self->len < size/4) {
-        // Reorder entries, removing the deleted ones
-        // Sort indices first
-        qsort(self->indices, size, sizeof(int), dict_int_!@valType@!_compare);
-        int dictLen = self->len - 1;
-        int currentIndex = 0;
-        // Reorder entries
-        if (self->indices[size-dictLen] != -2) {
-            for (int i=size-dictLen; i < size; i++) {
-                index = self->indices[i];
-                self->entries[currentIndex] = self->entries[index];
-                currentIndex++;
-            }
+    int dictLen = self->len - 1;
+    int removedPos = self->indices[index];
+    self->indices[index] = -2; // flag as deleted
+    // put the last entry in this spot
+    if (removedPos != dictLen) {
+        self->entries[removedPos] = self->entries[dictLen];
+        // update index for this entry
+        index = self->entries[removedPos].key % size;
+        while (self->indices[index] != dictLen) {
+            index++;
         }
+        self->indices[index] = removedPos;
+    }
+
+    if (dictLen > 10 && dictLen < size/4) {
         size /= 2;
         // Clear indices at the new size
         for (int i=0; i < size; i++) {
@@ -120,23 +118,17 @@ void dict_int_!@valType@!_del(dict_int_!@valType@!* self, long key) {
         self->entries = realloc(self->entries, sizeof(dict_int_!@valType@!_entry)*size);
         self->size = size;
     }
-    self->len -= 1;
+    self->len--;
 }
 
 void dict_int_!@valType@!_repr(dict_int_!@valType@!* self) {
-    int size = self->size;
-    int dictLastIndex = self->len - 1;
-    int index;
+    int dictLen = self->len-1;
     printf("{\n");
-    for (int i=0; i<size; i++) {
-        index = self->indices[i];
-        if (index > -1) {
-            if (index == dictLastIndex) {
-                printf("    %ld: !@formatCode@!\n", self->entries[index].key, self->entries[index].val);
-            } else {
-                printf("    %ld: !@formatCode@!,\n", self->entries[index].key, self->entries[index].val);
-            }
-        }
+    for (int i=0; i<dictLen; i++) {
+        printf("    %ld: !@formatCode@!,\n", self->entries[i].key, self->entries[i].val);
+    }
+    if (dictLen > -1) {
+        printf("    %ld: !@formatCode@!\n", self->entries[dictLen].key, self->entries[dictLen].val);
     }
     printf("}\n");
 }
