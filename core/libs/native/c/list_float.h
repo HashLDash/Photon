@@ -56,10 +56,10 @@ void list_float_repr(list_float* list) {
     int listLen = list->len;
     printf("[");
     for (int i=0; i<listLen-1; i++) {
-        printf("%lf, ", list->values[i]);
+        printf("%lg, ", list->values[i]);
     }
     if (listLen > 0) {
-        printf("%lf]\n", list->values[listLen-1]);
+        printf("%lg]\n", list->values[listLen-1]);
     } else {
         printf("]\n");
     }
@@ -69,10 +69,10 @@ char* list_float_str(list_float* list) {
     int listLen = list->len;
     char* out = "[";
     for (int i=0; i<listLen-1; i++) {
-        asprintf(&out, "%s%lf, ", out, list->values[i]);
+        asprintf(&out, "%s%lg, ", out, list->values[i]);
     }
     if (listLen > 0) {
-        asprintf(&out, "%s%lf]", out, list->values[listLen-1]);
+        asprintf(&out, "%s%lg]", out, list->values[listLen-1]);
     } else {
         asprintf(&out, "%s]", out);
     }

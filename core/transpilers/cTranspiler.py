@@ -157,7 +157,7 @@ class Transpiler(BaseTranspiler):
                 elif valType == 'int':
                     string = string.replace('{}', '%ld', 1)
                 elif valType == 'float':
-                    string = string.replace('{}', '%g', 1)
+                    string = string.replace('{}', '%lg', 1)
                 elif valType == 'array':
                     string = string.replace('{}', '%s', 1)
                     exprs[-1] = f'list_{expr["elementType"]}_str(&{exprs[-1]})'
@@ -648,7 +648,7 @@ class Transpiler(BaseTranspiler):
         if value['type'] == 'int':
             return f'printf("%ld{terminator}", {value["value"]});'
         elif value['type'] == 'float':
-            return f'printf("%g{terminator}", {value["value"]});'
+            return f'printf("%lg{terminator}", {value["value"]});'
         elif value['type'] == 'str':
             if 'format' in value:
                 # It's a format string
