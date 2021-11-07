@@ -558,6 +558,12 @@ class Transpiler(BaseTranspiler):
         self.className = name
         return f'typedef struct {self.className} {{'
 
+    def reformatInheritedMethodDefinition(self, definition, methodName, className, inheritedName):
+        definition = definition.replace(
+            f'{inheritedName}_{methodName}({inheritedName}',
+            f'{className}_{methodName}({className}')
+        self.classes[className]['methods'][methodName]['code'][0] = definition
+
     def formatEndClass(self):
         return f'}} {self.className};'
 
@@ -750,12 +756,14 @@ class Transpiler(BaseTranspiler):
             boilerPlateEnd = []
         with open(f'Sources/c/main.h', 'w') as f:
             indent = 0
+            f.write('#ifndef __main_h\n#define __main_h\n')
             for line in [m for m in self.imports if m != '#include "main.h"'] + self.header:
                 if '}' in line:
                     indent -= 4
                 f.write(' '*indent + line+'\n')
                 if self.isBlock(line):
                     indent += 4
+            f.write('#endif')
         with open(f'Sources/c/{self.filename}', 'w') as f:
             f.write('#ifndef __main\n#define __main\n')
             for imp in self.imports:

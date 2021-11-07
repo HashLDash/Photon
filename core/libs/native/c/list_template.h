@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "asprintf.h"
-#include "main.c"
+#include "main.h"
 
 typedef struct list_!@valType@! {
     int len;

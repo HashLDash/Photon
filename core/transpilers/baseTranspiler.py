@@ -748,6 +748,15 @@ class BaseTranspiler():
             if inherited in self.classes:
                 self.classes[name] = deepcopy(self.classes[inherited])
                 self.classes[name]['inherited'] = [inherited]
+                for methodName in self.classes[name]['methods']:
+                    self.classes[name]['scope'][methodName]['args'][0]['type'] = name
+                    self.classes[name]['methods'][methodName]['scope']['self']['type'] = name
+                    self.classes[name]['methods'][methodName]['args'][0]['type'] = name
+                    definition = self.classes[name]['methods'][methodName]['code'][0]
+                    self.reformatInheritedMethodDefinition(definition, methodName, name, inherited)
+                for n, attr in enumerate(self.classes[name]['attributes']):
+                    if 'returnType' in attr:
+                        self.classes[name]['attributes'][n]['args'][0]['type'] = name
 
         for c in token['block']:
             if c['token'] in {'assign', 'expr'}:
@@ -778,6 +787,9 @@ class BaseTranspiler():
             # Close class definition after writing methods
             self.insertCode(self.formatEndClass())
         self.inClass = None
+
+    def reformatInheritedMethodDefinition(self, definition, className, inheritedName):
+        pass
 
     def classHeader(self, index):
         ''' Construct the main header if it needs '''
