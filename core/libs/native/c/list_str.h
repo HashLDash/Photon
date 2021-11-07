@@ -1,6 +1,10 @@
+#ifndef __list_str
+#define __list_str
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "asprintf.h"
 
 typedef struct list_str {
     int len;  // number of element stored
@@ -81,3 +85,4 @@ char* list_str_str(list_str* list) {
     }
     return out;
 }
+#endif

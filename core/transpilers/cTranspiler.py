@@ -685,22 +685,6 @@ class Transpiler(BaseTranspiler):
         else:
             raise SyntaxError(f'Print function with token {value} not supported yet.')
 
-    def sortedImports(self):
-        ''' Imports must be sorted to avoid definition errors or conflicts '''
-        #TODO USE IF DEF GUARDS INSTEAD
-        # Lists must be imported before dicts
-        imports = sorted(list(self.imports), reverse=True)
-        try:
-            index = imports.index('#include "list_str.h"')
-        except ValueError:
-            pass
-        else:
-            aspIndex = imports.index('#include "asprintf.h"')
-            # asprintf must come before list_str. Switch if not
-            if aspIndex > index:
-                imports[index], imports[aspIndex] = imports[aspIndex], imports[index]
-        return imports
-
     def add(self, arg1, arg2):
         t1 = arg1['type']
         t2 = arg2['type']
@@ -766,7 +750,7 @@ class Transpiler(BaseTranspiler):
             boilerPlateEnd = []
         with open(f'Sources/c/main.h', 'w') as f:
             indent = 0
-            for line in self.header:
+            for line in [m for m in self.imports if m != '#include "main.h"'] + self.header:
                 if '}' in line:
                     indent -= 4
                 f.write(' '*indent + line+'\n')
@@ -774,7 +758,7 @@ class Transpiler(BaseTranspiler):
                     indent += 4
         with open(f'Sources/c/{self.filename}', 'w') as f:
             f.write('#ifndef __main\n#define __main\n')
-            for imp in self.sortedImports():
+            for imp in self.imports:
                 module = imp.split(' ')[-1].replace('.w', '').replace('"', '')
                 debug(f'Importing {module}')
                 if module in os.listdir(f'{self.standardLibs}/native/c'):

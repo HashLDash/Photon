@@ -1,3 +1,6 @@
+#ifndef __dict_int_!@valType@!
+#define __dict_int_!@valType@!
+
 typedef struct dict_int_!@valType@!_entry {
     int prehash;
     long key;
@@ -132,3 +135,4 @@ void dict_int_!@valType@!_repr(dict_int_!@valType@!* self) {
     }
     printf("}\n");
 }
+#endif

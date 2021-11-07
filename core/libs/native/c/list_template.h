@@ -1,3 +1,6 @@
+#ifndef __list_!@valType@!
+#define __list_!@valType@!
+
 #include <stdio.h>
 #include <stdlib.h>
 #include "asprintf.h"
@@ -117,3 +120,4 @@ char* list_!@valType@!_str(list_!@valType@!* list) {
     }
     return out;
 }
+#endif

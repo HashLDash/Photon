@@ -1,3 +1,6 @@
+#ifndef __list_float
+#define __list_float
+
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -78,3 +81,4 @@ char* list_float_str(list_float* list) {
     }
     return out;
 }
+#endif

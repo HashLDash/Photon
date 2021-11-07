@@ -1,3 +1,6 @@
+#ifndef __photonInput
+#define __photonInput
+
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -36,3 +39,4 @@ char *photonInput()
     line[read_size] = '\0';
     return line;
 }
+#endif

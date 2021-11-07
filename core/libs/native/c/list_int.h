@@ -1,3 +1,6 @@
+#ifndef __list_int
+#define __list_int
+
 #include <stdio.h>
 #include <stdlib.h>
 #include "asprintf.h"
@@ -113,3 +116,5 @@ char* list_int_str(list_int* list) {
     }
     return out;
 }
+
+#endif
