@@ -333,6 +333,8 @@ def expr(i, t):
         t2['args'][0]['modifier'] = t[i]['operator']
         t[i] = t2
         del t[i+1] # var or num
+    elif t[i]['token'] == 'group':
+        t[i] = convertToExpr(t[i])
     elif len(t[i:]) > 1 and t[i+1]['token'] == 'operator' and t[i+2]['token'] in {'num','var','group','expr'}:
         args = []
         ops = []
@@ -744,7 +746,7 @@ def dotAccess(i, t):
     '''
     varType = 'unknown'
     if t[i]['token'] == 'dot':
-        if not t[i-1]['token'] in {'dot', 'var', 'dotAccess'}\
+        if not t[i-1]['token'] in {'dot', 'var', 'dotAccess', 'rparen'}\
                 and t[i+1]['args'][0]['token'] in {'var', 'dotAccess'}:
             # Its a self. shorthand notation
             names = [{'token':'var', 'type':'unknown', 'name':'self'}]
@@ -767,14 +769,14 @@ def dotAccess(i, t):
             secondToken = t[i+3]
             del t[i+1] # space
 
-        if not t[i]['args'][-1]['token'] in {'var','dotAccess', 'type'}\
+        if not t[i]['args'][-1]['token'] in {'var','dotAccess', 'type','call'}\
             or not t[i+2]['args'][0]['token'] in {'var', 'dotAccess'}:
             # Not a valid dotAccess
             return 'continue'
 
         if t[i]['args'][-1]['token'] == 'dotAccess':
             names = t[i]['args'][-1]['dotAccess']
-        elif t[i]['args'][-1]['token'] == 'var':
+        elif t[i]['args'][-1]['token'] in {'var','call'}:
             names = [t[i]['args'][-1]]
 
         secondToken = t[i+2]
@@ -782,7 +784,7 @@ def dotAccess(i, t):
 
     if secondToken['args'][0]['token'] == 'dotAccess':
         names += secondToken['args'][0]['dotAccess']
-    elif secondToken['args'][0]['token'] == 'var':
+    elif secondToken['args'][0]['token'] in {'var', 'call'}:
         names += [secondToken['args'][0]]
 
     # Get the args and ops from the previous expr

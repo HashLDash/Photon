@@ -2,16 +2,10 @@ import wuiGraphics
 import raylib
 
 class Widget():
-    def new(.x=0, .y=0, .width=100, .height=100):
+    def new(.x=0.0, .y=0.0, .width=100.0, .height=100.0):
 
     def render():
         print()
-
-class Label(Widget):
-    def new(.text="", .fontSize=30, .color=Color BLACK):
-
-    def render():
-        drawText(.text, .x, .y, .fontSize, .color)
 
 class App():
     def run(Widget widget):

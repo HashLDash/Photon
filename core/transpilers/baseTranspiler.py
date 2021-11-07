@@ -302,7 +302,10 @@ class BaseTranspiler():
     def processExpression(self, token):
         ''' Process the expr token as a standalone code '''
         expr = self.processExpr(token)
-        self.insertCode(expr['value']+self.terminator)
+        if token['args'][0]['token'] == 'var':
+            self.insertCode(self.formatVarInit(expr['value'], expr['type']))
+        else:
+            self.insertCode(expr['value']+self.terminator)
 
     def processExpr(self, token):
         ''' Process expr tokens as values, returning its type and value '''
@@ -346,26 +349,30 @@ class BaseTranspiler():
             self.classes[self.inClass]['attributes'].append({'variable':token, 'expr':expr})
             return
 
-        variable = self.processVar(token['target'])
-        expr = token['expr']
+        if 'token' in token and token['token'] == 'expr':
+            variable = self.processExpr(token)
+            expr = {'value':'{}', 'type':'unknown'}
+        else:
+            variable = self.processVar(token['target'])
+            expr = token['expr']
             
-        for attr in self.classes[self.inClass]['attributes']:
-            if 'returnType' in attr:
-                continue
-            if variable['value'] == attr['variable']['value']:
-                # Attribute already defined, skip
-                return
+            for attr in self.classes[self.inClass]['attributes']:
+                if 'returnType' in attr:
+                    continue
+                if variable['value'] == attr['variable']['value']:
+                    # Attribute already defined, skip
+                    return
 
-        if self.typeKnown(variable['type']) and expr['args'][0]['type'] == 'array':
-            # The type declaration is for the elementType
-            variable['elementType'] = variable['type']
-            expr['args'][0]['elementType'] = variable['type']
-            variable['type'] = 'array'
-            if not 'size' in variable:
-                variable['size'] = expr['args'][0]['size']
-        expr = self.processExpr(expr)
-        if not self.typeKnown(variable['type']):
-            variable['type'] = expr['type']
+            if self.typeKnown(variable['type']) and expr['args'][0]['type'] == 'array':
+                # The type declaration is for the elementType
+                variable['elementType'] = variable['type']
+                expr['args'][0]['elementType'] = variable['type']
+                variable['type'] = 'array'
+                if not 'size' in variable:
+                    variable['size'] = expr['args'][0]['size']
+            expr = self.processExpr(expr)
+            if not self.typeKnown(variable['type']):
+                variable['type'] = expr['type']
         self.classes[self.inClass]['scope'][variable['value']] = {'type': variable['type']}
         if variable['type'] == 'array':
             if not 'elementType' in variable:
@@ -467,7 +474,7 @@ class BaseTranspiler():
 
         if expr['type'] == 'array' and expr['elementType'] != self.currentScope[variableName]['elementType']:
             cast = self.nativeType(varType)
-        elif self.typeKnown(expr['type']) and expr['type'] != varType:
+        elif self.typeKnown(expr['type']) and expr['type'] != varType and self.typeKnown(varType):
             cast = self.nativeType(varType)
         else:
             cast = None
@@ -489,7 +496,7 @@ class BaseTranspiler():
                     indexVal = variable['indexAccess']['args'][0]
                     index = indexVal['value'] if 'value' in indexVal else indexVal['name']
                     self.insertCode(self.formatArrayIncrement(token['target'], index, expr))
-                elif variable['type'] in {'int', 'float'}:
+                elif variable['type'] in {'int', 'float', 'str'}:
                     self.insertCode(self.formatIncrement(variable, expr))
                 else:
                     raise SyntaxError(f'AugAssign with type {variable["type"]} not implemented yet.')
@@ -663,7 +670,7 @@ class BaseTranspiler():
 
     def processDotAccess(self, token):
         tokens = token['dotAccess']
-        varType = self.processVar(tokens[0])['type']
+        varType = self.getValAndType(tokens[0])['type']
         currentType = varType
         tokens[0]['type'] = varType
         for n, v in enumerate(tokens[1:], 1):
@@ -687,6 +694,8 @@ class BaseTranspiler():
                 tokens[n]['type'] = 'int'
                 currentType = 'int'
                 varType = 'int'
+            else:
+                varType = v['type']
         value = self.formatDotAccess(tokens)
         
         # pass other arguments to be compatible with processVar method
@@ -740,7 +749,7 @@ class BaseTranspiler():
                 self.classes[name]['inherited'] = [inherited]
 
         for c in token['block']:
-            if c['token'] == 'assign':
+            if c['token'] in {'assign', 'expr'}:
                 self.processClassAttribute(c)
             elif c['token'] == 'func':
                 self.processClassMethod(c)

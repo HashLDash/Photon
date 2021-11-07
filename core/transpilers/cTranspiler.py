@@ -157,7 +157,7 @@ class Transpiler(BaseTranspiler):
                 elif valType == 'int':
                     string = string.replace('{}', '%ld', 1)
                 elif valType == 'float':
-                    string = string.replace('{}', '%lg', 1)
+                    string = string.replace('{}', '%g', 1)
                 elif valType == 'array':
                     string = string.replace('{}', '%s', 1)
                     exprs[-1] = f'list_{expr["elementType"]}_str(&{exprs[-1]})'
@@ -282,6 +282,10 @@ class Transpiler(BaseTranspiler):
         name = target['value']
         varType = target['type']
         expr = self.formatExpr(expr)
+        if varType == 'str':
+            self.imports.add('#include "asprintf.h"')
+            self.imports.add('#include <string.h>')
+            return f'asprintf(&{name}, "%s%s", {name}, {expr});'
         return f'{name} += {expr};'
 
     def formatArrayRemoveAll(self, target, expr):
@@ -305,10 +309,10 @@ class Transpiler(BaseTranspiler):
         else:
             varType = self.nativeType(varType) + ' '
         try:
-            if expr['token'] == 'inputFunc' and not cast is None:
-                return formattedExpr.format(cast=varType)
+            if expr['token'] == 'inputFunc' and cast is not None:
+                return formattedExpr.format(cast=varType, var=variable)
             elif expr['token'] == 'inputFunc':
-                return formattedExpr.format(cast=varType) + f'{varType}{variable}; {variable} = __inputStr__;'
+                return formattedExpr + f'{varType}{variable}; {variable} = __inputStr__;'
         except KeyError:
             pass
         if expr['type'] in {'array', 'map'}:
@@ -330,8 +334,7 @@ class Transpiler(BaseTranspiler):
         return f'{varType}{variable} = {formattedExpr};'
 
     def formatExpr(self, value, cast=None, var=None):
-        #TODO: implement cast to type
-        if not cast is None:
+        if cast is not None and self.nativeType(value['type']) != cast:
             if cast == 'long':
                 if 'token' in value and value['token'] == 'inputFunc':
                     return f'{value["value"]} {{cast}} {var} = strtol(__inputStr__, NULL, 10);'
@@ -345,8 +348,11 @@ class Transpiler(BaseTranspiler):
                 if 'token' in value and value['token'] == 'inputFunc':
                     return f'{value["value"]} {{cast}} {var} = strtod(__inputStr__, NULL);'
                 elif value['type'] == 'str':
+                    input('here')
                     return f'strtod({value["value"]}, NULL)'
                 elif value['type'] == 'int':
+                    return f'(double)({value["value"]})'
+                elif value['type'] == 'float':
                     return f'(double)({value["value"]})'
                 else:
                     raise SyntaxError(f'Convert from type {value["type"]} to type {cast} not implemented')
@@ -648,7 +654,7 @@ class Transpiler(BaseTranspiler):
         if value['type'] == 'int':
             return f'printf("%ld{terminator}", {value["value"]});'
         elif value['type'] == 'float':
-            return f'printf("%lg{terminator}", {value["value"]});'
+            return f'printf("%g{terminator}", {value["value"]});'
         elif value['type'] == 'str':
             if 'format' in value:
                 # It's a format string
@@ -787,4 +793,4 @@ class Transpiler(BaseTranspiler):
             print(e)
             print('Compilation error. Check errors above.')
         else:
-            call(['./Sources/c/main'])
+            call(['./main'], cwd='Sources/c')
