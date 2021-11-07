@@ -11,6 +11,7 @@ class BaseTranspiler():
         self.lang = 'photon'
         self.libExtension = 'photonExt'
         self.filename = filename.split('/')[-1].replace('.w','.photon')
+        self.header = []
         self.module = module
 
         self.operators = ['**','*','%','/','-','+','==','!=','>','<','>=','<=','is','in','andnot','and','or','&', '<<', '>>'] # in order 
@@ -766,6 +767,7 @@ class BaseTranspiler():
         if not self.methodsInsideClass:
             # Close class definition before writing methods
             self.insertCode(self.formatEndClass())
+            self.classHeader(index)
         # Write methods code
         for methodName, info in self.classes[name]['methods'].items():
             self.insertCode('')
@@ -776,6 +778,11 @@ class BaseTranspiler():
             # Close class definition after writing methods
             self.insertCode(self.formatEndClass())
         self.inClass = None
+
+    def classHeader(self, index):
+        ''' Construct the main header if it needs '''
+        self.header += self.outOfMain[index:]
+        del self.outOfMain[index:]
 
     def processClassMethod(self, token):
         selfArg = {
@@ -987,6 +994,7 @@ class BaseTranspiler():
                 self.links = self.links.union(interpreter.engine.links)
                 self.outOfMain += interpreter.engine.outOfMain
                 self.source += interpreter.engine.source
+                self.header += interpreter.engine.header
             elif f"{name}.{self.libExtension}" in os.listdir(self.standardLibs + f'/native/{self.lang}/'):
                 # Native Photon lib module import
                 raise SyntaxError('Native Photon module import not implemented yet.')

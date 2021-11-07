@@ -13,7 +13,7 @@ class Transpiler(BaseTranspiler):
         self.libExtension = 'h'
         self.filename = self.filename.replace('.w', '.c')
         self.commentSymbol = '//'
-        self.imports = {'#include <stdio.h>', '#include <stdlib.h>', '#include <locale.h>'}
+        self.imports = {'#include <stdio.h>', '#include <stdlib.h>', '#include <locale.h>', '#include "main.h"'}
         self.funcIdentifier = '/*def*/'
         self.constructorName = 'new'
         self.block = {'typedef ','/*def*/', 'for ','while ','if ','else ', 'int main('}
@@ -64,10 +64,21 @@ class Transpiler(BaseTranspiler):
             if 'indexAccess' in v:
                 # The value should be the dotAccess up to now
                 v['name'] = '.'.join(dotAccess + [v['name']]).replace('->.','->')
+                if 'elementType' in v:
+                    baseType = 'array'
+                elif 'keyType' in v:
+                    baseType = 'map'
+                else:
+                    raise TypeError(f'Base type of {v} not implemented yet.')
+                v['type'] = baseType
                 value = self.processIndexAccess(v)
                 currentType = value['type']
                 # Now the result is just this dotAccess
-                dotAccess = [value['value']]
+                if currentType in self.classes:
+                    # arrays and dicts with classes are all pointers
+                    dotAccess = [value['value']+'->']
+                else:
+                    dotAccess = [value['value']]
             elif v['token'] == 'call':
                 if currentType in self.classes:
                     instance = dotAccess.pop()
@@ -103,12 +114,9 @@ class Transpiler(BaseTranspiler):
     def formatArray(self, elements, elementType, size):
         self.listTypes.add(elementType)
         className = f'list_{elementType.replace("*", "ptr")}'
-        if elementType in {'int', 'float', 'str'}:
-            self.imports.add(f'#include "{className}.h"')
-            if elementType == 'str':
-                self.imports.add('#include "asprintf.h"')
-        else:
-            raise SyntaxError(f'Array of type {elementType} not implemented yet.')
+        if elementType == 'str':
+            self.imports.add('#include "asprintf.h"')
+        self.imports.add(f'#include "{className}.h"')
         if size == 'unknown':
             size = 10
         if elements:
@@ -265,6 +273,8 @@ class Transpiler(BaseTranspiler):
         name = target['value']
         varType = target['elementType']
         expr = self.formatExpr(expr)
+        if varType in self.classes:
+            return f'list_{varType}_append(&{name}, &{expr});'
         return f'list_{varType}_append(&{name}, {expr});'
 
     def formatArrayIncrement(self, target, index, expr):
@@ -428,7 +438,6 @@ class Transpiler(BaseTranspiler):
                 tempArray = iterable['value'].format(var="__tempArray__")
                 self.freeTempArray = 'free(__tempArray__.values); }'
                 iterable["value"] = "__tempArray__"
-                self.listTypes.add(varType)
             else:
                 tempArray = ''
             if len(variables) == 3:
@@ -725,6 +734,14 @@ class Transpiler(BaseTranspiler):
         with open(f'Sources/c/dict_{keyType}_{valType}.h', 'w') as lib:
             lib.write(dictLib)
 
+    def renderListTemplate(self, valType):
+        if not valType in {'str', 'int', 'float'}:
+            with open(f'{self.standardLibs}/native/c/list_template.h') as template:
+                listLib = template.read()
+            listLib = listLib.replace('!@valType@!', valType)
+            with open(f'Sources/c/list_{valType}.h', 'w') as lib:
+                lib.write(listLib)
+
     def write(self):
         boilerPlateStart = [
             'int main() {',
@@ -747,7 +764,16 @@ class Transpiler(BaseTranspiler):
             self.filename = f'{moduleName}.c'
             boilerPlateStart = []
             boilerPlateEnd = []
+        with open(f'Sources/c/main.h', 'w') as f:
+            indent = 0
+            for line in self.header:
+                if '}' in line:
+                    indent -= 4
+                f.write(' '*indent + line+'\n')
+                if self.isBlock(line):
+                    indent += 4
         with open(f'Sources/c/{self.filename}', 'w') as f:
+            f.write('#ifndef __main\n#define __main\n')
             for imp in self.sortedImports():
                 module = imp.split(' ')[-1].replace('.w', '').replace('"', '')
                 debug(f'Importing {module}')
@@ -757,6 +783,8 @@ class Transpiler(BaseTranspiler):
                 if not f'{module}.c' in os.listdir('Sources/c'):
                     # native import
                     f.write(imp + '\n')
+                for valType in self.listTypes:
+                    self.renderListTemplate(valType)
                 for keyType, valType in self.dictTypes:
                     self.renderDictTemplate(keyType, valType)
             for line in [''] + self.outOfMain + [''] + boilerPlateStart + self.source + boilerPlateEnd:
@@ -775,6 +803,7 @@ class Transpiler(BaseTranspiler):
                         f.write(' ' * indent + line.replace('/*def*/', '') + '\n')
                     if self.isBlock(line):
                         indent += 4
+            f.write('#endif')
         debug('Generated ' + self.filename)
 
     def run(self):
