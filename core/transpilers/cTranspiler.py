@@ -758,7 +758,9 @@ class Transpiler(BaseTranspiler):
         with open(f'Sources/c/main.h', 'w') as f:
             indent = 0
             f.write('#ifndef __main_h\n#define __main_h\n')
-            for line in [m for m in self.imports if m != '#include "main.h"'] + self.header:
+            mainhImports = self.imports.copy()
+            mainhImports.remove('#include "main.h"')
+            for line in sorted(mainhImports) + self.header:
                 if '}' in line:
                     indent -= 4
                 f.write(' '*indent + line+'\n')
@@ -767,7 +769,7 @@ class Transpiler(BaseTranspiler):
             f.write('#endif')
         with open(f'Sources/c/{self.filename}', 'w') as f:
             f.write('#ifndef __main\n#define __main\n')
-            for imp in self.imports:
+            for imp in sorted(self.imports):
                 module = imp.split(' ')[-1].replace('.w', '').replace('"', '')
                 debug(f'Importing {module}')
                 if module in os.listdir(f'{self.standardLibs}/native/c'):
