@@ -987,6 +987,11 @@ class BaseTranspiler():
             if f"{name}.w" in os.listdir(folder) + os.listdir(self.standardLibs):
                 if f"{name}.w" in os.listdir(self.standardLibs):
                     # Photon module import
+                    if name == 'wui':
+                        # Inject assets folder
+                        os.makedirs(f'Sources/{self.lang}', exist_ok=True)
+                        assetsPath = os.path.realpath(self.standardLibs+'../assets')
+                        os.system(f'cp -r {assetsPath} Sources/{self.lang}/')
                     filename = f'{self.standardLibs}{name}.w'
                 else:
                     # Local module import
