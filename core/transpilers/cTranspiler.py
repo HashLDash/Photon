@@ -112,6 +112,8 @@ class Transpiler(BaseTranspiler):
         return '.'.join(dotAccess).replace('->.','->')
     
     def formatArray(self, elements, elementType, size):
+        if not self.typeKnown(elementType):
+            raise SyntaxError(f'Array with elements of type {elementType} not supported yet.')
         self.listTypes.add(elementType)
         className = f'list_{elementType.replace("*", "ptr")}'
         if elementType == 'str' or elementType not in {'int', 'float'}:

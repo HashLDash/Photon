@@ -763,8 +763,10 @@ def dotAccess(i, t):
                 varType = t[i]['args'][0]['name']
             elif t[i]['token'] == 'type':
                 varType = t[i]['type']
+            elif t[i]['token'] == 'expr':
+                varType = t[i]['args'][0]['name']
             else:
-                raise SyntaxError('Type token {t[i]["token"]} not supported')
+                raise SyntaxError(f'Type token {t[i]["token"]} not supported')
             t[i] = convertToExpr(names[0])
             secondToken = t[i+3]
             del t[i+1] # space
