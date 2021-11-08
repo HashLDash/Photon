@@ -114,7 +114,7 @@ class Transpiler(BaseTranspiler):
     def formatArray(self, elements, elementType, size):
         self.listTypes.add(elementType)
         className = f'list_{elementType.replace("*", "ptr")}'
-        if elementType == 'str':
+        if elementType == 'str' or elementType not in {'int', 'float'}:
             self.imports.add('#include "asprintf.h"')
         self.imports.add(f'#include "{className}.h"')
         if size == 'unknown':
@@ -731,6 +731,7 @@ class Transpiler(BaseTranspiler):
             listLib = listLib.replace('!@valType@!', valType)
             with open(f'Sources/c/list_{valType}.h', 'w') as lib:
                 lib.write(listLib)
+
 
     def write(self):
         boilerPlateStart = [
