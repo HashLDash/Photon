@@ -760,7 +760,13 @@ class Transpiler(BaseTranspiler):
             f.write('#ifndef __main_h\n#define __main_h\n')
             mainhImports = self.imports.copy()
             mainhImports.remove('#include "main.h"')
-            for line in sorted(mainhImports) + self.header:
+            listTypeHints = []
+            for listType in self.listTypes:
+                if listType in self.classes:
+                    mainhImports.remove(f'#include "list_{listType}.h"')
+                    listTypeHints.append(f'typedef struct list_{listType} list_{listType};')
+            #TODO: do the same type hint for dicts
+            for line in sorted(mainhImports) + listTypeHints + self.header:
                 if '}' in line:
                     indent -= 4
                 f.write(' '*indent + line+'\n')
