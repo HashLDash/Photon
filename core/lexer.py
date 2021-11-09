@@ -396,8 +396,10 @@ def assign2kwarg(tok):
     if tok['target']['token'] == 'dotAccess':
         # Only valid for self.var
         if len(tok['target']['dotAccess']) == 2:
+            varType = tok['target']['type']
             tok['target'] = tok['target']['dotAccess'][1]
             tok['target']['attribute'] = True
+            tok['target']['type'] = varType
         else:
             raise SyntaxError('Default class attribute initiation is only valid for immediate class attributes. Ex: self.a.b not valid, but self.a is valid.')
     return tok

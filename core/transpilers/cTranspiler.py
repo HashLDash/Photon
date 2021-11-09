@@ -360,7 +360,6 @@ class Transpiler(BaseTranspiler):
                 if 'token' in value and value['token'] == 'inputFunc':
                     return f'{value["value"]} {{cast}} {var} = strtod(__inputStr__, NULL);'
                 elif value['type'] == 'str':
-                    input('here')
                     return f'strtod({value["value"]}, NULL)'
                 elif value['type'] == 'int':
                     return f'(double)({value["value"]})'
