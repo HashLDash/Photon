@@ -771,9 +771,10 @@ class Transpiler(BaseTranspiler):
                 if '}' in line:
                     indent -= 4
                 f.write(' '*indent + line+'\n')
-                if self.isBlock(line):
+                if self.isBlock(line) and not ';' in line[-1]:
                     indent += 4
             f.write('#endif')
+        indent = 0
         with open(f'Sources/c/{self.filename}', 'w') as f:
             f.write('#ifndef __main\n#define __main\n')
             for imp in sorted(self.imports):
