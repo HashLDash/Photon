@@ -732,7 +732,11 @@ class Transpiler(BaseTranspiler):
             listLib = listLib.replace('!@valType@!', valType)
             with open(f'Sources/c/list_{valType}.h', 'w') as lib:
                 lib.write(listLib)
-
+            with open(f'{self.standardLibs}/native/c/list_template.c') as template:
+                listLib = template.read()
+            listLib = listLib.replace('!@valType@!', valType)
+            with open(f'Sources/c/list_{valType}.c', 'w') as lib:
+                lib.write(listLib)
 
     def write(self):
         boilerPlateStart = [
@@ -759,15 +763,12 @@ class Transpiler(BaseTranspiler):
         with open(f'Sources/c/main.h', 'w') as f:
             indent = 0
             f.write('#ifndef __main_h\n#define __main_h\n')
-            mainhImports = self.imports.copy()
-            mainhImports.remove('#include "main.h"')
             listTypeHints = []
             for listType in self.listTypes:
                 if listType in self.classes:
-                    mainhImports.remove(f'#include "list_{listType}.h"')
                     listTypeHints.append(f'typedef struct list_{listType} list_{listType};')
             #TODO: do the same type hint for dicts
-            for line in sorted(mainhImports) + listTypeHints + self.header:
+            for line in listTypeHints + self.header:
                 if '}' in line:
                     indent -= 4
                 f.write(' '*indent + line+'\n')

@@ -793,8 +793,7 @@ class BaseTranspiler():
 
     def classHeader(self, index):
         ''' Construct the main header if it needs '''
-        self.header += self.outOfMain[index:]
-        del self.outOfMain[index:]
+        self.header.append(f'typedef struct {self.inClass} {self.inClass};')
 
     def processClassMethod(self, token):
         selfArg = {
