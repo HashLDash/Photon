@@ -826,4 +826,4 @@ class Transpiler(BaseTranspiler):
             print(e)
             print('Compilation error. Check errors above.')
         else:
-            call(['./main'], cwd=f'{os.getcwd()}/Sources/c')
+            call('./main', cwd='Sources/c')
