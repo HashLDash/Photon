@@ -826,4 +826,7 @@ class Transpiler(BaseTranspiler):
             print(e)
             print('Compilation error. Check errors above.')
         else:
-            call('./main', cwd='Sources/c', shell=True)
+            if self.target in {'linux', 'darwin'}:
+                call('./main', cwd='Sources/c')
+            else:
+                call('main', cwd='Sources/c', shell=True)
