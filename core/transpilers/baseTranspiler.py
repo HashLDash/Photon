@@ -303,7 +303,7 @@ class BaseTranspiler():
     def processExpression(self, token):
         ''' Process the expr token as a standalone code '''
         expr = self.processExpr(token)
-        if token['args'][0]['token'] == 'var':
+        if 'token' in token['args'][0] and token['args'][0]['token'] == 'var':
             self.insertCode(self.formatVarInit(expr['value'], expr['type']))
         else:
             self.insertCode(expr['value']+self.terminator)
