@@ -114,7 +114,11 @@ class Transpiler(BaseTranspiler):
     def formatArray(self, elements, elementType, size):
         if not self.typeKnown(elementType):
             raise SyntaxError(f'Array with elements of type {elementType} not supported yet.')
-        self.listTypes.add(elementType)
+        if not elementType in self.listTypes:
+            self.listTypes.add(elementType)
+            if elementType in self.classes:
+                self.insertCode(f'#include "list_{elementType}.h"')
+                self.insertCode(f'#include "list_{elementType}.c"')
         className = f'list_{elementType.replace("*", "ptr")}'
         if elementType == 'str' or elementType not in {'int', 'float'}:
             self.imports.add('#include "asprintf.h"')
