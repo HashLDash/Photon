@@ -418,7 +418,10 @@ class Transpiler(BaseTranspiler):
             if self.iterVar[-1][-1] in self.currentScope:
                 varType = ''
             else:
-                varType = self.nativeType(varType)
+                if varType in self.classes:
+                    varType = self.nativeType(varType) + "*"
+                else:
+                    varType = self.nativeType(varType)
             if '{var}' in iterable['value']:
                 # Temp array, must be initialized first
                 tempArray = iterable['value'].format(var="__tempArray__")
@@ -467,7 +470,10 @@ class Transpiler(BaseTranspiler):
                 if self.iterVar[-1][-1] in self.currentScope:
                     valVarType = ''
                 else:
-                    valVarType = self.nativeType(varType)
+                    if varType in self.classes:
+                        valVarType = self.nativeType(varType) + "*"
+                    else:
+                        valVarType = self.nativeType(varType)
                 return f'{varType} {keyVar};{valVarType} {valVar}; {tempArray}; for ({counterVarType} {counterVar}=0; {counterVar} < {iterable["value"]}.len; {counterVar}++) {{ {keyVar}={iterable["value"]}.entries[{counterVar}].key; {valVar}={iterable["value"]}.entries[{counterVar}].val;'
             else:
                 return f'{varType} {keyVar}; {tempArray}; for (long {counterVar}=0; {counterVar} < {iterable["value"]}.len; {counterVar}++) {{ {keyVar}={iterable["value"]}.entries[{counterVar}].key;'
@@ -693,6 +699,14 @@ class Transpiler(BaseTranspiler):
             keyType = value['keyType']
             valType = value['valType']
             return f'dict_{keyType}_{valType}_repr(&{value["value"]});'
+        elif value['type'] in self.classes:
+            if 'repr' in self.classes[value['type']]['methods']:
+                if self.inFunc or self.inClass:
+                    return f'{value["type"]}_repr({value["value"]});'
+                else:
+                    return f'{value["type"]}_repr(&{value["value"]});'
+            else:
+                return f'printf("<class {value["type"]}>{terminator}");'
         else:
             raise SyntaxError(f'Print function with token {value} not supported yet.')
 
