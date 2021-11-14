@@ -126,7 +126,18 @@ class Transpiler(BaseTranspiler):
         if size == 'unknown':
             size = 10
         if elements:
-            initValues = ';'.join(f'{{var}}.values[{i}] = {v["value"]}' for i, v in enumerate(elements))
+            initValues = []
+            for i, v in enumerate(elements):
+                if v['type'] in self.classes:
+                    permVars, init = self.formatClassInit(v['type'], f'{{var}}.values[{i}]')
+                    init = init.replace('{','{{').replace('}','}}')
+                    newMethod = v['value'].format(var=f'__permVar{self.permVarCounter}__')
+                    initValues.append(f'{v["type"]} __permVar{self.permVarCounter}__ = {init};{newMethod}')
+                    initValues.append(f'{{var}}.values[{i}] = &__permVar{self.permVarCounter}__')
+                    self.permVarCounter += 1
+                else:
+                    initValues.append(f'{{var}}.values[{i}] = {v["value"]}')
+            initValues = ';'.join(initValues)
         else:
             initValues = ''
         elementType = self.nativeType(elementType)
@@ -279,7 +290,7 @@ class Transpiler(BaseTranspiler):
         name = target['value']
         varType = target['elementType']
         expr = self.formatExpr(expr)
-        if varType in self.classes:
+        if varType in self.classes and not (self.inFunc or self.inClass):
             return f'list_{varType}_append(&{name}, &{expr});'
         return f'list_{varType}_append(&{name}, {expr});'
 

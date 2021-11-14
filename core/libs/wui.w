@@ -4,8 +4,11 @@ import raylib
 class Widget():
     def new(.x=0.0, .y=0.0, .width=100.0, .height=100.0):
 
+    def onKeyPress():
+
+    def update():
+
     def render():
-        print()
 
 class App():
     def run(Widget widget):
