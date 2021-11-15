@@ -520,18 +520,24 @@ class BaseTranspiler():
     def processIf(self, token):
         expr = self.processExpr(token['expr'])
         self.insertCode(self.formatIf(expr))
+        self.startScope()
         for c in token['block']:
             self.process(c)
+        self.endScope()
         if 'elifs' in token:
             for elifStatement in token['elifs']:
                 expr = self.processExpr(elifStatement['expr'])
                 self.insertCode(self.formatElif(expr))
+                self.startScope()
                 for c in elifStatement['elifBlock']:
                     self.process(c)
+                self.endScope()
         if 'else' in token:
             self.insertCode(self.formatElse())
+            self.startScope()
             for c in token['else']:
                 self.process(c)
+            self.endScope()
         self.insertCode(self.formatEndIf())
 
     def processWhile(self, token):
@@ -675,7 +681,7 @@ class BaseTranspiler():
         currentType = varType
         tokens[0]['type'] = varType
         for n, v in enumerate(tokens[1:], 1):
-            if varType in self.classes:
+            if currentType in self.classes:
                 if v['token'] == 'call':
                     name = v['name']['name']
                 else:
@@ -697,6 +703,7 @@ class BaseTranspiler():
                 varType = 'int'
             else:
                 varType = v['type']
+                currentType = varType
         value = self.formatDotAccess(tokens)
         
         # pass other arguments to be compatible with processVar method
