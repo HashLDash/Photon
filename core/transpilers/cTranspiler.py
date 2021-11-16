@@ -146,8 +146,13 @@ class Transpiler(BaseTranspiler):
     def formatMap(self, elements, keyType, valType):
         className = f'dict_{keyType.replace("*", "ptr")}_{valType.replace("*", "ptr")}'
         self.dictTypes.add((keyType, valType))
-        if keyType in {'int', 'float', 'str'} and valType in {'int', 'float', 'str'}:
-            self.imports.add(f'#include "{className}.h"')
+        if keyType in {'int', 'float', 'str'}:
+            if valType in {'int', 'float', 'str'}:
+                self.imports.add(f'#include "{className}.h"')
+            elif valType in self.classes:
+                self.imports.add(f'#include "{className}.h"')
+            else:
+                raise SyntaxError(f'Dict of type {className} not implemented yet.')
         else:
             raise SyntaxError(f'Dict of type {className} not implemented yet.')
         size = 10
@@ -277,12 +282,24 @@ class Transpiler(BaseTranspiler):
             cast = self.nativeType(varType)
         else:
             cast = None
-        expr = self.formatExpr(expr, cast = cast, var = name)
+        preparation = ''
+        if expr['type'] in self.classes:
+            variable = f'__permVar{self.permVarCounter}__'
+            self.permVarCounter += 1
+            className = expr["type"]
+            permanentVars, classInit = self.formatClassInit(className, variable)
+            initMethod = expr['value'].replace('{var}',variable) + ';'
+            if inMemory:
+                preparation = f'{permanentVars};{initMethod};'
+            preparation = f'{permanentVars}; {className} {variable} = {classInit};{initMethod};'
+            expr = f'&{variable}'
+        else:
+            expr = self.formatExpr(expr, cast = cast, var = name)
 
         if assignType == 'array':
-            return f'list_{varType}_set(&{name}, {index}, {expr});'
+            return f'{preparation}list_{varType}_set(&{name}, {index}, {expr});'
         elif assignType == 'map':
-            return f'dict_{keyType}_{varType}_set(&{name}, {index}, {expr});'
+            return f'{preparation}dict_{keyType}_{varType}_set(&{name}, {index}, {expr});'
         else:
             raise SyntaxError('This assign type for indexAssign is not implemented yet.')
 
@@ -750,7 +767,10 @@ class Transpiler(BaseTranspiler):
         with open(f'{self.standardLibs}/native/c/dict_{keyType}.template') as template:
             dictLib = template.read()
         valNativeType = self.nativeType(valType)
-        dictLib = dictLib.replace('!@valType@!', valType).replace('!@valNativeType@!', valNativeType).replace('!@formatCode@!', formatCodes[valType])
+        if valType in self.classes:
+            valNativeType += "*"
+        #TODO: Call instance repr if it exists instead of the placeholder
+        dictLib = dictLib.replace('!@valType@!', valType).replace('!@valNativeType@!', valNativeType).replace('!@formatCode@!', formatCodes[valType] if valType in formatCodes else f'<class {valType}>')
         with open(f'Sources/c/dict_{keyType}_{valType}.h', 'w') as lib:
             lib.write(dictLib)
 
