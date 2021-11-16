@@ -60,21 +60,10 @@ class Transpiler(BaseTranspiler):
                 value = self.processIndexAccess(tok)
                 names.append(value['value'])
                 currentType = value['type']
-            elif tok['token'] == 'var':
-                if 'keyType' in tok:
-                    if v['value'] == 'len':
-                        names = [f"len({'.'.join(names)})"]
-                        currentType = 'int'
-                    else:
-                        names.append(v['value'])
-                        currentType = v['type']
-                elif 'elementType' in tok:
-                    if v['value'] == 'len':
-                        names = [f"len({'.'.join(names)})"]
-                        currentType = 'int'
-                    else:
-                        names.append(v['value'])
-                        currentType = v['type']
+            elif currentType in {'array', 'map'}:
+                if v['value'] == 'len':
+                    names = [f"len({'.'.join(names)})"]
+                    currentType = 'int'
                 else:
                     names.append(v['value'])
                     currentType = v['type']

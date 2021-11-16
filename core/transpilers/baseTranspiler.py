@@ -1050,6 +1050,9 @@ class BaseTranspiler():
             varType = 'int'
         elif t1 in {'float','int'} and t2 in {'float','int'}:
             varType = 'float'
+        elif t1 == 'str' or t2 == 'str':
+            varType = 'str'
+            return {'value':f'{arg1["value"]} + {arg2["value"]}', 'type':varType, 'expressions':[]}
         else:
             varType = 'unknown'
         return {'value':f'{arg1["value"]} + {arg2["value"]}', 'type':varType}
@@ -1145,7 +1148,7 @@ class BaseTranspiler():
             except ValueError:
                 pass
             if b in line:
-                if b == 'for ':
+                if b == 'for ' or b == 'if ':
                     if ('[' in line and ']' in line) and (line.index('[') < line.index('for ') < line.index(']')):
                         # its a list comprehension
                         continue
