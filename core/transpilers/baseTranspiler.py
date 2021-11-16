@@ -795,7 +795,7 @@ class BaseTranspiler():
             self.insertCode(self.formatEndClass())
         self.inClass = None
 
-    def reformatInheritedMethodDefinition(self, definition, className, inheritedName):
+    def reformatInheritedMethodDefinition(self, definition, methodName, className, inheritedName):
         pass
 
     def classHeader(self, index):

@@ -52,19 +52,35 @@ class Transpiler(BaseTranspiler):
         names = []
         for tok in tokens:
             v = self.getValAndType(tok) 
-            if currentType == 'map':
-                if v['value'] == 'len':
-                    names = [f"len({'.'.join(names)})"]
+            if 'indexAccess' in tok:
+                if 'elementType' in tok:
+                    tok['type'] = 'array'
+                elif 'keyType' in tok:
+                    tok['type'] = 'map'
+                value = self.processIndexAccess(tok)
+                names.append(value['value'])
+                currentType = value['type']
+            elif tok['token'] == 'var':
+                if 'keyType' in tok:
+                    if v['value'] == 'len':
+                        names = [f"len({'.'.join(names)})"]
+                        currentType = 'int'
+                    else:
+                        names.append(v['value'])
+                        currentType = v['type']
+                elif 'elementType' in tok:
+                    if v['value'] == 'len':
+                        names = [f"len({'.'.join(names)})"]
+                        currentType = 'int'
+                    else:
+                        names.append(v['value'])
+                        currentType = v['type']
                 else:
                     names.append(v['value'])
-            elif currentType == 'array':
-                if v['value'] == 'len':
-                    names = [f"len({'.'.join(names)})"]
-                else:
-                    names.append(v['value'])
+                    currentType = v['type']
             else:
-                currentType = v['type']
                 names.append(v['value'])
+                currentType = v['type']
 
         return '.'.join(names)
 
