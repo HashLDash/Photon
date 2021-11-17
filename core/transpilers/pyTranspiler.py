@@ -43,6 +43,10 @@ class Transpiler(BaseTranspiler):
         return
 
     def formatVarInit(self, name, varType):
+        if name in self.currentScope:
+            # If name in scope, then it doesn't need to be initiated
+            # this will print the name in the interpreter
+            return name
         if varType:
             return f'{name}:{varType} = None'
         return f'{name} = None'
