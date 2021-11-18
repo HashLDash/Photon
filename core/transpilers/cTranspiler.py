@@ -134,7 +134,11 @@ class Transpiler(BaseTranspiler):
                     init = init.replace('{','{{').replace('}','}}')
                     newMethod = v['value'].format(var=f'__permVar{self.permVarCounter}__')
                     initValues.append(f'{v["type"]} __permVar{self.permVarCounter}__ = {init};{newMethod}')
-                    initValues.append(f'{{var}}.values[{i}] = &__permVar{self.permVarCounter}__')
+                    if elementType != v['type']:
+                        cast = f'({elementType}*)'
+                    else:
+                        cast = ''
+                    initValues.append(f'{{var}}.values[{i}] = {cast}&__permVar{self.permVarCounter}__')
                     self.permVarCounter += 1
                 else:
                     initValues.append(f'{{var}}.values[{i}] = {v["value"]}')
@@ -875,6 +879,7 @@ class Transpiler(BaseTranspiler):
         except Exception as e:
             print(e)
             print('Compilation error. Check errors above.')
+            exit()
         else:
             if self.target in {'linux', 'darwin'}:
                 call('./main', cwd='Sources/c')
