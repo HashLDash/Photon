@@ -512,7 +512,7 @@ def assign(i, t):
     if len(t) > 4 and i == 1:
         # Not parsed the value of the assign yet.
         return 'continue'
-    if len(t) > i+3 and t[i+2]['args'][0]['token'] in {'var', 'dotAccess'} and 'symbol' in t[i+3]:
+    if len(t) > i+3 and t[i+2]['args'][0]['token'] in {'var', 'dotAccess'} and 'symbol' in t[i+3] and t[i+3]['symbol'] == 'lparen':
         # Incomplete expression parsing
         if not t[i+3]['token'] == 'rparen':
             return 'continue'
