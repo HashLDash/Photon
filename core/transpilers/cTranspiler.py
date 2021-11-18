@@ -654,7 +654,7 @@ class Transpiler(BaseTranspiler):
     def formatClassAttribute(self, attr):
         if 'returnType' in attr:
             # Its a method
-            methodReturnType = attr['returnType']
+            methodReturnType = self.nativeType(attr['returnType'])
             method = attr['name']
             args = attr['args'] + attr['kwargs']
             argsTypes = []
@@ -731,9 +731,9 @@ class Transpiler(BaseTranspiler):
         elif value['type'] in self.classes:
             if 'repr' in self.classes[value['type']]['methods']:
                 if self.inFunc or self.inClass:
-                    return f'{value["type"]}_repr({value["value"]});'
+                    return f'printf("%s{terminator}", {value["type"]}_repr({value["value"]}));'
                 else:
-                    return f'{value["type"]}_repr(&{value["value"]});'
+                    return f'printf("%s{terminator}", {value["type"]}_repr(&{value["value"]}));'
             else:
                 return f'printf("<class {value["type"]}>{terminator}");'
         else:
