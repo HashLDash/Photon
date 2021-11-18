@@ -360,7 +360,7 @@ def expr(i, t):
 def group(i, t):
     ''' Return a group token
     '''
-    if t[i-1]['token'] in {'operator','returnStatement'} or 'symbol' in t[i-1]:
+    if t[i-1]['token'] in {'operator','returnStatement'} or 'symbol' in t[i-1] or i == 1:
         # Its a group
         t[i] = {'token':'group', 'type':t[i+1]['type'], 'expr':t[i+1]}
         del t[i+1] # expr
