@@ -59,7 +59,7 @@ void dict_str_!@valType@!_set(dict_str_!@valType@!* self, char* key, !@valNative
     int size = self->size;
     int index = str_prehash(key) % size;
     while (self->indices[index] != -1) {
-        if (strcmp(self->entries[self->indices[index]].key, key)) {
+        if (!strcmp(self->entries[self->indices[index]].key, key)) {
             // found, just update its value
             self->entries[self->indices[index]].val = value;
             return;

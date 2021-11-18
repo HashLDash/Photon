@@ -47,6 +47,40 @@ void list_str_append(list_str* list, char* value) {
     list->len += 1;
 }
 
+void list_str_removeAll(list_str* list, char* value) {
+    int removedItems = 0;
+    int listLen = list->len;
+    for (int i=0; i<listLen; i++) {
+        if (!strcmp(list->values[i], value)) {
+            removedItems = 1;
+            for (i=i; i<listLen-removedItems; i++) {
+                if (!strcmp(list->values[i], value)) {
+                    removedItems++;
+                }
+                list->values[i] = list->values[i+removedItems];
+            }
+            break;
+        }
+    }
+    list->len -= removedItems;
+    if (list->size >= 4*list->len) {
+        list->size = list->size / 2;
+        list->values = realloc(list->values, sizeof(long) * list->size);
+    }
+}
+
+void list_str_del(list_str* list, int index) {
+    int listLen = list->len;
+    for (int i=index; i<listLen-1; i++) {
+        list->values[i] = list->values[i+1];
+    }
+    list->len -= 1;
+    if (list->size >= 4*list->len) {
+        list->size = list->size / 2;
+        list->values = realloc(list->values, sizeof(long) * list->size);
+    }
+}
+
 void list_str_inc(list_str* list, int index, char* value) {
     if (index < 0) {
         // -1 is equivalent to the last element

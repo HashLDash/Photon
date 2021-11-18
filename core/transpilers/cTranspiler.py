@@ -51,7 +51,8 @@ class Transpiler(BaseTranspiler):
         if name == 'math':
             # the link name is different
             name = 'm'
-        self.links.add(f"-l{name}")
+        if name not in {'time'}:
+            self.links.add(f"-l{name}")
         return ''
 
     def formatVarInit(self, name, varType):
