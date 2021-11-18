@@ -7,7 +7,7 @@ import re
 from lexer import *
 
 statements = ['if','else','elif','def','cdef','for','in','as','return','import','class','while','break','continue','try', 'del']
-operators = ['+','-','%','/','*','**','<','>','not','and','or','is', '&']
+operators = ['+','-','%','/','*','**','<','>','not', '!', 'and','or','is', '&']
 builtins = ['input','sizeof','addr']
 types = ['str','cstr','const','struct','char','int','float','double','struct', 'func','uint','ulong','ubyte']
 symbols = {
@@ -25,7 +25,6 @@ symbols = {
     ' ':'space',
     '\n':'newLine',
     '\t':'tab',
-    '!':'exclamation',
     '{':'lbrace',
     '}':'rbrace',
     '>':'greaterThan',
