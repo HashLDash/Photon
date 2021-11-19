@@ -634,6 +634,7 @@ class BaseTranspiler():
         name = self.getValAndType(token['name'])
         args = self.processArgs(token['args'], inferType=True)
         callType = name['type']
+        callback = False
         # Put kwargs in the right order
         if not className is None:
             kws = self.classes[className]['methods'][name['value']]['kwargs']
@@ -647,8 +648,14 @@ class BaseTranspiler():
                 kws = []
                 ags = []
         elif name['value'] in self.currentScope:
-            kws = self.currentScope[name['value']]['kwargs']
-            ags = self.currentScope[name['value']]['args']
+            if 'func' in self.currentScope[name['value']]['type']:
+                # Its a callback
+                callback = True
+                kws = self.processKwargs(token['kwargs'], inferType=True)
+                ags = args
+            else:
+                kws = self.currentScope[name['value']]['kwargs']
+                ags = self.currentScope[name['value']]['args']
         else:
             # Call signature not defined, use the order it was passed
             kws = self.processKwargs(token['kwargs'], inferType=True)
@@ -670,7 +677,7 @@ class BaseTranspiler():
                 arg['cast'] = a['type']
             arguments.append(arg)
                 
-        val = self.formatCall(name['value'], name['type'], arguments, kwargs, className)
+        val = self.formatCall(name['value'], name['type'], arguments, kwargs, className, callback)
         if 'modifier' in token:
             val = token['modifier'].replace('not',self.notOperator) + val
         return {'value':val, 'type':callType}

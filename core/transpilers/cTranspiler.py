@@ -206,7 +206,7 @@ class Transpiler(BaseTranspiler):
                     raise SyntaxError(f'Cannot format {valType} in formatStr')
         return string, exprs
 
-    def formatCall(self, name, returnType, args, kwargs, className):
+    def formatCall(self, name, returnType, args, kwargs, className, callback):
         # Handle function arguments. Kwargs are in the right order
         if name in self.classes:
             args.insert(0, {'value':'{var}', 'type':name})
@@ -250,7 +250,11 @@ class Transpiler(BaseTranspiler):
         if tempVars or permanentVars:
             self.insertCode(permanentVars)
             self.insertCode(tempVars)
+            if callback:
+                return f'(*{name})({arguments})'
             return f'{instance}{name}({arguments})'
+        if callback:
+            return f'(*{name})({arguments})'
         return f'{instance}{name}({arguments})'
     
     def formatIndexAccess(self, token):
@@ -578,6 +582,11 @@ class Transpiler(BaseTranspiler):
                 arg['type'] = self.inClass
             elif arg['type'] == 'array':
                 arg['type'] = f"list_{arg['elementType']}"
+            elif 'func' in arg['type']:
+                #callback
+                #TODO: implement return types
+                arg['type'] = "void"
+                arg['value'] = f"(*{arg['value']})()"
             newArgs.append(arg)
         args = newArgs
 
