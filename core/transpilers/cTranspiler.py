@@ -193,9 +193,15 @@ class Transpiler(BaseTranspiler):
                     string = string.replace('{}', '%ld', 1)
                 elif valType == 'float':
                     string = string.replace('{}', '%g', 1)
+                elif valType == 'bool':
+                    string = string.replace('{}', '%s', 1)
+                    exprs[-1] = f'({exprs[-1]}) ? "True" : "False"'
                 elif valType == 'array':
                     string = string.replace('{}', '%s', 1)
                     exprs[-1] = f'list_{expr["elementType"]}_str(&{exprs[-1]})'
+                elif valType == 'map':
+                    string = string.replace('{}', '%s', 1)
+                    exprs[-1] = f'dict_{expr["keyType"]}_{expr["valType"]}_str(&{exprs[-1]})'
                 else:
                     raise SyntaxError(f'Cannot format {valType} in formatStr')
         return string, exprs

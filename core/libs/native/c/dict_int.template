@@ -1,6 +1,7 @@
 #ifndef __dict_int_!@valType@!
 #define __dict_int_!@valType@!
 #include "main.h"
+#include "asprintf.h"
 
 typedef struct dict_int_!@valType@!_entry {
     int prehash;
@@ -72,13 +73,6 @@ void dict_int_!@valType@!_set(dict_int_!@valType@!* self, long key, !@valNativeT
     }
 }
 
-// inline?
-int dict_int_!@valType@!_compare(const void* a, const void* b) {
-    int int_a = *((int*)a);
-    int int_b = *((int*)b);
-    return (int_a > int_b) - (int_a < int_b);
-}
-
 void dict_int_!@valType@!_del(dict_int_!@valType@!* self, long key) {
     int size = self->size;
     int index = key % size;
@@ -123,6 +117,20 @@ void dict_int_!@valType@!_del(dict_int_!@valType@!* self, long key) {
         self->size = size;
     }
     self->len--;
+}
+
+char* dict_int_!@valType@!_str(dict_int_!@valType@!* self) {
+    int dictLen = self->len-1;
+    char* out = "{";
+    for (int i=0; i<dictLen; i++) {
+        asprintf(&out, "%s%ld: !@formatCode@!, ", out, self->entries[i].key, self->entries[i].val);
+    }
+    if (dictLen > -1) {
+        asprintf(&out, "%s%ld: !@formatCode@!}", out, self->entries[dictLen].key, self->entries[dictLen].val);
+    } else {
+        asprintf(&out, "%s}", out);
+    }
+    return out;
 }
 
 void dict_int_!@valType@!_repr(dict_int_!@valType@!* self) {
