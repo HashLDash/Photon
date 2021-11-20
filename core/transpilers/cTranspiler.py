@@ -87,8 +87,10 @@ class Transpiler(BaseTranspiler):
                     v['args'] = [{'value':instance.replace('->',''), 'type':currentType, 'pointer':True}] + v['args']
                     value = self.processCall(v, className=currentType)
                     if self.inFunc:
-                        if self.inClass and instance == 'self':
+                        if self.inClass and instance == 'super->':
                             # Call the method only without a dot access
+                            call = value['value'].replace('!@instance@!', '').replace(f'{v["name"]["name"]}(super', f'{v["name"]["name"]}(({currentType}*)self')
+
                             value['value'] = f'{currentType}_{call}'
                         else:
                             call = value['value'].replace('!@instance@!', '')

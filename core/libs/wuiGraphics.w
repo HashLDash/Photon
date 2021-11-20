@@ -15,3 +15,16 @@ def measureText(Font font, str text, int fontSize):
     for Python:
         int width = MeasureTextEx(font, text.encode(), fontSize, 0).x
     return width
+
+def drawRoundedRectangle(float x, float y, float width, float height, float radius, Color color):
+    segments = 10
+    for C:
+        Rectangle rec
+        rec.x = x
+        rec.y = y
+        rec.width = width
+        rec.height = height
+    for Python:
+        rec = Rectangle(x, y, width, height)
+    DrawRectangleRounded(rec, radius, segments, color)
+

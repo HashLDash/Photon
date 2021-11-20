@@ -765,6 +765,8 @@ class BaseTranspiler():
                 for methodName in self.classes[name]['methods']:
                     self.classes[name]['scope'][methodName]['args'][0]['type'] = name
                     self.classes[name]['methods'][methodName]['scope']['self']['type'] = name
+                    if inherited:
+                        self.classes[name]['methods'][methodName]['scope']['super'] = {'type': inherited}
                     self.classes[name]['methods'][methodName]['args'][0]['type'] = name
                     definition = self.classes[name]['methods'][methodName]['code'][0]
                     self.reformatInheritedMethodDefinition(definition, methodName, name, inherited)
@@ -871,6 +873,9 @@ class BaseTranspiler():
             self.startScope()
             if self.inClass:
                 self.startClassScope()
+                inherited = self.classes[self.inClass]['inherited']
+                if inherited:
+                    self.currentScope['super'] = {'type':inherited[0]}
             # put args in scope
             for arg in args:
                 argType = arg['type']
@@ -929,6 +934,10 @@ class BaseTranspiler():
         scopeName = 'new' if functionName == self.constructorName else functionName
         self.currentScope[scopeName] = {'type':returnType, 'token':'func', 'args':args, 'kwargs':kwargs}
         # put args in scope
+        if self.inClass:
+            inherited = self.classes[self.inClass]['inherited']
+            if inherited:
+                self.currentScope['super'] = {'type':inherited[0]}
         index = len(self.outOfMain)
         for arg in args:
             argType = arg['type']
