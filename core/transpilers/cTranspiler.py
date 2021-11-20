@@ -40,6 +40,7 @@ class Transpiler(BaseTranspiler):
             'str': 'char*',
             'bool': 'int',
             'void': 'void',
+            'func': 'void',
             'unknown': 'auto',
         }
         self.initInternal = False
@@ -587,7 +588,6 @@ class Transpiler(BaseTranspiler):
             elif 'func' in arg['type']:
                 #callback
                 #TODO: implement return types
-                arg['type'] = "void"
                 arg['value'] = f"(*{arg['value']})()"
             newArgs.append(arg)
         args = newArgs
@@ -685,6 +685,9 @@ class Transpiler(BaseTranspiler):
                     argsTypes.append(f"list_{a['elementType']}")
                 elif a['type'] in self.classes:
                     argsTypes.append(f'struct {attrType}*')
+                elif a['type'] == 'func':
+                    #TODO: Add real return type
+                    argsTypes.append(f'void (*)()')
                 else:
                     argsTypes.append(attrType)
 
@@ -703,6 +706,10 @@ class Transpiler(BaseTranspiler):
             varType = self.nativeType(varType)
             if varType in self.classes:
                 return f'{varType}* {name};'
+            elif variable['type'] == 'func':
+                # Its a callback
+                #TODO: Handle real type
+                return f'{varType} (*{name})();'
             else:
                 return f'{varType} {name};'
 

@@ -623,6 +623,9 @@ class BaseTranspiler():
             if tok['expr']['type'] == 'array' and not self.typeKnown(tok['expr']['args'][0]['elementType']):
                 tok['expr']['args'][0]['elementType'] = tok['target']['type']
             kw = self.getValAndType(tok['expr'])
+            if self.typeKnown(tok['target']['type']) and tok['target']['type'] == 'func':
+                # It's a callback
+                kw['type'] = tok['target']['type']
             name = tok['target']['name']
             kw['name'] = name
             if 'attribute' in tok['target']:
@@ -636,7 +639,11 @@ class BaseTranspiler():
         callType = name['type']
         callback = False
         # Put kwargs in the right order
-        if not className is None:
+        if token['type'] == 'func':
+            # It'a a callback
+            kws = self.processKwargs(token['kwargs'], inferType=True)
+            ags = args
+        elif className is not None:
             kws = self.classes[className]['methods'][name['value']]['kwargs']
             ags = self.classes[className]['methods'][name['value']]['args']
         elif name['value'] in self.classes:
