@@ -362,7 +362,7 @@ class Transpiler(BaseTranspiler):
             formatstr = expr['format']
             values = ','.join(expr['values'])
             varType = self.nativeType(varType)
-            return f'{varType} {variable}; asprintf(&{variable}, {formatstr},{values});'
+            return f'{varType} {variable}; asprintf(&_{variable}, {formatstr},{values});'
         formattedExpr = self.formatExpr(expr, cast = cast, var = variable)
         # Check if type declaration is needed
         if inMemory:
@@ -378,7 +378,7 @@ class Transpiler(BaseTranspiler):
         except KeyError:
             pass
         if expr['type'] in {'array', 'map'}:
-            return formattedExpr.format(var=variable)
+            return formattedExpr.format(var=f'{variable}')
         elif expr['type'] in self.classes:
             className = expr["type"]
             permanentVars, classInit = self.formatClassInit(className, variable)

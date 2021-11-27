@@ -19,16 +19,30 @@ class Label(Widget):
         if .font.baseSize == 0:
             .font = LoadFontEx("assets/Roboto-Italic.ttf", .fontSize, 0, 250)
         
-        lineBuffer = ""
-        word = ""
+        lineBuffer = ''
+        word = ''
         for c in .text:
-            if c == " " or c == "\n":
-                if c == "\n" or measureText(.font, lineBuffer+word+c, .fontSize) > .width:
+            if c == ' ':
+                if measureText(.font, lineBuffer+' '+word, .fontSize) > .width:
                     .lines += lineBuffer
-                    lineBuffer = word + c
+                    lineBuffer = word
                 else:
-                    lineBuffer += word + c
-                word = ""
+                    if lineBuffer == '':
+                        lineBuffer = word
+                    else:
+                        lineBuffer += ' ' + word
+                word = ''
+            elif c == '\n':
+                if measureText(.font, lineBuffer+' '+word, .fontSize) > .width:
+                    .lines += lineBuffer
+                    .lines += word
+                else:
+                    if lineBuffer == '':
+                        .lines += word
+                    else:
+                        .lines += lineBuffer + ' ' + word
+                lineBuffer = ''
+                word = ''
             else:
                 word += c
         if measureText(.font, lineBuffer+word, .fontSize) > .width:
@@ -41,7 +55,7 @@ class Label(Widget):
         if .valign == "center":
             dy += (.height - .lines.len * .fontSize)/2
         elif .valign == "bottom":
-            dy = .y + .height - .lines.len * .fontSize
+            dy += .height - .lines.len * .fontSize
 
         dx = 0.0
         for line in .lines:
