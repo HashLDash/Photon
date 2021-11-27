@@ -100,6 +100,16 @@ class Transpiler(BaseTranspiler):
                         # if outside, use . instead
                         value['value'] = value['value'].replace('!@instance@!', instance + '.')
                     dotAccess = [value['value']]
+                elif currentType in {'array', 'map'}:
+                    v['args'] = [{'type':currentType, 'value':f'&{"".join(dotAccess)}'}] + v['args']
+                    value = self.processCall(v)
+                    if currentType == 'array':
+                        arrayType = tokens[n-1]['elementType']
+                        dotAccess = [f"list_{arrayType}_{value['value']}"]
+                    else:
+                        keyType = tokens[n-1]['keyType']
+                        valType = tokens[n-1]['valType']
+                        dotAccess = [f"dict_{keyType}_{valType}_{value['value']}"]
                 else:
                     value = self.processCall(v)
                     dotAccess.append(value['value'])
