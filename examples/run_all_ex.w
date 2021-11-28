@@ -1,6 +1,10 @@
 # File import example
 
 print("---------------------------------------------")
+print("# import callback_ex")
+import callback_ex
+
+print("---------------------------------------------")
 print("# import class_ex")
 import class_ex
 
@@ -29,13 +33,13 @@ print("# import loops_ex")
 import loops_ex
 
 print("---------------------------------------------")
-print("# import print_and_input_ex")
-import print_and_input_ex
-
-#print("---------------------------------------------")
-#print("# import test_ex")
-#import test_ex
-
-print("---------------------------------------------")
 print("# import variables_ex")
 import variables_ex
+
+print("---------------------------------------------")
+print("# import random_ex")
+import random_ex
+
+print("---------------------------------------------")
+print("# import print_and_input_ex")
+import print_and_input_ex
