@@ -5,19 +5,19 @@ for C:
 
     srand(time(NULL))
 
-    def float random(float begin = 0.0, float end = 0.0):
+    def float random_example(float begin = 0.0, float end = 0.0):
         float gen = rand() / RAND_MAX
         if begin != 0.0 or end != 0.0:
             gen = gen * (end - begin) + begin
         return gen
 
-def test_random(float begin, float end, int max_iteration = 100000):
+def test_random_example(float begin, float end, int max_iteration = 100000):
     x = 0
     y = 0
     z = 0
     float k = []
     for i in 0..max_iteration:
-        gen = random(begin = begin, end = end)
+        gen = random_example(begin = begin, end = end)
         if gen == begin:
             x += 1
         elif gen == end:
@@ -33,4 +33,4 @@ def test_random(float begin, float end, int max_iteration = 100000):
     #print(k)
     print()
 
-test_random(-5, 5)
+test_random_example(-5, 5)
