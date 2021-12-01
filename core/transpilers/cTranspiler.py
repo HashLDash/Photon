@@ -435,6 +435,11 @@ class Transpiler(BaseTranspiler):
                     return f'(double)({value["value"]})'
                 else:
                     raise SyntaxError(f'Convert from type {value["type"]} to type {cast} not implemented')
+            elif cast == 'char*':
+                if value['type'] == 'int':
+                    return f'(char)({value["value"]})'
+                else:
+                    raise SyntaxError(f'Convert from type {value["type"]} to type {cast} not implemented')
             else:
                 raise SyntaxError(f'Cast not implemented for type {cast}')
         return value['value']
