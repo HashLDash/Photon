@@ -9,7 +9,7 @@ from lexer import *
 statements = ['if','else','elif','def','cdef','for','in','as','return','import','class','while','break','continue','try', 'del']
 operators = ['+','-','%','/','*','**','<','>','not', '!', 'and','or','is', '&']
 builtins = ['input','sizeof','addr']
-types = ['str','cstr','const','struct','char','int','float','double','struct', 'func','uint','ulong','ubyte']
+types = ['str','cstr','const','struct','char','int','float','double','struct', 'func','uint','ulong','ubyte','file']
 symbols = {
     '.':'dot',
     '=':'equal',

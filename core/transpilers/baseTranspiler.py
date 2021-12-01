@@ -186,6 +186,13 @@ class BaseTranspiler():
                     'indexAccess':token['indexAccess'], 'type':v['type']}
             return {'value':token['name'], 'type':varType,
                 'keyType':token['keyType'], 'valType':token['valType']}
+        if varType == 'str':
+            if 'indexAccess' in token:
+                # Accessing an element of string
+                token['type'] = varType
+                v = self.processIndexAccess(token)
+                return {'value':v['value'],
+                    'indexAccess':token['indexAccess'], 'type':v['type']}
         return {'value':token['name'], 'type':varType}
 
     def processIndexAccess(self, token):
@@ -195,6 +202,10 @@ class BaseTranspiler():
                 'type':varType}
         elif token['type'] == 'map':
             varType = token['valType']
+            return {'value':self.formatIndexAccess(token),
+                'type':varType}
+        elif token['type'] == 'str':
+            varType = 'char'
             return {'value':self.formatIndexAccess(token),
                 'type':varType}
         else:
@@ -480,7 +491,8 @@ class BaseTranspiler():
         else:
             cast = None
 
-        if 'indexAccess' in variable:
+        if 'indexAccess' in target:
+            target['type'] = varType
             self.insertCode(self.formatIndexAssign(target, expr, inMemory=inMemory))
         else:
             self.insertCode(self.formatAssign(variableName, varType, cast, expr, inMemory=inMemory))

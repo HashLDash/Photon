@@ -42,6 +42,7 @@ class Transpiler(BaseTranspiler):
             'void': 'void',
             'func': 'void',
             'unknown': 'auto',
+            'file': 'FILE*'
         }
         self.initInternal = False
 
@@ -271,17 +272,17 @@ class Transpiler(BaseTranspiler):
         return f'{instance}{name}({arguments})'
     
     def formatIndexAccess(self, token):
+        indexAccess = self.processExpr(token['indexAccess'])['value']
+        name = token['name']
         if token['type'] == 'array':
             varType = token['elementType']
-            indexAccess = self.processExpr(token['indexAccess'])['value']
-            name = token['name']
             return f'list_{varType}_get(&{name}, {indexAccess})'
         elif token['type'] == 'map':
             keyType = token['keyType']
             valType = token['valType']
-            indexAccess = self.processExpr(token['indexAccess'])['value']
-            name = token['name']
             return f'dict_{keyType}_{valType}_get(&{name}, {indexAccess})'
+        elif token['type'] == 'str':
+            return f'{name}[{indexAccess}]'
         else:
             raise SyntaxError(f'IndexAccess with type {token["type"]} not implemented yet')
 
@@ -303,6 +304,11 @@ class Transpiler(BaseTranspiler):
             name = target['name']
             varType = target['valType']
             keyType = target['keyType']
+        elif target['type'] == 'str':
+            index = self.processExpr(target['indexAccess'])['value']
+            name = target['name']
+            assignType = 'str'
+            varType = 'str'
         else:
             raise SyntaxError(f'Index assign with type {target["type"]} not implemented in c target.')
 
@@ -328,6 +334,8 @@ class Transpiler(BaseTranspiler):
             return f'{preparation}list_{varType}_set(&{name}, {index}, {expr});'
         elif assignType == 'map':
             return f'{preparation}dict_{keyType}_{varType}_set(&{name}, {index}, {expr});'
+        elif assignType == 'str':
+            return f'{preparation}{name}[{index}] = {expr};'
         else:
             raise SyntaxError('This assign type for indexAssign is not implemented yet.')
 
@@ -774,6 +782,8 @@ class Transpiler(BaseTranspiler):
                     return f'printf("%s{terminator}", {value["type"]}_repr(&{value["value"]}));'
             else:
                 return f'printf("<class {value["type"]}>{terminator}");'
+        elif value['type'] == 'char':
+            return f'printf("%c{terminator}", {value["value"]});'
         else:
             raise SyntaxError(f'Print function with token {value} not supported yet.')
 
