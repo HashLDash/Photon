@@ -1,6 +1,9 @@
 import wuiGraphics
 import raylib
 
+def pass():
+    print("Apertou!!")
+
 class Widget():
     def new(.x=0.0, .y=0.0, .width=100.0, .height=100.0):
 
@@ -69,6 +72,59 @@ class Label(Widget):
             drawText(.font, line, dx, dy, .fontSize, .color)
             dy += .fontSize
         .lines.len = 0
+    
+class Button(Label):
+    def new(func .onPress=pass, func .onRelease=pass, .radius=0.5, .buttonColor=Color BLUE):
+
+    def render():
+        int posX = GetMouseX()
+        int posY = GetMouseY()
+        if posX > .x and posX < .x + .width and posY > .y and posY < .y + .height:
+            if IsMouseButtonPressed(MOUSE_LEFT_BUTTON):
+                .onPress()
+            elif IsMouseButtonReleased(MOUSE_LEFT_BUTTON):
+                .onRelease()
+        drawRoundedRectangle(.x, .y, .width, .height, .radius, .buttonColor)
+        super.render()
+
+class Layout(Widget):
+    def new(Widget .children=[]):
+
+    def render():
+        for child in .children:
+            child.render()
+
+    def addWidget(Widget widget):
+        .children += widget
+
+    def removeWidget(Widget widget):
+        .children -= widget
+
+class Box(Layout):
+    def new(.orientation='vertical'):
+
+    def render():
+        dx = .x
+        dy = .y
+        if .children.len > 0:
+            if .orientation == 'vertical':
+                wHeight = .height / .children.len
+                for child in .children:
+                    child.x = dx
+                    child.y = dy
+                    child.width = .width
+                    child.height = wHeight
+                    child.render()
+                    dy += wHeight
+            else:
+                wWidth = .width / .children.len
+                for child in .children:
+                    child.x = dx
+                    child.y = dy
+                    child.width = wWidth
+                    child.height = .height
+                    child.render()
+                    dx += wWidth
 
 class App():
     def run(Widget widget):
