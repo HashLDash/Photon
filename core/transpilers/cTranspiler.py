@@ -894,7 +894,7 @@ class Transpiler(BaseTranspiler):
                     self.renderListTemplate(valType)
                 for keyType, valType in self.dictTypes:
                     self.renderDictTemplate(keyType, valType)
-            for line in [''] + self.outOfMain + [''] + boilerPlateStart + self.source + boilerPlateEnd:
+            for line in [''] + boilerPlateStart + self.outOfMain + [''] + self.source + boilerPlateEnd:
                 if line:
                     if line[0] == '}':
                         indent -= 4
