@@ -380,7 +380,10 @@ class Transpiler(BaseTranspiler):
             formatstr = expr['format']
             values = ','.join(expr['values'])
             varType = self.nativeType(varType)
-            return f'{varType} {variable}; asprintf(&_{variable}, {formatstr},{values});'
+            if inMemory:
+                return f'asprintf(&{variable}, {formatstr},{values});'
+            else:
+                return f'{varType} {variable}; asprintf(&{variable}, {formatstr},{values});'
         formattedExpr = self.formatExpr(expr, cast = cast, var = variable)
         # Check if type declaration is needed
         if inMemory:
