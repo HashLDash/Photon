@@ -934,6 +934,8 @@ class Transpiler(BaseTranspiler):
             exit()
         else:
             if self.target in {'linux', 'darwin'}:
-                call('./main', cwd='Sources/c')
+                # don't call on Sources/c folder because of file paths
+                call('./Sources/c/main')
+                #call('./main', cwd='Sources/c')
             else:
                 call('main', cwd='Sources/c', shell=True)
