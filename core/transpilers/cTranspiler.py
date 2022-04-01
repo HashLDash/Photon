@@ -380,7 +380,10 @@ class Transpiler(BaseTranspiler):
             formatstr = expr['format']
             values = ','.join(expr['values'])
             varType = self.nativeType(varType)
-            return f'{varType} {variable}; asprintf(&_{variable}, {formatstr},{values});'
+            if inMemory:
+                return f'asprintf(&{variable}, {formatstr},{values});'
+            else:
+                return f'{varType} {variable}; asprintf(&{variable}, {formatstr},{values});'
         formattedExpr = self.formatExpr(expr, cast = cast, var = variable)
         # Check if type declaration is needed
         if inMemory:
@@ -894,7 +897,7 @@ class Transpiler(BaseTranspiler):
                     self.renderListTemplate(valType)
                 for keyType, valType in self.dictTypes:
                     self.renderDictTemplate(keyType, valType)
-            for line in [''] + self.outOfMain + [''] + boilerPlateStart + self.source + boilerPlateEnd:
+            for line in [''] + boilerPlateStart + self.outOfMain + [''] + self.source + boilerPlateEnd:
                 if line:
                     if line[0] == '}':
                         indent -= 4
@@ -931,6 +934,8 @@ class Transpiler(BaseTranspiler):
             exit()
         else:
             if self.target in {'linux', 'darwin'}:
-                call('./main', cwd='Sources/c')
+                # don't call on Sources/c folder because of file paths
+                call('./Sources/c/main')
+                #call('./main', cwd='Sources/c')
             else:
                 call('main', cwd='Sources/c', shell=True)
