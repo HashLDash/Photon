@@ -103,7 +103,7 @@ def token2word(tokens):
         elif 'symbol' in t:
             phrase += t['symbol']
         elif t['token'] in {'num', 'var', 'expr','print','printFunc',
-                'floatNumber', 'type',
+                'floatNumber', 'type', 'special',
                 'assign','operator','group','ifStatement','if','elifStatement',
                 'elif','input','inputFunc', 'args','call', 'whileStatement',
                 'while','forStatement','inStatement','for','range','defStatement',

@@ -9,9 +9,8 @@ def inference(value):
         return {'token':'num', 'value': value, 'type':'int'}
     except:
         try:
-            input(float(value[0]))
-            input('it is something??')
-            return {'token':'value','type':'unknown','value':value}
+            float(value[0])
+            return {'token':'special','type':'unknown','value':value}
         except:
             if value == 'True' or value == 'False':
                 return {'token':'expr','type':'bool','args': [{'token':'bool', 'type':'bool','value':value.lower()}], 'ops':[] }
@@ -86,7 +85,7 @@ def string(i, t):
             s += "'\"'"
         elif token['token'] == 'var':
             s += token['name']
-        elif token['token'] == 'num':
+        elif token['token'] in ['num','special']:
             s += str(token['value'])
         elif 'operator' in token:
             s += token['operator']
