@@ -869,6 +869,8 @@ class Transpiler(BaseTranspiler):
         with open(f'Sources/c/main.h', 'w') as f:
             indent = 0
             f.write('#ifndef __main_h\n#define __main_h\n')
+            if self.listTypes:
+                self.imports.add('#include "asprintf.h"')
             listTypeHints = []
             for listType in self.listTypes:
                 if listType in self.classes:

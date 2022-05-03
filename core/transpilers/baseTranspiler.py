@@ -289,6 +289,7 @@ class BaseTranspiler():
                     token['value'] = self.true
             if 'modifier' in token:
                 token['value'] = token['modifier'].replace('not', self.notOperator) + token['value']
+                del token['modifier']
             return token
         elif token['token'] == 'expr':
             return self.processExpr(token)
