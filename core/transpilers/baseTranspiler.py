@@ -47,6 +47,9 @@ class BaseTranspiler():
             'or': self.orOperator,
             'delete': self.delete,
         }
+        self.builtins = {
+            'open':{'type':'file', 'value':'open'},
+        }
         self.terminator = ';'
         self.currentScope = {}
         # Old scope is a list because of nested scopes.
@@ -649,7 +652,11 @@ class BaseTranspiler():
     def processCall(self, token, className=None):
         name = self.getValAndType(token['name'])
         args = self.processArgs(token['args'], inferType=True)
-        callType = name['type']
+        if name['value'] in self.builtins:
+            callType = self.builtins[name['value']]['type']
+            name['value'] = self.builtins[name['value']]['value']
+        else:
+            callType = name['type']
         callback = False
         # Put kwargs in the right order
         if token['type'] == 'func':

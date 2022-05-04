@@ -44,6 +44,9 @@ class Transpiler(BaseTranspiler):
             'unknown': 'auto',
             'file': 'FILE*'
         }
+        self.builtins = {
+            'open':{'type':'file', 'value':'fopen'},
+        }
         self.initInternal = False
 
     def formatSystemLibImport(self, expr):
@@ -111,6 +114,26 @@ class Transpiler(BaseTranspiler):
                         keyType = tokens[n-1]['keyType']
                         valType = tokens[n-1]['valType']
                         dotAccess = [f"dict_{keyType}_{valType}_{value['value']}"]
+                elif currentType == 'file':
+                    if v['name']['name'] in ['write', 'close']:
+                        name = v['name']['name']
+                        instance = dotAccess.pop()
+                        if name == 'write':
+                            v['name']['name'] = 'fprintf'
+                            value = self.processFormatStr(v['args'][0]['args'][0])
+                            if 'format' in value:
+                                # It's a format string
+                                formatstr = value['format']
+                                values = ', '.join(value['values'])
+                                dotAccess = [f'fprintf({instance}, {formatstr}, {values})']
+                                continue
+                        else:
+                            v['name']['name'] = 'fclose'
+                        v['args'] = [{'value':instance, 'type':'file'}] + v['args']
+                        value = self.processCall(v)
+                        dotAccess = [value['value']]
+                    else:
+                        raise ValueError(f'Method {v["name"]} is not available for files.')
                 else:
                     value = self.processCall(v)
                     dotAccess.append(value['value'])
