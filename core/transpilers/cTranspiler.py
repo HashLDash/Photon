@@ -54,8 +54,17 @@ class Transpiler(BaseTranspiler):
         name = expr['args'][0]['name']
         self.imports.add(f'#include "{name}.h"')
         with open(f'{self.standardLibs}native/c/{name}.h') as f:
-            flags = f.readline()
+            flags = []
+            includes = []
             for line in f:
+                if line.startswith('//PHOTON_FLAGS '):
+                    flags = line.replace('//PHOTON_FLAGS ','').split(' ')
+                    for flag in flags:
+                        self.links.add(f"-l{flag.strip()}")
+                elif line.startswith('//PHOTON_INCLUDES '):
+                    includes = line.replace('//PHOTON_INCLUDES ','').split(' ')
+                    for include in includes:
+                        self.imports.add(f'#include "{include.strip()}.h"')
                 if not ';' in line:
                     line = line.strip()
                     tokens = line.split(' ')
@@ -64,9 +73,6 @@ class Transpiler(BaseTranspiler):
                         funcName = tokens[1].split('(')[0]
                         returnType = list(self.nativeTypes.keys())[list(self.nativeTypes.values()).index(tokens[0])]
                         self.currentScope[funcName] = {'type':returnType, 'kwargs':[], 'args':[], 'token':'nativeFunc', 'name':funcName}
-        if '//PHOTON_FLAGS ' in flags:
-            for flag in flags.replace('//PHOTON_FLAGS ','').split(' '):
-                self.links.add(f"-l{flag.strip()}")
         return ''
 
     def formatSystemLibImport(self, expr):
