@@ -675,7 +675,10 @@ class BaseTranspiler():
                 kws = []
                 ags = []
         elif name['value'] in self.currentScope:
-            if 'func' in self.currentScope[name['value']]['type']:
+            if self.currentScope[name['value']]['token'] == 'nativeFunc':
+                kws = []
+                ags = args
+            elif 'func' in self.currentScope[name['value']]['type']:
                 # Its a callback
                 callback = True
                 kws = self.processKwargs(token['kwargs'], inferType=True)
@@ -1063,7 +1066,7 @@ class BaseTranspiler():
                 self.header += interpreter.engine.header
             elif f"{name}.{self.libExtension}" in os.listdir(self.standardLibs + f'/native/{self.lang}/'):
                 # Native Photon lib module import
-                raise SyntaxError('Native Photon module import not implemented yet.')
+                self.insertCode(self.formatNativeLibImport(token['expr']))
             elif f"{name}.{self.libExtension}" in os.listdir():
                 # Native Photon local module import
                 raise SyntaxError('Native Photon local module import not implemented yet.')

@@ -49,6 +49,26 @@ class Transpiler(BaseTranspiler):
         }
         self.initInternal = False
 
+    def formatNativeLibImport(self, expr):
+        # TODO: Handle dotAccess imports
+        name = expr['args'][0]['name']
+        self.imports.add(f'#include "{name}.h"')
+        with open(f'{self.standardLibs}native/c/{name}.h') as f:
+            flags = f.readline()
+            for line in f:
+                if not ';' in line:
+                    line = line.strip()
+                    tokens = line.split(' ')
+                    line = line.replace(' ','')
+                    if tokens[0] in self.nativeTypes.values() and line[-2:] == '){':
+                        funcName = tokens[1].split('(')[0]
+                        returnType = list(self.nativeTypes.keys())[list(self.nativeTypes.values()).index(tokens[0])]
+                        self.currentScope[funcName] = {'type':returnType, 'kwargs':[], 'args':[], 'token':'nativeFunc', 'name':funcName}
+        if '//PHOTON_FLAGS ' in flags:
+            for flag in flags.replace('//PHOTON_FLAGS ','').split(' '):
+                self.links.add(f"-l{flag.strip()}")
+        return ''
+
     def formatSystemLibImport(self, expr):
         # TODO: Handle dotAccess imports
         name = expr['args'][0]['name']
