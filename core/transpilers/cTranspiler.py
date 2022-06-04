@@ -141,7 +141,7 @@ class Transpiler(BaseTranspiler):
                         valType = tokens[n-1]['valType']
                         dotAccess = [f"dict_{keyType}_{valType}_{value['value']}"]
                 elif currentType == 'file':
-                    if v['name']['name'] in ['write', 'close']:
+                    if v['name']['name'] in ['write', 'close', 'read']:
                         name = v['name']['name']
                         instance = dotAccess.pop()
                         if name == 'write':
@@ -153,6 +153,12 @@ class Transpiler(BaseTranspiler):
                                 values = ', '.join(value['values'])
                                 dotAccess = [f'fprintf({instance}, {formatstr}, {values})']
                                 continue
+                        elif name == 'read':
+                            v['name']['name'] = 'fgets'
+                            length = v['args'][0]['args'][0]['value'] if v['args'] else 1
+                            dotAccess = [f'fgets({{var}}, {length}, {instance})']
+                            currentType = 'str'
+                            continue
                         else:
                             v['name']['name'] = 'fclose'
                         v['args'] = [{'value':instance, 'type':'file'}] + v['args']
@@ -173,7 +179,7 @@ class Transpiler(BaseTranspiler):
                         dotAccess.append(f'{v["name"]}')
                 else:
                     dotAccess.append(v['name'])
-        return '.'.join(dotAccess).replace('->.','->')
+        return '.'.join(dotAccess).replace('->.','->'), currentType
     
     def formatArray(self, elements, elementType, size):
         if not self.typeKnown(elementType):
@@ -457,6 +463,10 @@ class Transpiler(BaseTranspiler):
                 return f'{permanentVars};{initMethod}'
             return f'{permanentVars}; {className} {variable} = {classInit};{initMethod}'
         if varType == self.nativeType('str') + ' ':
+            if formattedExpr.startswith('fgets({var},'):
+                formattedExpr = formattedExpr.replace('fgets({var},', f'fgets({variable},')
+                length = int(formattedExpr.split(',')[1])+1
+                return f'char {variable}[{length}]; {formattedExpr};'
             # if defined with char* it cannot be modified
             if '__tempVar' in formattedExpr:
                 # Already allocated memory, just reassign

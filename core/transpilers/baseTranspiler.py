@@ -741,7 +741,9 @@ class BaseTranspiler():
             else:
                 varType = v['type']
                 currentType = varType
-        value = self.formatDotAccess(tokens)
+        value, lastType = self.formatDotAccess(tokens)
+        if lastType is not None:
+            varType = lastType
         
         # pass other arguments to be compatible with processVar method
         if currentType == 'array':
