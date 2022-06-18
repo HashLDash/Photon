@@ -75,7 +75,7 @@ class Transpiler(BaseTranspiler):
                 names.append(v['value'])
                 currentType = v['type']
 
-        return '.'.join(names)
+        return '.'.join(names), currentType
 
     def formatInput(self, expr):
         message = expr['value']

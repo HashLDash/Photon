@@ -66,7 +66,7 @@ class Transpiler(BaseTranspiler):
                 currentType = v['type']
                 names.append(v['value'])
 
-        return '.'.join(names).replace('self.','this.')
+        return '.'.join(names).replace('self.','this.'), currentType
     
     def formatInput(self, expr):
         if not self.target == 'web':
