@@ -448,7 +448,16 @@ class Transpiler(BaseTranspiler):
         except KeyError:
             pass
         if expr['type'] in {'array', 'map'}:
-            return formattedExpr.format(var=f'{variable}')
+            formattedExpr = formattedExpr.format(var=f'{variable}')
+            # TODO: improve this detection of call vs array init
+            # Maybe use tokens...
+            if '{var} = {{ ' in expr['value']:
+                # just an array or dict init
+                return formattedExpr
+            else:
+                if expr['type'] == 'array':
+                    elementType = expr['elementType']
+                    varType = f'list_{elementType} '
         elif expr['type'] in self.classes:
             className = expr["type"]
             permanentVars, classInit = self.formatClassInit(className, variable)

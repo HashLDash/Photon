@@ -112,7 +112,6 @@ class BaseTranspiler():
             pass
         return 'unknown'
 
-
     def inferType(self, expr):
         if self.typeKnown(expr['type']):
             return expr['type']
@@ -155,10 +154,10 @@ class BaseTranspiler():
             elif varType == 'map':
                 token['keyType'] = self.currentScope[name]['keyType']
                 token['valType'] = self.currentScope[name]['valType']
-        elif name == self.inFunc and self.returnType:
-            for rt in self.returnType:
-                if self.typeKnown(rt):
-                    varType = rt
+        elif name == self.inFunc and self.returnValue:
+            for rv in self.returnValue:
+                if self.typeKnown(rv['type']):
+                    varType = rv['type']
                     # If return is an array, get other info
                     if varType == 'array':
                         token['elementType'] = self.currentScope[name]['elementType']
@@ -710,7 +709,11 @@ class BaseTranspiler():
         val = self.formatCall(name['value'], name['type'], arguments, kwargs, className, callback)
         if 'modifier' in token:
             val = token['modifier'].replace('not',self.notOperator) + val
-        return {'value':val, 'type':callType}
+        outVal = {'value':val, 'type':callType}
+        if callType == 'array':
+            outVal['elementType'] = token['name']['elementType']
+            outVal['size'] = token['name']['size']
+        return outVal
 
     def processDotAccess(self, token):
         tokens = token['dotAccess']
@@ -766,7 +769,7 @@ class BaseTranspiler():
     def startScope(self):
         self.oldScope.append(deepcopy(self.currentScope))
         # refresh returnType
-        self.returnType = set()
+        self.returnValue = []
 
     def endScope(self):
         scope = deepcopy(self.currentScope)
@@ -893,7 +896,7 @@ class BaseTranspiler():
         kwargs = self.processKwargs(token['kwargs'])
         functionName = token['name']
         returnType = token['type']
-        self.returnType = returnType
+        self.returnValue = token
         self.inFunc = functionName
         # infer return type if not known
         if not self.typeKnown(returnType):
@@ -948,9 +951,10 @@ class BaseTranspiler():
             block = deepcopy(token['block'])
             for c in block:
                 self.process(c)
-            for rt in self.returnType:
-                if self.typeKnown(rt):
-                    returnType = rt
+            for rv in self.returnValue:
+                if self.typeKnown(rv['type']):
+                    returnType = rv['type']
+                    returnValue = rv
                     break
             else:
                 returnType = 'void'
@@ -1010,19 +1014,26 @@ class BaseTranspiler():
                     self.processClassAttribute(attribute)
         for c in token['block']:
             self.process(c)
+        returnType = returnValue['type']
+        if returnType == 'array':
+            elementType = returnValue['elementType']
+            returnType = f'list_{elementType}'
         self.insertCode(self.formatFunc(functionName, returnType, args, kwargs),index)
         self.insertCode(self.formatEndFunc())
         self.inFunc = None
         funcScope = self.endScope()
-        self.currentScope[scopeName] = {'scope':funcScope, 'type':returnType, 'token':'func', 'args':args, 'kwargs':kwargs}
+        self.currentScope[scopeName] = {'scope':funcScope, 'type':returnValue['type'], 'token':'func', 'args':args, 'kwargs':kwargs}
+        if returnValue['type'] == 'array':
+            self.currentScope[scopeName]['elementType'] = returnValue['elementType'] 
+            self.currentScope[scopeName]['size'] = returnValue['size']
 
     def processReturn(self, token):
         if 'expr' in token:
             expr = self.processExpr(token['expr'])
-            self.returnType.add(expr['type'])
+            self.returnValue.append(expr)
         else:
             expr = None
-            self.returnType.add('void')
+            self.returnValue.append({'type':'void'})
         self.insertCode(self.formatReturn(expr))
 
     def processBreak(self, token):
