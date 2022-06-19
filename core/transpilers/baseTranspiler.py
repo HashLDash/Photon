@@ -832,6 +832,9 @@ class BaseTranspiler():
         for methodName, info in self.classes[name]['methods'].items():
             self.insertCode('')
             self.classes[name]['scope'][methodName] = info['scope'][methodName]
+            if info['type'] == 'array':
+                self.classes[name]['scope'][methodName]['elementType'] = info['elementType']
+                self.classes[name]['scope'][methodName]['size'] = info['size']
             for c in info['code']:
                 self.insertCode(c)
         if self.methodsInsideClass:
@@ -883,6 +886,9 @@ class BaseTranspiler():
             'name':name,
             'args':methodInfo['args'],
             'kwargs':methodInfo['kwargs']}
+        if methodInfo['type'] == 'array':
+            attrData['elementType'] = self.currentScope[name]['elementType']
+            attrData['size'] = self.currentScope[name]['size']
         # Check if this method overrides other inherited method
         for n, attr in enumerate(self.classes[self.inClass]['attributes']):
             if 'returnType' in attr and attr['name'] == name:
@@ -960,6 +966,7 @@ class BaseTranspiler():
                     break
             else:
                 returnType = 'void'
+                returnValue = {'type':'void'}
             self.endScope()
             if self.inClass:
                 self.endClassScope()
@@ -1056,7 +1063,7 @@ class BaseTranspiler():
                         # Inject assets folder
                         os.makedirs(f'Sources/{self.lang}', exist_ok=True)
                         assetsPath = os.path.realpath(self.standardLibs+'../assets')
-                        os.system(f'cp -r {assetsPath} Sources/{self.lang}/')
+                        os.system(f'cp -r {assetsPath} ./')
                     filename = f'{self.standardLibs}{name}.w'
                 else:
                     # Local module import

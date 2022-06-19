@@ -128,7 +128,7 @@ class Transpiler(BaseTranspiler):
                             value['value'] = '.'.join(dotAccess + [instance, call]).replace('->.','->')
                     else:
                         # if outside, use . instead
-                        value['value'] = value['value'].replace('!@instance@!', instance + '.')
+                        value['value'] = value['value'].replace('!@instance@!', currentType + '_')
                     dotAccess = [value['value']]
                 elif currentType in {'array', 'map'}:
                     v['args'] = [{'type':currentType, 'value':f'&{"".join(dotAccess)}'}] + v['args']
@@ -770,6 +770,8 @@ class Transpiler(BaseTranspiler):
         if 'returnType' in attr:
             # Its a method
             methodReturnType = self.nativeType(attr['returnType'])
+            if methodReturnType == 'array':
+                methodReturnType = f'list_{attr["elementType"]}'
             method = attr['name']
             args = attr['args'] + attr['kwargs']
             argsTypes = []
