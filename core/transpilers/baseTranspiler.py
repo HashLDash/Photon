@@ -72,9 +72,9 @@ class BaseTranspiler():
             'unknown':'auto',
         }
 
-    def insertCode(self, line, index=None):
+    def insertCode(self, line, index=None, isGlobal=False):
         if self.insertMode:
-            if self.inFunc or self.inClass:
+            if self.inFunc or self.inClass or isGlobal:
                 if not index is None:
                     self.outOfMain.insert(index, line)
                 else:
@@ -498,7 +498,13 @@ class BaseTranspiler():
             target['type'] = varType
             self.insertCode(self.formatIndexAssign(target, expr, inMemory=inMemory))
         else:
+            if not inMemory and not self.inFunc and not self.inClass:
+                # It's a global variable, initialize it
+                self.insertCode(self.formatVarInit(variableName, varType), isGlobal=True)
+                # Now set inMemory because it was already defined in global scope
+                inMemory = True
             self.insertCode(self.formatAssign(variableName, varType, cast, expr, inMemory=inMemory))
+
 
     def processAugAssign(self, token):
         op = token['operator']

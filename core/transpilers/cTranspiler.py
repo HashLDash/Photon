@@ -87,6 +87,9 @@ class Transpiler(BaseTranspiler):
         return ''
 
     def formatVarInit(self, name, varType):
+        if varType == 'array':
+            elementType = self.currentScope[name]['elementType']
+            varType = f'list_{elementType}'
         return f'{varType} {name};'
 
     def formatDotAccess(self, tokens):
@@ -179,6 +182,8 @@ class Transpiler(BaseTranspiler):
                         dotAccess.append(f'{v["name"]}')
                 else:
                     dotAccess.append(v['name'])
+        # dont send currentType... trust the bastTranspiler
+        currentType = None
         return '.'.join(dotAccess).replace('->.','->'), currentType
     
     def formatArray(self, elements, elementType, size):
@@ -720,6 +725,7 @@ class Transpiler(BaseTranspiler):
         self.classes[className]['methods'][methodName]['code'][0] = definition
 
     def formatEndClass(self):
+        self.classes[self.className]['endline'] = len(self.outOfMain)
         return f'}} {self.className};'
 
     def formatArrayInit(self, array):
@@ -945,6 +951,7 @@ class Transpiler(BaseTranspiler):
             for listType in self.listTypes:
                 if listType in self.classes:
                     listTypeHints.append(f'typedef struct list_{listType} list_{listType};')
+                    self.outOfMain[self.classes[listType]['endline']] += f'\n#include "list_{listType}.c"\n'
             #TODO: do the same type hint for dicts
             for line in listTypeHints + self.header:
                 if '}' in line:
@@ -969,7 +976,7 @@ class Transpiler(BaseTranspiler):
                     self.renderListTemplate(valType)
                 for keyType, valType in self.dictTypes:
                     self.renderDictTemplate(keyType, valType)
-            for line in [''] + boilerPlateStart + self.outOfMain + [''] + self.source + boilerPlateEnd:
+            for line in [''] + self.outOfMain + boilerPlateStart + [''] + self.source + boilerPlateEnd:
                 if line:
                     if line[0] == '}':
                         indent -= 4
