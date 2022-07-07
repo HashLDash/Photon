@@ -44,7 +44,7 @@ void list_float_append(list_float* list, double value) {
     list->len += 1;
 }
 
-inline int float_equals(double v1, double v2) {
+static inline int float_equals(double v1, double v2) {
     double delta = 0.0000000001;
     if (v1 >= v2 - delta && v1 <= v2 + delta) {
         return 1;
