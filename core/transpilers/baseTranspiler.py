@@ -195,6 +195,8 @@ class BaseTranspiler():
                 v = self.processIndexAccess(token)
                 return {'value':v['value'],
                     'indexAccess':token['indexAccess'], 'type':v['type']}
+        if name in self.currentScope and 'pointer' in self.currentScope[name]:
+            return {'value':token['name'], 'type':varType, 'pointer':self.currentScope[name]['pointer']}
         return {'value':token['name'], 'type':varType}
 
     def processIndexAccess(self, token):
@@ -627,7 +629,7 @@ class BaseTranspiler():
         for tok in tokens:
             arg = self.getValAndType(tok)
             if inferType:
-                args.append( {'type':arg['type'], 'value':arg['value']} )
+                args.append( arg )
             else:
                 # ignore value type because of the scope
                 # Function arguments need explicit type
@@ -928,6 +930,8 @@ class BaseTranspiler():
                 argType = arg['type']
                 argVal = arg['value']
                 self.currentScope[argVal] = {'type':argType}
+                if argType in self.classes:
+                    self.currentScope[argVal]['pointer'] = True
                 if self.inClass and 'default' in arg:
                     self.processClassAttribute(arg)
             # put kwargs in scope
@@ -935,6 +939,8 @@ class BaseTranspiler():
                 kwType = kw['type']
                 kwVal = kw['name']
                 self.currentScope[kwVal] = {'type':kwType}
+                if kwType in self.classes:
+                    self.currentScope[kwVal]['pointer'] = True
                 if kwType == 'array':
                     self.currentScope[kwVal]['elementType'] = kw['elementType']
                     self.currentScope[kwVal]['size'] = kw['size']
@@ -992,6 +998,8 @@ class BaseTranspiler():
             argType = arg['type']
             argVal = arg['value']
             self.currentScope[argVal] = {'type':argType}
+            if argType in self.classes:
+                self.currentScope[argVal]['pointer'] = True
             if self.inClass and 'default' in arg:
                 self.insertCode(self.formatClassDefaultValue(arg))
                 self.processClassAttribute(arg)
@@ -1000,6 +1008,8 @@ class BaseTranspiler():
             kwType = kw['type']
             kwVal = kw['name']
             self.currentScope[kwVal] = {'type':kwType}
+            if kwType in self.classes:
+                self.currentScope[kwVal]['pointer'] = True
             if kwType == 'array':
                 self.currentScope[kwVal]['elementType'] = kw['elementType']
                 self.currentScope[kwVal]['size'] = kw['size']

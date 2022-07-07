@@ -308,7 +308,12 @@ class Transpiler(BaseTranspiler):
                     arguments += f"{cast}&__permVar{self.permVarCounter}__, "
                     self.permVarCounter += 1
                 elif self.inFunc:
-                    arguments += f"{cast}{arg['value']}, "
+                    # Hoping that {var} is a class instance
+                    # TODO: if it's not, then it will bug
+                    if '{var}' == arg['value'] or ('pointer' in arg and not arg['pointer']):
+                        arguments += f"{cast}&{arg['value']}, "
+                    else:
+                        arguments += f"{cast}{arg['value']}, "
                 else:
                     arguments += f"{cast}&{arg['value']}, "
             else:
@@ -475,6 +480,7 @@ class Transpiler(BaseTranspiler):
             initMethod = expr['value'].replace('{var}',variable) + ';'
             if inMemory:
                 return f'{permanentVars};{initMethod}'
+            self.currentScope[variable]['pointer'] = False
             return f'{permanentVars}; {className} {variable} = {classInit};{initMethod}'
         if varType == self.nativeType('str') + ' ':
             if formattedExpr.startswith('fgets({var},'):
