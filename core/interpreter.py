@@ -9,9 +9,11 @@
 from photonParser import parse, assembly, showError
 from photonParser import debug as debugFunc
 import sys
+import hashlib
 
 class Interpreter():
     def __init__(self, filename='', lang='c', target=sys.platform, module=False, standardLibs='', debug=False, transpileOnly=False):
+        self.md5 = None
         self.debug = debug
         if lang == 'c':
             from transpilers.cTranspiler import Transpiler
@@ -34,16 +36,7 @@ class Interpreter():
         if filename:
             self.engine = Transpiler(filename=filename,target=target, module=module, standardLibs=standardLibs, debug=debug)
             self.input = self.file
-            try:
-                # Read utf8 but write as the default on the OS
-                with open(filename,'r',encoding='utf8') as f:
-                    self.source = [line for line in f]
-            except UnicodeDecodeError:
-                with open(filename,'r') as f:
-                    self.source = [line for line in f]
-            except FileNotFoundError as e:
-                print(f"File not found: can't open file {filename}: {e}")
-                sys.exit()
+            self.read_file()
         else:
             try:
                 import readline
@@ -61,6 +54,21 @@ class Interpreter():
         self.processing = True
         self.transpileOnly = transpileOnly
         self.lineNumber = 0
+
+    def read_file(self):
+        filename = self.filename
+        try:
+            # Read utf8 but write as the default on the OS
+            with open(filename,'r',encoding='utf8') as f:
+                self.source = [line for line in f]
+        except UnicodeDecodeError:
+            with open(filename,'r') as f:
+                self.source = [line for line in f]
+        except FileNotFoundError as e:
+            print(f"File not found: can't open file {filename}: {e}")
+            sys.exit()
+        self.md5 = hashlib.md5(str(self.source).encode('utf-8')).hexdigest()
+        #print(f">>>\n{self.source}\n<<< MD5: {self.md5}")
 
     def console(self, glyph='>>> '):
         return input(glyph)
@@ -95,7 +103,8 @@ class Interpreter():
             else:
                 if not self.transpileOnly:
                     self.engine.run()
-                    sys.exit()
+                    #sys.exit()
+                    return 'exit'
                 else:
                     self.engine.write()
                     self.classes = self.engine.classes
@@ -179,4 +188,3 @@ if __name__ == "__main__":
     except IndexError:
         filename = ''
     Interpreter(filename).run()
-

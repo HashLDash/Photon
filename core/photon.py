@@ -3,6 +3,7 @@
 
 import os
 import sys
+import time
 
 def photonConfigLang(defineLang = None):
     import json
@@ -124,4 +125,17 @@ if __name__ == "__main__":
             if not haveDependencies(lang, sys.platform):
                 resolveDependencies(lang, sys.platform)
                 print('Dependencies successfuly installed.')
-        Interpreter(filename = first, lang = lang, standardLibs = os.path.join(PHOTON_INSTALL_PATH, 'libs/'), debug = DEBUG).run()
+
+        interp = Interpreter(filename = first, lang = lang, standardLibs = os.path.join(PHOTON_INSTALL_PATH, 'libs/'), debug = DEBUG)
+        md5_static = interp.md5
+        interp.run()
+        print("# Press Ctrl + C to finish running the app")
+        while True:
+            if md5_static != interp.md5:
+                print("# MD5 Difference Detected - Restarting . . .\n")
+                interp = Interpreter(filename = first, lang = lang, standardLibs = os.path.join(PHOTON_INSTALL_PATH, 'libs/'), debug = DEBUG)
+                md5_static = interp.md5
+                interp.run()
+                print("# Press Ctrl + C to finish running the app")
+            time.sleep(3)
+            interp.read_file()
