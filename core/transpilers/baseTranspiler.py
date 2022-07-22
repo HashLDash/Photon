@@ -838,6 +838,19 @@ class BaseTranspiler():
             self.classHeader(index)
         # Write methods code
         for methodName, info in self.classes[name]['methods'].items():
+            if methodName == 'constructor':
+                continue
+            self.insertCode('')
+            self.classes[name]['scope'][methodName] = info['scope'][methodName]
+            if info['type'] == 'array':
+                self.classes[name]['scope'][methodName]['elementType'] = info['elementType']
+                self.classes[name]['scope'][methodName]['size'] = info['size']
+            for c in info['code']:
+                self.insertCode(c)
+        # Write the constructor if it has one
+        if 'constructor' in self.classes[name]['methods']:
+            methodName = 'constructor'
+            info = self.classes[name]['methods'][methodName]
             self.insertCode('')
             self.classes[name]['scope'][methodName] = info['scope'][methodName]
             if info['type'] == 'array':
