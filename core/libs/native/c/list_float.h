@@ -11,6 +11,22 @@ typedef struct list_float {
     double* values;
 } list_float;
 
+list_float* list_float_constructor(int len, int size, ...) {
+    list_float* list = malloc(sizeof(list_float));
+    list->len = len;
+    list->size = size;
+    list->values = malloc(sizeof(double)*size);
+
+    va_list ptr;
+    va_start(ptr, size); // size is the last argument before the ellipsis
+
+    for (int i = 0; i < len; i++) {
+        list->values[i] = va_arg(ptr, double);
+    }
+    va_end(ptr);
+    return list;
+}
+
 double list_float_get(list_float* list, int index) {
     if (index < 0) {
         // -1 is equivalent to the last element

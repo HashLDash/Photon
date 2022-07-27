@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include "asprintf.h"
 
 typedef struct list_int {
@@ -10,6 +11,22 @@ typedef struct list_int {
     int size; // allocated array size
     long* values;
 } list_int;
+
+list_int* list_int_constructor(int len, int size, ...) {
+    list_int* list = malloc(sizeof(list_int));
+    list->len = len;
+    list->size = size;
+    list->values = malloc(sizeof(long)*size);
+
+    va_list ptr;
+    va_start(ptr, size); // size is the last argument before the ellipsis
+
+    for (int i = 0; i < len; i++) {
+        list->values[i] = va_arg(ptr, long);
+    }
+    va_end(ptr);
+    return list;
+}
 
 int list_int_get(list_int* list, int index) {
     if (index < 0) {

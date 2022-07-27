@@ -9,6 +9,8 @@ typedef struct list_!@valType@! {
     !@valType@!** values;
 } list_!@valType@!;
 
+list_!@valType@!* list_!@valType@!_constructor(int len, int size, ...);
+
 !@valType@!* list_!@valType@!_get(list_!@valType@!* list, int index);
 
 

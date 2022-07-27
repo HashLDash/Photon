@@ -90,7 +90,7 @@ class Transpiler(BaseTranspiler):
     def formatVarInit(self, name, varType):
         if varType == 'array':
             elementType = self.currentScope[name]['elementType']
-            varType = f'list_{elementType}'
+            varType = f'list_{elementType}*'
         if varType in self.classes:
             return f'{varType}* {name};'
         return f'{varType} {name};'
@@ -198,7 +198,7 @@ class Transpiler(BaseTranspiler):
             self.imports.add('#include "asprintf.h"')
         self.imports.add(f'#include "{className}.h"')
         if size == 'unknown':
-            size = 10
+            size = 8 if not elements else 2**(len(elements)//8) * 8
         if elements:
             initValues = []
             for i, v in enumerate(elements):
@@ -214,12 +214,12 @@ class Transpiler(BaseTranspiler):
                     initValues.append(f'{{var}}.values[{i}] = {cast}&__permVar{self.permVarCounter}__')
                     self.permVarCounter += 1
                 else:
-                    initValues.append(f'{{var}}.values[{i}] = {v["value"]}')
-            initValues = ';'.join(initValues)
+                    initValues.append(f'({self.nativeType(elementType)}){v["value"]}')
+            initValues = ', '.join(initValues)
         else:
             initValues = ''
         elementType = self.nativeType(elementType)
-        return f"{className} {{var}} = {{{{ {len(elements)}, {size}, malloc(sizeof({elementType})*{size}) }}}};{initValues};"
+        return f"{className}_constructor({len(elements)}, {size}, {initValues})"
 
     def formatMap(self, elements, keyType, valType):
         className = f'dict_{keyType.replace("*", "ptr")}_{valType.replace("*", "ptr")}'
@@ -233,7 +233,7 @@ class Transpiler(BaseTranspiler):
                 raise SyntaxError(f'Dict of type {className} not implemented yet.')
         else:
             raise SyntaxError(f'Dict of type {className} not implemented yet.')
-        size = 10
+        size = 8
         if elements:
             initValues = ';'.join(f'dict_{keyType}_{valType}_set(&{{var}}, {v[0]["value"]}, {v[1]["value"]})' for v in elements) + ';'
         else:
@@ -323,11 +323,11 @@ class Transpiler(BaseTranspiler):
         name = token['name']
         if token['type'] == 'array':
             varType = token['elementType']
-            return f'list_{varType}_get(&{name}, {indexAccess})'
+            return f'list_{varType}_get({name}, {indexAccess})'
         elif token['type'] == 'map':
             keyType = token['keyType']
             valType = token['valType']
-            return f'dict_{keyType}_{valType}_get(&{name}, {indexAccess})'
+            return f'dict_{keyType}_{valType}_get({name}, {indexAccess})'
         elif token['type'] == 'str':
             return f'{name}[{indexAccess}]'
         else:
@@ -378,7 +378,7 @@ class Transpiler(BaseTranspiler):
             expr = self.formatExpr(expr, cast = cast, var = name)
 
         if assignType == 'array':
-            return f'{preparation}list_{varType}_set(&{name}, {index}, {expr});'
+            return f'{preparation}list_{varType}_set({name}, {index}, {expr});'
         elif assignType == 'map':
             return f'{preparation}dict_{keyType}_{varType}_set(&{name}, {index}, {expr});'
         elif assignType == 'str':
@@ -391,8 +391,8 @@ class Transpiler(BaseTranspiler):
         varType = target['elementType']
         expr = self.formatExpr(expr)
         if varType in self.classes and not (self.inFunc or self.inClass):
-            return f'list_{varType}_append(&{name}, &{expr});'
-        return f'list_{varType}_append(&{name}, {expr});'
+            return f'list_{varType}_append({name}, &{expr});'
+        return f'list_{varType}_append({name}, {expr});'
 
     def formatArrayIncrement(self, target, index, expr):
         if 'name' in target:
@@ -403,7 +403,7 @@ class Transpiler(BaseTranspiler):
             name = target['dotAccess'][-1]['name']
             varType = target['dotAccess'][-1]['elementType']
         expr = self.formatExpr(expr)
-        return f'list_{varType}_inc(&{name}, {index}, {expr});'
+        return f'list_{varType}_inc({name}, {index}, {expr});'
 
     def formatIncrement(self, target, expr):
         name = target['value']
@@ -419,7 +419,7 @@ class Transpiler(BaseTranspiler):
         name = target['value']
         varType = target['elementType']
         expr = self.formatExpr(expr)
-        return f'list_{varType}_removeAll(&{name}, {expr});'
+        return f'list_{varType}_removeAll({name}, {expr});'
 
     def formatAssign(self, variable, varType, cast, expr, inMemory = False):
         if 'format' in expr:
@@ -455,7 +455,7 @@ class Transpiler(BaseTranspiler):
             else:
                 if expr['type'] == 'array':
                     elementType = expr['elementType']
-                    varType = f'list_{elementType} '
+                    varType = f'list_{elementType}* '
         elif expr['type'] in self.classes:
             className = expr["type"]
             permanentVars, classInit = self.formatClassInit(className, variable)
@@ -481,9 +481,9 @@ class Transpiler(BaseTranspiler):
         if cast is not None and self.nativeType(value['type']) != cast:
             if cast == 'long':
                 if 'token' in value and value['token'] == 'inputFunc':
-                    return f'{value["value"]} {{cast}} {var} = strtol(__inputStr__, NULL, 10);'
+                    return f'{value["value"]} {{cast}} {var} = strtol(__inputStr__, NULL, 8);'
                 elif value['type'] == 'str':
-                    return f'strtol({value["value"]}, NULL, 10)'
+                    return f'strtol({value["value"]}, NULL, 8)'
                 elif value['type'] == 'float':
                     return f'(long)({value["value"]})'
                 else:
@@ -671,7 +671,7 @@ class Transpiler(BaseTranspiler):
             if arg['type'] == '%{className}%':
                 arg['type'] = self.inClass
             elif arg['type'] == 'array':
-                arg['type'] = f"list_{arg['elementType']}"
+                arg['type'] = f"list_{arg['elementType']}*"
             elif 'func' in arg['type']:
                 #callback
                 #TODO: implement return types
@@ -761,10 +761,11 @@ class Transpiler(BaseTranspiler):
         elements = array['elements']
         elementType = array['elementType']
         elementType = self.nativeType(elementType)
+        input(array)
         size = array['size']
         if size == 'unknown':
             size = 8
-        return f"{{ {len(elements)}, {size}, malloc(sizeof({elementType})*{size}) }}"
+        return f"list_{elementType}_constructor({len(elements)}, {size}, 1 }}"
 
     def formatClassDefaultValue(self, arg):
         if 'name' in arg:
@@ -806,14 +807,14 @@ class Transpiler(BaseTranspiler):
             # Its a method
             methodReturnType = self.nativeType(attr['returnType'])
             if methodReturnType == 'array':
-                methodReturnType = f'list_{attr["elementType"]}'
+                methodReturnType = f'list_{attr["elementType"]}*'
             method = attr['name']
             args = attr['args'] + attr['kwargs']
             argsTypes = []
             for a in args:
                 attrType = self.nativeType(a['type'])
                 if attrType == 'array':
-                    argsTypes.append(f"list_{a['elementType']}")
+                    argsTypes.append(f"list_{a['elementType']}*")
                 elif a['type'] in self.classes:
                     argsTypes.append(f'struct {attrType}*')
                 elif a['type'] == 'func':
@@ -831,7 +832,7 @@ class Transpiler(BaseTranspiler):
             varType = variable['type']
             if varType == 'array':
                 elementType = expr['elementType']
-                varType = f'list_{elementType}'
+                varType = f'list_{elementType}*'
             name = variable['value']
             expr = self.formatExpr(expr)
             varType = self.nativeType(varType)
@@ -882,7 +883,7 @@ class Transpiler(BaseTranspiler):
             return f'printf("{terminator}");'
         elif value['type'] == 'array':
             elementType = value['elementType']
-            return f'list_{elementType}_repr(&{value["value"]});'
+            return f'list_{elementType}_repr({value["value"]});'
         elif value['type'] == 'map':
             keyType = value['keyType']
             valType = value['valType']
