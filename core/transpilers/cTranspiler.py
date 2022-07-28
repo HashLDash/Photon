@@ -137,7 +137,7 @@ class Transpiler(BaseTranspiler):
                         value['value'] = value['value'].replace('!@instance@!', currentType + '_')
                     dotAccess = [value['value']]
                 elif currentType in {'array', 'map'}:
-                    v['args'] = [{'type':currentType, 'value':f'&{"".join(dotAccess)}'}] + v['args']
+                    v['args'] = [{'type':currentType, 'value':f'{"".join(dotAccess)}'}] + v['args']
                     value = self.processCall(v)
                     if currentType == 'array':
                         arrayType = tokens[n-1]['elementType']
@@ -215,11 +215,10 @@ class Transpiler(BaseTranspiler):
                     #self.permVarCounter += 1
                 else:
                     initValues.append(f'({self.nativeType(elementType)}){v["value"]}')
-            initValues = ', '.join(initValues)
+            initValues = ', ' + ', '.join(initValues)
         else:
             initValues = ''
-        elementType = self.nativeType(elementType)
-        return f"{className}_constructor({len(elements)}, {size}, {initValues})"
+        return f"{className}_constructor({len(elements)}, {size}{initValues})"
 
     def formatMap(self, elements, keyType, valType):
         className = f'dict_{keyType.replace("*", "ptr")}_{valType.replace("*", "ptr")}'
