@@ -205,14 +205,14 @@ class Transpiler(BaseTranspiler):
                 if v['type'] in self.classes:
                     permVars, init = self.formatClassInit(v['type'], f'{{var}}.values[{i}]')
                     init = init.replace('{','{{').replace('}','}}')
-                    newMethod = v['value'].format(var=f'__permVar{self.permVarCounter}__')
-                    initValues.append(f'{v["type"]} __permVar{self.permVarCounter}__ = {init};{newMethod}')
+                    #newMethod = v['value'].format(var=f'__permVar{self.permVarCounter}__')
+                    initValues.append(f'{init}')
                     if elementType != v['type']:
                         cast = f'({elementType}*)'
                     else:
                         cast = ''
-                    initValues.append(f'{{var}}.values[{i}] = {cast}&__permVar{self.permVarCounter}__')
-                    self.permVarCounter += 1
+                    #initValues.append(f'bbb{{var}}.values[{i}] = {cast}&__permVar{self.permVarCounter}__bbb')
+                    #self.permVarCounter += 1
                 else:
                     initValues.append(f'({self.nativeType(elementType)}){v["value"]}')
             initValues = ', '.join(initValues)
@@ -781,13 +781,13 @@ class Transpiler(BaseTranspiler):
         attrs = self.classes[className]['attributes']
         defaultValues = []
         permanentVars = ''
-        initVals = ''
+        #initVals = ''
         for a in attrs:
             if 'returnType' in a:
-                defaultValues.append(f'&{className}_{a["name"]}')
+                # ignore class methods
+                pass
             elif a['variable']['type'] in self.classes:
                 attrClassName = a['variable']['type']
-                #defaultValues.append(f'malloc(sizeof({attrClassName}))')
                 # Get initVals of the attribute class
                 argPermVars, argInit = self.formatClassInit(a['variable']['type'], f'{variable}.{a["variable"]["value"]}')
                 permanentVars += f"{argPermVars} {a['variable']['type']} __permVar{self.permVarCounter}__ = {argInit}; "
@@ -795,12 +795,12 @@ class Transpiler(BaseTranspiler):
                 self.permVarCounter += 1
             elif a['variable']['type'] == 'array':
                 defaultValues.append(self.formatArrayInit(a['expr']))
-                initVals += ';'.join(v.format(var=f"{variable}.{a['variable']['value']}") for v in a['expr']['value'].split(';')[1:]) + ';'
+                #initVals += ';'.join(v.format(var=f"{variable}.{a['variable']['value']}") for v in a['expr']['value'].split(';')[1:]) + ';'
             else:
                 defaultValues.append(a['expr']['value'])
         defaultValues = ', '.join(defaultValues)
         # TODO: Initialize dict values
-        return permanentVars, f'{{ {defaultValues} }}; {initVals}'
+        return permanentVars, f'{className}_constructor({defaultValues})'
 
     def formatClassAttribute(self, attr):
         if 'returnType' in attr:
