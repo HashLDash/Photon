@@ -570,7 +570,7 @@ class Transpiler(BaseTranspiler):
             else:
                 counterVar = f'__tempVar{self.tempVarCounter}__'
                 self.tempVarCounter += 1
-            return f'{varType} {self.iterVar[-1][-1]}; {beginScope}{tempArray}; for (long {counterVar}=0; {counterVar} < {iterable["value"]}.len; {counterVar}++) {{ {self.iterVar[-1][-1]}={iterable["value"]}.values[{counterVar}];'
+            return f'{varType} {self.iterVar[-1][-1]}; {beginScope}{tempArray}; for (long {counterVar}=0; {counterVar} < {iterable["value"]}->len; {counterVar}++) {{ {self.iterVar[-1][-1]}={iterable["value"]}->values[{counterVar}];'
         elif iterable['type'] == 'map':
             varType = iterable['keyType']
             if '{var}' in iterable['value']:
