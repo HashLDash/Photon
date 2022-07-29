@@ -137,7 +137,11 @@ class Transpiler(BaseTranspiler):
                         value['value'] = value['value'].replace('!@instance@!', currentType + '_')
                     dotAccess = [value['value']]
                 elif currentType in {'array', 'map'}:
-                    v['args'] = [{'type':currentType, 'value':f'{"".join(dotAccess)}'}] + v['args']
+                    chain = "".join(dotAccess)
+                    if chain[-1] == '>':
+                        # if the last element is a pointer, remove the last arrow
+                        chain = chain[:-2]
+                    v['args'] = [{'type':currentType, 'value':chain}] + v['args']
                     value = self.processCall(v)
                     if currentType == 'array':
                         arrayType = tokens[n-1]['elementType']
@@ -809,7 +813,6 @@ class Transpiler(BaseTranspiler):
             pass
         defaultValues = []
         permanentVars = ''
-        #initVals = ''
         for a in attrs:
             if 'returnType' in a:
                 # ignore class methods
@@ -824,9 +827,6 @@ class Transpiler(BaseTranspiler):
             elif a['variable']['type'] == 'array':
                 if a['variable']['value'] in initArgs:
                     defaultValues.append(self.formatArrayInit(a['expr']))
-                #initVals += ';'.join(v.format(var=f"{variable}.{a['variable']['value']}") for v in a['expr']['value'].split(';')[1:]) + ';'
-                #input('Hum, this is not implemented')
-                input(f'Hum, {a}')
             else:
                 if a['variable']['value'] in initArgs:
                     defaultValues.append(a['expr']['value'])
