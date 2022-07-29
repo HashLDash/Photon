@@ -114,7 +114,7 @@ class Transpiler(BaseTranspiler):
                 # Now the result is just this dotAccess
                 if currentType in self.classes:
                     # arrays and dicts with classes are all pointers
-                    dotAccess = [value['value']+'->']
+                    dotAccess = [value['value']+'->2']
                 else:
                     dotAccess = [value['value']]
             elif v['token'] == 'call':
@@ -177,13 +177,19 @@ class Transpiler(BaseTranspiler):
                     dotAccess.append(value['value'])
             elif 'name' in v:
                 currentType = v['type']
-                if 'name' in v and v['type'] in self.classes:
+                if 'name' in v and (currentType in self.classes or currentType in ['array', 'map']):
+                    if v['name'] == '':
+                        input(v)
                     dotAccess.append(f'{v["name"]}->')
                 else:
                     dotAccess.append(v['name'])
         # dont send currentType... trust the bastTranspiler
         currentType = None
-        return '.'.join(dotAccess).replace('->.','->'), currentType
+        chain = '.'.join(dotAccess).replace('->.','->')
+        if chain[-1] == '>':
+            # if the last element is a pointer, remove the last arrow
+            chain = chain[:-2]
+        return chain, currentType
     
     def formatArray(self, elements, elementType, size):
         if not self.typeKnown(elementType):
@@ -203,16 +209,11 @@ class Transpiler(BaseTranspiler):
             initValues = []
             for i, v in enumerate(elements):
                 if v['type'] in self.classes:
-                    permVars, init = self.formatClassInit(v['type'], f'{{var}}.values[{i}]')
-                    init = init.replace('{','{{').replace('}','}}')
-                    #newMethod = v['value'].format(var=f'__permVar{self.permVarCounter}__')
-                    initValues.append(f'{init}')
                     if elementType != v['type']:
                         cast = f'({elementType}*)'
                     else:
                         cast = ''
-                    #initValues.append(f'bbb{{var}}.values[{i}] = {cast}&__permVar{self.permVarCounter}__bbb')
-                    #self.permVarCounter += 1
+                    initValues.append(v['value'])
                 else:
                     initValues.append(f'({self.nativeType(elementType)}){v["value"]}')
             initValues = ', ' + ', '.join(initValues)
@@ -703,31 +704,13 @@ class Transpiler(BaseTranspiler):
 
     def formatClass(self, name, args):
         self.className = name
+        from pprint import pprint
+        #pprint(self.classes[self.className])
+        #input() 
         
         # Create the class constructor
         try:
             constructor = self.classes[self.className]['methods']['new']['code'].copy()
-            for n, i in enumerate(constructor):
-                if i.startswith(f'/*def*/void {self.className}_new('):
-                    break
-            constructor[n] = f'/*def*/{self.className}* {self.className}_constructor(' + constructor[n].split('self, ', 1)[1]
-            constructor.insert(n+1, f'{self.className}* self = malloc(sizeof({self.className}));')
-            for attr in self.classes[self.className]['attributes']:
-                if 'returnType' in attr:
-                    constructor.insert(-1, f"self->{attr['name']} = {self.className}_{attr['name']};")
-                elif 'variable' in attr:
-                    if attr['variable']['type'] == 'array':
-                        constructor.insert(-1, f"self->{attr['variable']['value']} = &{attr['variable']['value']};")
-                        input(attr['variable'])
-                        #TODO Create list constructor and initialize it here with the default values
-                        
-            constructor.insert(-1, 'return self;')
-
-            # Insert the constructor into the class methods
-            self.classes[self.className]['methods']['constructor'] = deepcopy(self.classes[self.className]['methods']['new'])
-            self.classes[self.className]['methods']['constructor']['code'] = constructor
-            self.classes[self.className]['methods']['constructor']['scope']['constructor'] = self.classes[self.className]['methods']['constructor']['scope'].pop('new')
-            self.classes[self.className]['methods']['constructor']['tokens']['name'] = 'constructor'
         except KeyError:
             # No new method defined, create a constructor from scratch
             constructor = [
@@ -743,6 +726,45 @@ class Transpiler(BaseTranspiler):
             constructor.append('return self;')
             constructor.append('}')
             self.classes[self.className]['methods']['constructor'] = {'code':constructor, 'type':self.className, 'scope':{'constructor':{}}}
+        else:
+            # New method was defined
+            for n, i in enumerate(constructor):
+                if i.startswith(f'/*def*/void {self.className}_new('):
+                    break
+            constructor[n] = f'/*def*/{self.className}* {self.className}_constructor(' + constructor[n].split('self, ', 1)[1]
+            constructor.insert(n+1, f'{self.className}* self = malloc(sizeof({self.className}));')
+            defaultValues = []
+            initArgs = []
+            if 'kwargs' in self.classes[self.className]['methods']['new']:
+                initArgs = [ a['name'] for a in self.classes[self.className]['methods']['new']['kwargs'] ]
+            if 'args' in self.classes[self.className]['methods']['new']:
+                initArgs += [ a['value'] for a in self.classes[self.className]['methods']['new']['args'] ]
+            for attr in self.classes[self.className]['attributes']:
+                if 'returnType' in attr:
+                    constructor.insert(n+2, f"self->{attr['name']} = {self.className}_{attr['name']};")
+                    
+                elif 'variable' in attr:
+                    attrName = attr['variable']['value']
+                    if attrName in initArgs:
+                        constructor.insert(n+2, f"self->{attrName} = {attr['variable']['value']};")
+                    else:
+                        # class variable
+                        value = attr['expr']['value']
+                        if value == '{}':
+                            # There is no value to be initialized
+                            # just the type was declared
+                            pass
+                        else:
+                            constructor.insert(n+2, f"self->{attrName} = {value};")
+                    defaultValues.append(self.formatClassAttribute(attr)[:-1])
+                        
+            constructor.insert(-1, 'return self;')
+
+            # Insert the constructor into the class methods
+            self.classes[self.className]['methods']['constructor'] = deepcopy(self.classes[self.className]['methods']['new'])
+            self.classes[self.className]['methods']['constructor']['code'] = constructor
+            self.classes[self.className]['methods']['constructor']['scope']['constructor'] = self.classes[self.className]['methods']['constructor']['scope'].pop('new')
+            self.classes[self.className]['methods']['constructor']['tokens']['name'] = 'constructor'
 
         return f'typedef struct {self.className} {{'
 
@@ -759,12 +781,10 @@ class Transpiler(BaseTranspiler):
     def formatArrayInit(self, array):
         elements = array['elements']
         elementType = array['elementType']
-        elementType = self.nativeType(elementType)
-        input(array)
         size = array['size']
         if size == 'unknown':
             size = 8
-        return f"list_{elementType}_constructor({len(elements)}, {size}, 1 }}"
+        return f"list_{elementType}_constructor({len(elements)}, {size}, 1)"
 
     def formatClassDefaultValue(self, arg):
         if 'name' in arg:
@@ -778,6 +798,15 @@ class Transpiler(BaseTranspiler):
 
     def formatClassInit(self, className, variable):
         attrs = self.classes[className]['attributes']
+        initArgs = []
+        try:
+            if 'args' in self.classes[className]['methods']['new']:
+                initArgs += [ a['value'] for a in self.classes[className]['methods']['new']['args'] ]
+            if 'kwargs' in self.classes[className]['methods']['new']:
+                initArgs = [ a['name'] for a in self.classes[className]['methods']['new']['kwargs'] ]
+        except KeyError:
+            # No new method
+            pass
         defaultValues = []
         permanentVars = ''
         #initVals = ''
@@ -793,10 +822,16 @@ class Transpiler(BaseTranspiler):
                 defaultValues.append(f'&__permVar{self.permVarCounter}__')
                 self.permVarCounter += 1
             elif a['variable']['type'] == 'array':
-                defaultValues.append(self.formatArrayInit(a['expr']))
+                if a['variable']['value'] in initArgs:
+                    defaultValues.append(self.formatArrayInit(a['expr']))
                 #initVals += ';'.join(v.format(var=f"{variable}.{a['variable']['value']}") for v in a['expr']['value'].split(';')[1:]) + ';'
+                #input('Hum, this is not implemented')
+                input(f'Hum, {a}')
             else:
-                defaultValues.append(a['expr']['value'])
+                if a['variable']['value'] in initArgs:
+                    defaultValues.append(a['expr']['value'])
+                    if a['variable']['value'] == 'text':
+                        input(a)
         defaultValues = ', '.join(defaultValues)
         # TODO: Initialize dict values
         return permanentVars, f'{className}_constructor({defaultValues})'
