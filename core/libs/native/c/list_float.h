@@ -140,4 +140,9 @@ char* list_float_str(list_float* list) {
     }
     return out;
 }
+
+void list_float_clear(list_float* list) {
+    list->len = 0;
+}
+
 #endif

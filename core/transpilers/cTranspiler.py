@@ -697,11 +697,14 @@ class Transpiler(BaseTranspiler):
             newKwargs.append(kwarg)
         kwargs = newKwargs
         args = self.formatArgs(args+kwargs)
+        ptr = ''
+        if returnType in self.classes or returnType.startswith('list_') or returnType.startswith('dict'):
+            ptr = '*'
         if self.inClass:
             # Its a method
-            return f'/*def*/{self.nativeType(returnType)} {self.inClass}_{name}({args}) {{'
+            return f'/*def*/{self.nativeType(returnType)}{ptr} {self.inClass}_{name}({args}) {{'
         else:
-            return f'/*def*/{self.nativeType(returnType)} {name}({args}) {{'
+            return f'/*def*/{self.nativeType(returnType)}{ptr} {name}({args}) {{'
 
     def formatEndFunc(self):
         return '}\n'

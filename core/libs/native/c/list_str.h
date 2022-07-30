@@ -135,4 +135,9 @@ char* list_str_str(list_str* list) {
     }
     return out;
 }
+
+void list_str_clear(list_str* list) {
+    list->len = 0;
+}
+
 #endif

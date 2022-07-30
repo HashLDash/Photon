@@ -130,4 +130,9 @@ char* list_!@valType@!_str(list_!@valType@!* list) {
     }
     return out;
 }
+
+void list_!@valType@!_clear(list_!@valType@!* list) {
+    list->len = 0;
+}
+
 #endif

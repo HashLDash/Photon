@@ -134,4 +134,8 @@ char* list_int_str(list_int* list) {
     return out;
 }
 
+void list_int_clear(list_int* list) {
+    list->len = 0;
+}
+
 #endif
