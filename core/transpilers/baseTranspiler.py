@@ -60,6 +60,7 @@ class BaseTranspiler():
         self.links = set()
         self.inFunc = None
         self.inClass = None
+        self.initializeGlobalVars = True
         self.methodsInsideClass = True
         self.insertMode = True
         self.source = []
@@ -73,6 +74,8 @@ class BaseTranspiler():
         }
 
     def insertCode(self, line, index=None, isGlobal=False):
+        if isGlobal and not self.initializeGlobalVars:
+            return
         if self.insertMode:
             if self.inFunc or self.inClass or isGlobal:
                 if not index is None:

@@ -21,6 +21,7 @@ class Transpiler(BaseTranspiler):
         self.null = 'None'
         self.self = 'self'
         self.notOperator = 'not '
+        self.initializeGlobalVars = False
         self.nativeTypes = {
             'float':'float',
             'int':'int',
