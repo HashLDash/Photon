@@ -32,6 +32,7 @@ class Transpiler(BaseTranspiler):
             'any':'var',
             'unknown':'var',
         }
+        self.initializeGlobalVars = False
     
     def nativeType(self, varType):
         try:
