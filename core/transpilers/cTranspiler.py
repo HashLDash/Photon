@@ -93,6 +93,7 @@ class Transpiler(BaseTranspiler):
             varType = f'list_{elementType}*'
         if varType in self.classes:
             return f'{varType}* {name};'
+        varType = self.nativeType(varType)
         return f'{varType} {name};'
 
     def formatDotAccess(self, tokens):
