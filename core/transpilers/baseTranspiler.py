@@ -1004,6 +1004,9 @@ class BaseTranspiler():
         self.startScope()
         scopeName = 'new' if functionName == self.constructorName else functionName
         self.currentScope[scopeName] = {'type':returnType, 'token':'func', 'args':args, 'kwargs':kwargs}
+        if returnValue['type'] == 'array':
+            self.currentScope[scopeName]['elementType'] = returnValue['elementType'] 
+            self.currentScope[scopeName]['size'] = returnValue['size']
         # put args in scope
         if self.inClass:
             inherited = self.classes[self.inClass]['inherited']
