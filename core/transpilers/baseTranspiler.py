@@ -406,11 +406,11 @@ class BaseTranspiler():
         target = token['target']
         expr = token['expr']
         if target['token'] in {'var', 'dotAccess'}:
-            #variable = self.processVar(target)
             variable = self.getValAndType(target)
             if variable['type'] == 'array':
-                if not self.typeKnown(expr['args'][0]['elementType']):
+                if not 'elementType' in expr['args'][0] or self.typeKnown(expr['args'][0]['elementType']):
                     # Add array info into expression
+                    expr['args'][0]['type'] == 'array'
                     expr['args'][0]['elementType'] = variable['elementType']
                     expr['args'][0]['size'] = variable['size']
             elif variable['type'] == 'map':

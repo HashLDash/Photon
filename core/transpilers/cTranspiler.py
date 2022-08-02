@@ -115,7 +115,7 @@ class Transpiler(BaseTranspiler):
                 # Now the result is just this dotAccess
                 if currentType in self.classes:
                     # arrays and dicts with classes are all pointers
-                    dotAccess = [value['value']+'->2']
+                    dotAccess = [value['value']+'->']
                 else:
                     dotAccess = [value['value']]
             elif v['token'] == 'call':
