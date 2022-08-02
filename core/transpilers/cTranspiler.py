@@ -276,10 +276,10 @@ class Transpiler(BaseTranspiler):
                     exprs[-1] = f'({exprs[-1]}) ? "True" : "False"'
                 elif valType == 'array':
                     string = string.replace('{}', '%s', 1)
-                    exprs[-1] = f'list_{expr["elementType"]}_str(&{exprs[-1]})'
+                    exprs[-1] = f'list_{expr["elementType"]}_str({exprs[-1]})'
                 elif valType == 'map':
                     string = string.replace('{}', '%s', 1)
-                    exprs[-1] = f'dict_{expr["keyType"]}_{expr["valType"]}_str(&{exprs[-1]})'
+                    exprs[-1] = f'dict_{expr["keyType"]}_{expr["valType"]}_str({exprs[-1]})'
                 else:
                     raise SyntaxError(f'Cannot format {valType} in formatStr')
         return string, exprs
@@ -925,13 +925,10 @@ class Transpiler(BaseTranspiler):
         elif value['type'] == 'map':
             keyType = value['keyType']
             valType = value['valType']
-            return f'dict_{keyType}_{valType}_repr(&{value["value"]});'
+            return f'dict_{keyType}_{valType}_repr({value["value"]});'
         elif value['type'] in self.classes:
             if 'repr' in self.classes[value['type']]['methods']:
-                if self.inFunc or self.inClass:
-                    return f'printf("%s{terminator}", {value["type"]}_repr({value["value"]}));'
-                else:
-                    return f'printf("%s{terminator}", {value["type"]}_repr(&{value["value"]}));'
+                return f'printf("%s{terminator}", {value["type"]}_repr({value["value"]}));'
             else:
                 return f'printf("<class {value["type"]}>{terminator}");'
         elif value['type'] == 'char':
