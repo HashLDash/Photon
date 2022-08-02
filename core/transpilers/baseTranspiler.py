@@ -809,6 +809,8 @@ class BaseTranspiler():
                 self.classes[name] = deepcopy(self.classes[inherited])
                 self.classes[name]['inherited'] = [inherited]
                 for methodName in self.classes[name]['methods']:
+                    if methodName == 'constructor':
+                        continue
                     self.classes[name]['scope'][methodName]['args'][0]['type'] = name
                     self.classes[name]['methods'][methodName]['scope']['self']['type'] = name
                     if inherited:
@@ -890,11 +892,12 @@ class BaseTranspiler():
             except IndexError:
                 pass
             else:
-                inheritedKwargs = self.classes[inherited]['methods']['new']['tokens']['kwargs']
-                # Check if it's an inherited new method
-                # to avoid duplicating the attributes
-                if not inheritedKwargs == token['kwargs']:
-                    token['kwargs'] = inheritedKwargs + token['kwargs']
+                if 'new' in self.classes[inherited]['methods']:
+                    inheritedKwargs = self.classes[inherited]['methods']['new']['tokens']['kwargs']
+                    # Check if it's an inherited new method
+                    # to avoid duplicating the attributes
+                    if not inheritedKwargs == token['kwargs']:
+                        token['kwargs'] = inheritedKwargs + token['kwargs']
         self.processFunc(token)
         # delete self, because the next inheritance will insert it
         del token['args'][0]
