@@ -455,7 +455,7 @@ class Transpiler(BaseTranspiler):
                 # just an array or dict init
                 return formattedExpr
             else:
-                if expr['type'] == 'array':
+                if expr['type'] == 'array' and not inMemory:
                     elementType = expr['elementType']
                     varType = f'list_{elementType}* '
         elif expr['type'] in self.classes:
