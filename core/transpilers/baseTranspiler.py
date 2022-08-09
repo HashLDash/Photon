@@ -930,6 +930,7 @@ class BaseTranspiler():
         kwargs = self.processKwargs(token['kwargs'])
         functionName = token['name']
         returnType = token['type']
+        returnValue = {'value':None, 'type':returnType}
         self.returnValue = token
         self.inFunc = functionName
         # infer return type if not known
@@ -1006,7 +1007,7 @@ class BaseTranspiler():
         self.startScope()
         scopeName = 'new' if functionName == self.constructorName else functionName
         self.currentScope[scopeName] = {'type':returnType, 'token':'func', 'args':args, 'kwargs':kwargs}
-        if returnValue['type'] == 'array':
+        if returnValue and returnValue['type'] == 'array':
             self.currentScope[scopeName]['elementType'] = returnValue['elementType'] 
             self.currentScope[scopeName]['size'] = returnValue['size']
         # put args in scope
