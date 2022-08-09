@@ -684,7 +684,7 @@ class BaseTranspiler():
                 kws = []
                 ags = []
         elif name['value'] in self.currentScope:
-            if self.currentScope[name['value']]['token'] == 'nativeFunc':
+            if 'token' in self.currentScope[name['value']] and self.currentScope[name['value']]['token'] == 'nativeFunc':
                 kws = []
                 ags = args
             elif 'func' in self.currentScope[name['value']]['type']:
