@@ -408,7 +408,7 @@ class BaseTranspiler():
         if target['token'] in {'var', 'dotAccess'}:
             variable = self.getValAndType(target)
             if variable['type'] == 'array':
-                if not 'elementType' in expr['args'][0] or self.typeKnown(expr['args'][0]['elementType']):
+                if not 'elementType' in expr['args'][0] or not self.typeKnown(expr['args'][0]['elementType']):
                     # Add array info into expression
                     expr['args'][0]['type'] == 'array'
                     expr['args'][0]['elementType'] = variable['elementType']
@@ -492,7 +492,7 @@ class BaseTranspiler():
         else:
             raise SyntaxError(f'Format assign with variableName {target} not implemented yet.')
 
-        if expr['type'] == 'array' and expr['elementType'] != self.currentScope[variableName]['elementType']:
+        if expr['type'] == 'array' and expr['elementType'] != varType:
             cast = self.nativeType(varType)
         elif self.typeKnown(expr['type']) and expr['type'] != varType and self.typeKnown(varType):
             cast = self.nativeType(varType)
@@ -509,7 +509,6 @@ class BaseTranspiler():
                 # Now set inMemory because it was already defined in global scope
                 inMemory = True
             self.insertCode(self.formatAssign(variableName, varType, cast, expr, inMemory=inMemory))
-
 
     def processAugAssign(self, token):
         op = token['operator']

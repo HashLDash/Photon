@@ -277,6 +277,12 @@ class Transpiler(BaseTranspiler):
                 elif valType == 'map':
                     string = string.replace('{}', '%s', 1)
                     exprs[-1] = f'dict_{expr["keyType"]}_{expr["valType"]}_str({exprs[-1]})'
+                elif valType in self.classes:
+                    string = string.replace('{}', '%s', 1)
+                    if 'repr' in self.classes[valType]['methods']:
+                        exprs[-1] = f'{valType}_repr({exprs[-1]})'
+                    else:
+                        exprs[-1] = f'"<class {valType}>"'
                 else:
                     raise SyntaxError(f'Cannot format {valType} in formatStr')
         return string, exprs
