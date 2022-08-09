@@ -73,6 +73,26 @@ void dict_int_!@valType@!_set(dict_int_!@valType@!* self, long key, !@valNativeT
     }
 }
 
+dict_int_!@valType@!* dict_int_!@valType@!_constructor(int len, int size, ...) {
+    dict_int_!@valType@!* dict = malloc(sizeof(dict_int_!@valType@!));
+    dict->len = 0;
+    dict->size = size;
+    dict->entries = malloc(sizeof(dict_int_!@valType@!_entry)*size);
+    dict->indices = malloc(sizeof(int)*size);
+    for (int i = 0; i < size; i++) {
+        dict->indices[i] = -1;
+    }
+
+    va_list ptr;
+    va_start(ptr, size); // size is the last argument before the ellipsis
+
+    for (int i = 0; i < len; i++) {
+        dict_int_!@valType@!_set(dict, va_arg(ptr, long), va_arg(ptr, !@valNativeType@!));
+    }
+    va_end(ptr);
+    return dict;
+}
+
 void dict_int_!@valType@!_del(dict_int_!@valType@!* self, long key) {
     int size = self->size;
     int index = key % size;

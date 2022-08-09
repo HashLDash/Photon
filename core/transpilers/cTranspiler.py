@@ -91,6 +91,10 @@ class Transpiler(BaseTranspiler):
         if varType == 'array':
             elementType = self.currentScope[name]['elementType']
             varType = f'list_{elementType}*'
+        if varType == 'map':
+            keyType = self.currentScope[name]['keyType']
+            valType = self.currentScope[name]['valType']
+            varType = f'dict_{keyType}_{valType}*'
         if varType in self.classes:
             return f'{varType}* {name};'
         varType = self.nativeType(varType)
@@ -237,10 +241,20 @@ class Transpiler(BaseTranspiler):
             raise SyntaxError(f'Dict of type {className} not implemented yet.')
         size = 8
         if elements:
-            initValues = ';'.join(f'dict_{keyType}_{valType}_set(&{{var}}, {v[0]["value"]}, {v[1]["value"]})' for v in elements) + ';'
+            for i, v in enumerate(elements):
+                input(v)
+                if v['type'] in self.classes:
+                    if elementType != v['type']:
+                        cast = f'({elementType}*)'
+                    else:
+                        cast = ''
+                    initValues.append(v['value'])
+                else:
+                    initValues.append(f'({self.nativeType(elementType)}){v["value"]}')
+            initValues = ', ' + ', '.join(initValues)
         else:
             initValues = ''
-        return f"{className} {{var}} = {{{{ 0, {size}, malloc(sizeof(int)*{size}), malloc(sizeof(dict_{keyType}_{valType}_entry)*{size}) }}}}; for(int i=0; i<{size}; i++) {{{{ {{var}}.indices[i]=-1; }}}} {initValues};{initValues}"
+        return f"{className}_constructor({len(elements)}, {size}{initValues})"
 
     def formatInput(self, expr):
         self.imports.add('#include "photonInput.h"')
@@ -388,7 +402,7 @@ class Transpiler(BaseTranspiler):
         if assignType == 'array':
             return f'{preparation}list_{varType}_set({name}, {index}, {expr});'
         elif assignType == 'map':
-            return f'{preparation}dict_{keyType}_{varType}_set(&{name}, {index}, {expr});'
+            return f'{preparation}dict_{keyType}_{varType}_set({name}, {index}, {expr});'
         elif assignType == 'str':
             return f'{preparation}{name}[{index}] = {expr};'
         else:
@@ -615,9 +629,9 @@ class Transpiler(BaseTranspiler):
                         valVarType = self.nativeType(varType) + "*"
                     else:
                         valVarType = self.nativeType(varType)
-                return f'{varType} {keyVar};{valVarType} {valVar}; {tempArray}; for ({counterVarType} {counterVar}=0; {counterVar} < {iterable["value"]}.len; {counterVar}++) {{ {keyVar}={iterable["value"]}.entries[{counterVar}].key; {valVar}={iterable["value"]}.entries[{counterVar}].val;'
+                return f'{varType} {keyVar};{valVarType} {valVar}; {tempArray}; for ({counterVarType} {counterVar}=0; {counterVar} < {iterable["value"]}->len; {counterVar}++) {{ {keyVar}={iterable["value"]}->entries[{counterVar}].key; {valVar}={iterable["value"]}->entries[{counterVar}].val;'
             else:
-                return f'{varType} {keyVar}; {tempArray}; for (long {counterVar}=0; {counterVar} < {iterable["value"]}.len; {counterVar}++) {{ {keyVar}={iterable["value"]}.entries[{counterVar}].key;'
+                return f'{varType} {keyVar}; {tempArray}; for (long {counterVar}=0; {counterVar} < {iterable["value"]}->len; {counterVar}++) {{ {keyVar}={iterable["value"]}->entries[{counterVar}].key;'
         elif iterable['type'] == 'str':
             varType = 'str'
             self.imports.add('#include <string.h>')
