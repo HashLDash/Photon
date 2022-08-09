@@ -89,7 +89,8 @@ class BaseTranspiler():
                     self.source.append(line)
 
     def process(self, token):
-        self.instructions[token['opcode']](token)
+        if token is not None:
+            self.instructions[token['opcode']](token)
 
     def nativeType(self, varType):
         if varType in self.nativeTypes:
