@@ -146,7 +146,7 @@ class Transpiler(BaseTranspiler):
         return f'{name}({arguments})'
 
     def formatExpr(self, value, cast=None):
-        if cast is None:
+        if cast is None or cast == self.nativeType(value['type']):
             return value['value']
         elif cast in {'str', 'int', 'float'}:
             return f"{cast}({value['value']})"
