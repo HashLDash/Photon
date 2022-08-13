@@ -781,8 +781,6 @@ class BaseTranspiler():
 
     def startScope(self):
         self.oldScope.append(deepcopy(self.currentScope))
-        # refresh returnType
-        self.returnValue = []
 
     def endScope(self):
         scope = deepcopy(self.currentScope)
@@ -932,7 +930,6 @@ class BaseTranspiler():
         functionName = token['name']
         returnType = token['type']
         returnValue = {'value':None, 'type':returnType}
-        self.returnValue = token
         self.inFunc = functionName
         # infer return type if not known
         if not self.typeKnown(returnType):
@@ -940,6 +937,7 @@ class BaseTranspiler():
             # change mode to not insert code on processing
             self.insertMode = False
             self.startScope()
+            self.returnValue = []
             if self.inClass:
                 self.startClassScope()
                 inherited = self.classes[self.inClass]['inherited']
@@ -1006,6 +1004,7 @@ class BaseTranspiler():
             self.insertMode = True
             # End pre processing
         self.startScope()
+        self.returnValue = []
         scopeName = 'new' if functionName == self.constructorName else functionName
         self.currentScope[scopeName] = {'type':returnType, 'token':'func', 'args':args, 'kwargs':kwargs}
         if returnValue and returnValue['type'] == 'array':
@@ -1082,6 +1081,7 @@ class BaseTranspiler():
         else:
             expr = None
             self.returnValue.append({'type':'void'})
+        input(self.returnValue)
         self.insertCode(self.formatReturn(expr))
 
     def processBreak(self, token):
