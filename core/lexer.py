@@ -130,11 +130,9 @@ def var(i, t):
 def arrayType(i, t):
     ''' 
     Return a type token according to signature.
-    (var type) beginBlock num -> array
+    (var type) lbracket num rbracket var -> array
+    (var type) lbracket rbracket var -> array
     '''
-    # Verify if it's a valid type token
-    if inMap(i, t):
-        return 'continue'
     if t[i]['token'] == 'var':
         elementType = t[i]['name']
     elif t[i]['token'] == 'type':
@@ -142,12 +140,16 @@ def arrayType(i, t):
     else:
         raise SyntaxError('Array type tok {t[i]["token"} not implemented.')
 
-    arraySize = t[i+2]['value']
+    if t[i+2]['token'] == 'num':
+        arraySize = t[i+2]['value']
+        del t[i+1] #num
+    else:
+        arraySize = 'unkown'
 
     t[i] = {'token':'type', 'type':'array', 'elementType':elementType, 'size':arraySize}
 
-    del t[i+1] #beginBlock
-    del t[i+1] #num
+    del t[i+1] #lbracket
+    del t[i+1] #rbracket
     return t
 
 def inMap(i, t):

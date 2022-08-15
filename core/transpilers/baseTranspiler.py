@@ -637,6 +637,9 @@ class BaseTranspiler():
                 # ignore value type because of the scope
                 # Function arguments need explicit type
                 attr = {'type':tok['type'], 'value':arg['value']}
+                if tok['type'] == 'array':
+                    attr['elementType'] = arg['elementType']
+                    attr['size'] = arg['size']
                 if 'attribute' in tok:
                     attr['default'] = True
                     attr['value'] = tok['args'][0]['dotAccess'][-1]['name']
@@ -647,7 +650,10 @@ class BaseTranspiler():
         kwargs = []
         for tok in tokens:
             if tok['expr']['type'] == 'array' and not self.typeKnown(tok['expr']['args'][0]['elementType']):
-                tok['expr']['args'][0]['elementType'] = tok['target']['type']
+                if tok['target']['type'] == 'array':
+                    tok['expr']['args'][0]['elementType'] = tok['target']['elementType']
+                else:
+                    tok['expr']['args'][0]['elementType'] = tok['target']['type']
             kw = self.getValAndType(tok['expr'])
             if self.typeKnown(tok['target']['type']) and tok['target']['type'] == 'func':
                 # It's a callback
@@ -948,6 +954,9 @@ class BaseTranspiler():
                 argType = arg['type']
                 argVal = arg['value']
                 self.currentScope[argVal] = {'type':argType}
+                if argType == 'array':
+                    self.currentScope[argVal]['elementType'] = arg['elementType']
+                    self.currentScope[argVal]['size'] = arg['size']
                 if argType in self.classes:
                     self.currentScope[argVal]['pointer'] = True
                 if self.inClass and 'default' in arg:
@@ -1020,6 +1029,9 @@ class BaseTranspiler():
             argType = arg['type']
             argVal = arg['value']
             self.currentScope[argVal] = {'type':argType}
+            if argType == 'array':
+                self.currentScope[argVal]['elementType'] = arg['elementType']
+                self.currentScope[argVal]['size'] = arg['size']
             if argType in self.classes:
                 self.currentScope[argVal]['pointer'] = True
             if self.inClass and 'default' in arg:
@@ -1081,7 +1093,6 @@ class BaseTranspiler():
         else:
             expr = None
             self.returnValue.append({'type':'void'})
-        input(self.returnValue)
         self.insertCode(self.formatReturn(expr))
 
     def processBreak(self, token):
