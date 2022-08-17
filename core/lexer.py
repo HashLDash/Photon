@@ -144,7 +144,7 @@ def arrayType(i, t):
         arraySize = t[i+2]['value']
         del t[i+1] #num
     else:
-        arraySize = 'unkown'
+        arraySize = 'unknown'
 
     t[i] = {'token':'type', 'type':'array', 'elementType':elementType, 'size':arraySize}
 
