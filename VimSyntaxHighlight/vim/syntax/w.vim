@@ -1,6 +1,8 @@
 " Wlang syntax highlight for Vim - Version 0.1
 " Author: Will - HashLDash
 
+set termguicolors
+
 " Quit when a syntax file was already loaded.
 if exists('b:current_syntax') | finish|  endif
 
@@ -25,13 +27,13 @@ syntax keyword wTypes str cstr int float func struct const char double
 syntax keyword wPlatforms android Android HTML5 html5 linux Linux Web C c Python python Py py JS js JavaScript
 
 hi def link wVar ModeMsg
-hi def link wNumber Number
 hi def link wString String
-hi def link wStatement Statement
+hi wNumber ctermfg=Magenta guifg=#FFAAFF cterm=bold
 hi wComment ctermfg=DarkGray
-hi def link wBuiltinFunc Include
-hi def link wFuncName Function
-hi def link wTypes Type
+hi wFuncName ctermfg=Cyan guifg=#33BBCC cterm=bold
+hi wStatement ctermfg=Yellow guifg=#FFFF77 cterm=bold
+hi wTypes ctermfg=Blue guifg=#8888FF cterm=bold
+hi wBuiltinFunc ctermfg=Blue guifg=#4466FF cterm=bold
 hi def link wPlatforms Type
 
 let b:current_syntax = 'w'
