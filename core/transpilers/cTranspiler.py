@@ -169,7 +169,7 @@ class Transpiler(BaseTranspiler):
                                 dotAccess = [f'fprintf({instance}, {formatstr}, {values})']
                                 continue
                         elif name == 'read':
-                            v['name']['name'] = 'fgets'
+                            v['name']['name'] = 'gets'
                             length = v['args'][0]['args'][0]['value'] if v['args'] else 1
                             dotAccess = [f'fgets({{var}}, {length}, {instance})']
                             currentType = 'str'
@@ -486,11 +486,14 @@ class Transpiler(BaseTranspiler):
                 return f'{permanentVars}; {variable} = {initMethod}'
             self.currentScope[variable]['pointer'] = False
             return f'{permanentVars}; {className} {variable} = {classInit};{initMethod}'
-        if varType == self.nativeType('str') + ' ':
-            if formattedExpr.startswith('fgets({var},'):
-                formattedExpr = formattedExpr.replace('fgets({var},', f'fgets({variable},')
-                length = int(formattedExpr.split(',')[1])+1
+        if formattedExpr.startswith('fgets({var},'):
+            formattedExpr = formattedExpr.replace('fgets({var},', f'fgets({variable},')
+            length = int(formattedExpr.split(',')[1])+1
+            if inMemory:
+                return f'{variable} = realloc({variable}, sizeof(char)*{length});{formattedExpr};'
+            else:
                 return f'char {variable}[{length}]; {formattedExpr};'
+        if varType == self.nativeType('str') + ' ':
             # if defined with char* it cannot be modified
             if '__tempVar' in formattedExpr:
                 # Already allocated memory, just reassign
