@@ -173,8 +173,9 @@ class Transpiler(BaseTranspiler):
                                 continue
                         elif name == 'read':
                             v['name']['name'] = 'gets'
-                            length = v['args'][0]['args'][0]['value'] if v['args'] else 1
-                            dotAccess = [f'fgets({{var}}, {length}, {instance})']
+                            value = self.getValAndType(v['args'][0])
+                            length = value['value']
+                            dotAccess = [f'fgets({{var}}, {length}+1, {instance})']
                             currentType = 'str'
                             continue
                         else:
@@ -500,7 +501,7 @@ class Transpiler(BaseTranspiler):
             return f'{permanentVars}; {className} {variable} = {classInit};{initMethod}'
         if formattedExpr.startswith('fgets({var},'):
             formattedExpr = formattedExpr.replace('fgets({var},', f'fgets({variable},')
-            length = int(formattedExpr.split(',')[1])+1
+            length = formattedExpr.split(',')[1]
             if inMemory:
                 return f'{variable} = realloc({variable}, sizeof(char)*{length});{formattedExpr};'
             else:
