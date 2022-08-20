@@ -206,8 +206,6 @@ class Transpiler(BaseTranspiler):
                 else:
                     dotAccess.append(v['name'])
                     currentType = v['type']
-        # dont send currentType... trust the bastTranspiler
-        #currentType = None
         chain = '->'.join(dotAccess).replace('->.','->')
         if chain[-1] == '>':
             # if the last element is a pointer, remove the last arrow
