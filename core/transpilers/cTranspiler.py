@@ -136,11 +136,12 @@ class Transpiler(BaseTranspiler):
                             value['value'] = f'{currentType}_{call}'
                         else:
                             call = value['value'].replace('!@instance@!', '')
-                            value['value'] = '.'.join(dotAccess + [instance, call]).replace('->.','->')
+                            value['value'] = '->'.join(dotAccess + [instance, call]).replace('->.','->')
                     else:
                         # if outside, use . instead
                         value['value'] = value['value'].replace('!@instance@!', currentType + '_')
                     dotAccess = [value['value']]
+                    currentType = value['type']
                 elif currentType in {'array', 'map'}:
                     chain = "".join(dotAccess)
                     if chain[-1] == '>':
@@ -155,11 +156,13 @@ class Transpiler(BaseTranspiler):
                         keyType = tokens[n-1]['keyType']
                         valType = tokens[n-1]['valType']
                         dotAccess = [f"dict_{keyType}_{valType}_{value['value']}"]
+                    currentType = value['type']
                 elif currentType == 'file':
                     if v['name']['name'] in ['write', 'close', 'read']:
                         name = v['name']['name']
                         instance = dotAccess.pop()
                         if name == 'write':
+                            currentType = 'unknwon'
                             v['name']['name'] = 'fprintf'
                             value = self.processFormatStr(v['args'][0]['args'][0])
                             if 'format' in value:
@@ -176,6 +179,7 @@ class Transpiler(BaseTranspiler):
                             continue
                         else:
                             v['name']['name'] = 'fclose'
+                            currentType = 'unknown'
                         v['args'] = [{'value':instance, 'type':'file'}] + v['args']
                         value = self.processCall(v)
                         dotAccess = [value['value']]
@@ -184,17 +188,27 @@ class Transpiler(BaseTranspiler):
                 else:
                     value = self.processCall(v)
                     dotAccess.append(value['value'])
+                    currentType = value['type']
             elif 'name' in v:
-                currentType = v['type']
-                if 'name' in v and (currentType in self.classes or currentType in ['array', 'map']):
+                if (currentType in self.classes or currentType in ['array', 'map']):
                     if v['name'] == '':
                         input(v)
                     dotAccess.append(f'{v["name"]}->')
+                    currentType = v['type']
+                elif v['name'] == 'len' and currentType == 'str':
+                    currentType = 'int'
+                    chain = "".join(dotAccess)
+                    if chain[-1] == '>':
+                        # if the last element is a pointer, remove the last arrow
+                        chain = chain[:-2]
+                    dotAccess = [f"strlen({chain})"]
+                    self.imports.add("#include <string.h>")
                 else:
                     dotAccess.append(v['name'])
+                    currentType = v['type']
         # dont send currentType... trust the bastTranspiler
-        currentType = None
-        chain = '.'.join(dotAccess).replace('->.','->')
+        #currentType = None
+        chain = '->'.join(dotAccess).replace('->.','->')
         if chain[-1] == '>':
             # if the last element is a pointer, remove the last arrow
             chain = chain[:-2]
