@@ -101,12 +101,24 @@ class Transpiler(BaseTranspiler):
         return f'{varType} {name};'
 
     def formatDotAccess(self, tokens):
+        def cleanChain(chain):
+            if chain.startswith('.'):
+                chain = chain[1:]
+            elif chain.startswith('->'):
+                chain = chain[2:]
+            return chain
         dotAccess = []
         currentType = None
+        chain = ''
         for n, v in enumerate(tokens):
             if 'indexAccess' in v:
                 # The value should be the dotAccess up to now
-                v['name'] = '.'.join(dotAccess + [v['name']]).replace('->.','->')
+                if currentType in self.classes or currentType in ['map', 'array']:
+                    chain += '->' + v['name']
+                else:
+                    chain += '.' + v['name']
+                chain = cleanChain(chain)
+                v['name'] = chain
                 if 'elementType' in v:
                     baseType = 'array'
                 elif 'keyType' in v:
@@ -117,36 +129,36 @@ class Transpiler(BaseTranspiler):
                 value = self.processIndexAccess(v)
                 currentType = value['type']
                 # Now the result is just this dotAccess
-                if currentType in self.classes:
-                    # arrays and dicts with classes are all pointers
-                    dotAccess = [value['value']+'->']
-                else:
-                    dotAccess = [value['value']]
+                dotAccess = [value['value']]
+                chain = dotAccess[-1]
             elif v['token'] == 'call':
                 if currentType in self.classes:
                     instance = dotAccess.pop()
+                    chain = ''.join(chain.rsplit(instance, 1))
+                    if chain.endswith('.'):
+                        chain = chain[:-1]
+                    elif chain.endswith('->'):
+                        chain = chain[:-2]
                     # include instance as the first arg in the call
-                    v['args'] = [{'value':instance.replace('->',''), 'type':currentType, 'pointer':True}] + v['args']
+                    v['args'] = [{'value':instance, 'type':currentType, 'pointer':True}] + v['args']
                     value = self.processCall(v, className=currentType)
                     if self.inFunc:
-                        if self.inClass and instance == 'super->':
+                        if self.inClass and instance == 'super':
                             # Call the method only without a dot access
                             call = value['value'].replace('!@instance@!', '').replace(f'{v["name"]["name"]}(super', f'{v["name"]["name"]}(({currentType}*)self')
 
                             value['value'] = f'{currentType}_{call}'
                         else:
                             call = value['value'].replace('!@instance@!', '')
-                            value['value'] = '->'.join(dotAccess + [instance, call]).replace('->.','->')
+                            value['value'] = chain + '->' + instance + '->' + call
+                            value['value'] = cleanChain(value['value'])
                     else:
                         # if outside, use . instead
                         value['value'] = value['value'].replace('!@instance@!', currentType + '_')
                     dotAccess = [value['value']]
+                    chain = dotAccess[-1]
                     currentType = value['type']
                 elif currentType in {'array', 'map'}:
-                    chain = "".join(dotAccess)
-                    if chain[-1] == '>':
-                        # if the last element is a pointer, remove the last arrow
-                        chain = chain[:-2]
                     v['args'] = [{'type':currentType, 'value':chain}] + v['args']
                     value = self.processCall(v)
                     if currentType == 'array':
@@ -156,6 +168,7 @@ class Transpiler(BaseTranspiler):
                         keyType = tokens[n-1]['keyType']
                         valType = tokens[n-1]['valType']
                         dotAccess = [f"dict_{keyType}_{valType}_{value['value']}"]
+                    chain = dotAccess[-1]
                     currentType = value['type']
                 elif currentType == 'file':
                     if v['name']['name'] in ['write', 'close', 'read']:
@@ -170,12 +183,14 @@ class Transpiler(BaseTranspiler):
                                 formatstr = value['format']
                                 values = ', '.join(value['values'])
                                 dotAccess = [f'fprintf({instance}, {formatstr}, {values})']
+                                chain = dotAccess[-1]
                                 continue
                         elif name == 'read':
                             v['name']['name'] = 'gets'
                             value = self.getValAndType(v['args'][0])
                             length = value['value']
                             dotAccess = [f'fgets({{var}}, {length}+1, {instance})']
+                            chain = dotAccess[-1]
                             currentType = 'str'
                             continue
                         else:
@@ -184,33 +199,33 @@ class Transpiler(BaseTranspiler):
                         v['args'] = [{'value':instance, 'type':'file'}] + v['args']
                         value = self.processCall(v)
                         dotAccess = [value['value']]
+                        chain = dotAccess[-1]
                     else:
                         raise ValueError(f'Method {v["name"]} is not available for files.')
                 else:
                     value = self.processCall(v)
                     dotAccess.append(value['value'])
+                    chain += '.' + dotAccess[-1]
+                    chain = cleanChain(chain)
                     currentType = value['type']
             elif 'name' in v:
                 if (currentType in self.classes or currentType in ['array', 'map']):
                     if v['name'] == '':
                         input(v)
-                    dotAccess.append(f'{v["name"]}->')
+                    dotAccess.append(f'{v["name"]}')
+                    chain += '->' + dotAccess[-1]
+                    chain = cleanChain(chain)
                     currentType = v['type']
                 elif v['name'] == 'len' and currentType == 'str':
                     currentType = 'int'
-                    chain = "".join(dotAccess)
-                    if chain[-1] == '>':
-                        # if the last element is a pointer, remove the last arrow
-                        chain = chain[:-2]
                     dotAccess = [f"strlen({chain})"]
+                    chain = dotAccess[-1]
                     self.imports.add("#include <string.h>")
                 else:
                     dotAccess.append(v['name'])
+                    chain += '.' + dotAccess[-1]
+                    chain = cleanChain(chain)
                     currentType = v['type']
-        chain = '->'.join(dotAccess).replace('->.','->')
-        if chain[-1] == '>':
-            # if the last element is a pointer, remove the last arrow
-            chain = chain[:-2]
         return chain, currentType
     
     def formatArray(self, elements, elementType, size):
