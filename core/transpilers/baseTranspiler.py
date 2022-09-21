@@ -668,6 +668,7 @@ class BaseTranspiler():
     def processCall(self, token, className=None):
         name = self.getValAndType(token['name'])
         args = self.processArgs(token['args'], inferType=True)
+        outVal = {}
         if name['value'] in self.builtins:
             callType = self.builtins[name['value']]['type']
             name['value'] = self.builtins[name['value']]['value']
@@ -682,6 +683,10 @@ class BaseTranspiler():
         elif className is not None:
             kws = self.classes[className]['methods'][name['value']]['kwargs']
             ags = self.classes[className]['methods'][name['value']]['args']
+            callType = self.classes[className]['methods'][name['value']]['type']
+            if callType == 'array':
+                outVal['elementType'] = self.classes[className]['methods'][name['value']]['elementType']
+                outVal['size'] = self.classes[className]['methods'][name['value']]['size']
         elif name['value'] in self.classes:
             callType = name['value']
             if 'new' in self.classes[callType]['methods']:
@@ -726,8 +731,9 @@ class BaseTranspiler():
         val = self.formatCall(name['value'], name['type'], arguments, kwargs, className, callback)
         if 'modifier' in token:
             val = token['modifier'].replace('not',self.notOperator) + val
-        outVal = {'value':val, 'type':callType}
-        if callType == 'array':
+        outVal['value'] = val
+        outVal['type'] = callType
+        if callType == 'array' and not 'elementType' in outVal:
             outVal['elementType'] = token['name']['elementType']
             outVal['size'] = token['name']['size']
         return outVal
@@ -762,6 +768,7 @@ class BaseTranspiler():
                 varType = v['type']
                 currentType = varType
         value, lastType = self.formatDotAccess(tokens)
+        print(lastType, currentType)
         if lastType is not None:
             varType = lastType
         
