@@ -768,7 +768,6 @@ class BaseTranspiler():
                 varType = v['type']
                 currentType = varType
         value, lastType = self.formatDotAccess(tokens)
-        print(lastType, currentType)
         if lastType is not None:
             varType = lastType
         
