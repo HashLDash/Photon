@@ -333,7 +333,8 @@ class Transpiler(BaseTranspiler):
         # Handle function arguments. Kwargs are in the right order
         if name in self.classes:
             #args.insert(0, {'value':'{var}', 'type':name})
-            pass
+            if args:
+                del args[0]
         arguments = ''
         permanentVars = ''
         tempVars = ''
@@ -528,6 +529,8 @@ class Transpiler(BaseTranspiler):
                 return f'char* {variable} = {formattedExpr};'
             else:
                 return f'char* {variable} = {formattedExpr};'
+        if 'func' in varType:
+            varType = self.nativeType(varType.replace(' func','').strip()) + ' '
         return f'{varType}{variable} = {formattedExpr};'
 
     def formatExpr(self, value, cast=None, var=None):
@@ -720,6 +723,7 @@ class Transpiler(BaseTranspiler):
 
     def formatArgs(self, args):
         newArgs = []
+        arguments = ''
         for arg in args:
             if arg['type'] == '%{className}%':
                 arg['type'] = self.inClass
@@ -727,14 +731,15 @@ class Transpiler(BaseTranspiler):
                 arg['type'] = f"list_{arg['elementType']}*"
             elif 'func' in arg['type']:
                 #callback
-                #TODO: implement return types
-                arg['value'] = f"(*{arg['value']})()"
-            newArgs.append(arg)
-        args = newArgs
+                varType = self.nativeType(arg['type'].replace(' func', '').strip())
+                arguments += f", {varType} (*{arg['value']})()"
+                continue
+            if not arg['type'] in self.classes:
+                arguments += f', {self.nativeType(arg["type"])} {arg["value"]}' 
+            else:
+                arguments += f', {self.nativeType(arg["type"])}* {arg["value"]}'
 
-        return ', '.join([ 
-            f'{self.nativeType(arg["type"])} {arg["value"]}' if not arg['type'] in self.classes
-            else f'{self.nativeType(arg["type"])}* {arg["value"]}' for arg in args])
+        return arguments[2:]
 
     def formatFunc(self, name, returnType, args, kwargs):
         # convert kwargs to args
@@ -903,9 +908,9 @@ class Transpiler(BaseTranspiler):
                     argsTypes.append(f"list_{a['elementType']}*")
                 elif a['type'] in self.classes:
                     argsTypes.append(f'struct {attrType}*')
-                elif a['type'] == 'func':
-                    #TODO: Add real return type
-                    argsTypes.append(f'void (*)()')
+                elif 'func' in a['type']:
+                    varType = self.nativeType(a['type'].replace(' func', '').strip())
+                    argsTypes.append(f'{varType} (*)()')
                 else:
                     argsTypes.append(attrType)
 
@@ -952,6 +957,8 @@ class Transpiler(BaseTranspiler):
             return {'value':f'{arg1["value"]} == {arg2["value"]}', 'type':'bool'}
 
     def formatPrint(self, value, terminator='\\n'):
+        if 'func' in value['type']:
+            value['type'] = value['type'].replace(' func','').strip()
         if value['type'] == 'int':
             return f'printf("%ld{terminator}", {value["value"]});'
         elif value['type'] == 'float':

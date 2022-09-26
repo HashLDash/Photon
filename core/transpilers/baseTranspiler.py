@@ -676,7 +676,7 @@ class BaseTranspiler():
             callType = name['type']
         callback = False
         # Put kwargs in the right order
-        if token['type'] == 'func':
+        if 'func' in token['type']:
             # It'a a callback
             kws = self.processKwargs(token['kwargs'], inferType=True)
             ags = args
@@ -692,6 +692,7 @@ class BaseTranspiler():
             if 'new' in self.classes[callType]['methods']:
                 kws = self.classes[callType]['methods']['new']['kwargs']
                 ags = self.classes[callType]['methods']['new']['args']
+                args.insert(0, {'value':'self', 'type':callType})
             else:
                 kws = []
                 ags = []
