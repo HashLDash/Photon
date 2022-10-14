@@ -304,6 +304,8 @@ class Transpiler(BaseTranspiler):
                 valType = expr['type']
                 val = expr['value']
                 exprs.append(val)
+                if 'func' in valType:
+                    valType = valType.replace(' func','').strip()
                 if valType == 'str':
                     string = string.replace('{}', '%s', 1)
                 elif valType == 'int':
