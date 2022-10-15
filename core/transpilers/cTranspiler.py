@@ -794,7 +794,10 @@ class Transpiler(BaseTranspiler):
             for n, i in enumerate(constructor):
                 if i.startswith(f'/*def*/void {self.className}_new('):
                     break
-            constructor[n] = f'/*def*/{self.className}* {self.className}_constructor(' + constructor[n].split('self, ', 1)[1]
+            if f'{self.className}_new({self.className}* self, ' in constructor[n]:
+                constructor[n] = f'/*def*/{self.className}* {self.className}_constructor(' + constructor[n].split('self, ', 1)[1]
+            else:
+                constructor[n] = f'/*def*/{self.className}* {self.className}_constructor() {{'
             constructor.insert(n+1, f'{self.className}* self = malloc(sizeof({self.className}));')
             defaultValues = []
             initArgs = []
