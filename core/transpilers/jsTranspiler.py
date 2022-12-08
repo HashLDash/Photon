@@ -67,6 +67,9 @@ class Transpiler(BaseTranspiler):
                     names.append('length = 0')
                 else:
                     names.append(v['value'])
+            elif v['value'] == 'len' and currentType == 'str':
+                currentType = 'int'
+                names.append('length')
             else:
                 currentType = v['type']
                 names.append(v['value'])
