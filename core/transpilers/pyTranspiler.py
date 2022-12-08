@@ -52,8 +52,6 @@ class Transpiler(BaseTranspiler):
         names = []
         for tok in tokens:
             v = self.getValAndType(tok) 
-            print(currentType)
-            input(v)
             if 'indexAccess' in tok:
                 if 'elementType' in tok:
                     tok['type'] = 'array'
