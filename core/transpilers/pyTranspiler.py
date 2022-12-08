@@ -52,6 +52,8 @@ class Transpiler(BaseTranspiler):
         names = []
         for tok in tokens:
             v = self.getValAndType(tok) 
+            print(currentType)
+            input(v)
             if 'indexAccess' in tok:
                 if 'elementType' in tok:
                     tok['type'] = 'array'
@@ -67,6 +69,10 @@ class Transpiler(BaseTranspiler):
                 else:
                     names.append(v['value'])
                     currentType = v['type']
+            elif v['value'] == 'len' and currentType == 'str':
+                currentType = 'int'
+                chain = '.'.join(names)
+                names = [f"len({chain})"]
             else:
                 names.append(v['value'])
                 currentType = v['type']
