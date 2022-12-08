@@ -32,6 +32,7 @@ class Transpiler(BaseTranspiler):
             'any':'var',
             'unknown':'var',
         }
+        self.initializeGlobalVars = False
     
     def nativeType(self, varType):
         try:
@@ -60,8 +61,15 @@ class Transpiler(BaseTranspiler):
             elif currentType == 'array':
                 if v['value'] == 'len':
                     names = [f"{'.'.join(names)}.length"]
+                elif v['value'].startswith('append'):
+                    names.append(v['value'].replace('append','push', 1))
+                elif v['value'] == 'clear()':
+                    names.append('length = 0')
                 else:
                     names.append(v['value'])
+            elif v['value'] == 'len' and currentType == 'str':
+                currentType = 'int'
+                names.append('length')
             else:
                 currentType = v['type']
                 names.append(v['value'])
@@ -98,7 +106,7 @@ class Transpiler(BaseTranspiler):
             index = self.processExpr(token['indexAccess'])['value']
             #TODO: Optimize for constants and remove the if else test. The same applies to C
             name = token['name']
-            return f'{name}[{index} >= 0 ? {index} : {name}.length + {index}]'
+            return f'{name}.slice({index})[0]'
         else:
             raise SyntaxError(f'IndexAccess with type {token["type"]} not implemented yet')
     

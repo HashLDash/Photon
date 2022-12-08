@@ -60,6 +60,7 @@ class BaseTranspiler():
         self.links = set()
         self.inFunc = None
         self.inClass = None
+        self.initializeGlobalVars = True
         self.methodsInsideClass = True
         self.insertMode = True
         self.source = []
@@ -73,6 +74,8 @@ class BaseTranspiler():
         }
 
     def insertCode(self, line, index=None, isGlobal=False):
+        if isGlobal and not self.initializeGlobalVars:
+            return
         if self.insertMode:
             if self.inFunc or self.inClass or isGlobal:
                 if not index is None:
@@ -86,7 +89,8 @@ class BaseTranspiler():
                     self.source.append(line)
 
     def process(self, token):
-        self.instructions[token['opcode']](token)
+        if token is not None:
+            self.instructions[token['opcode']](token)
 
     def nativeType(self, varType):
         if varType in self.nativeTypes:
@@ -403,11 +407,11 @@ class BaseTranspiler():
         target = token['target']
         expr = token['expr']
         if target['token'] in {'var', 'dotAccess'}:
-            #variable = self.processVar(target)
             variable = self.getValAndType(target)
             if variable['type'] == 'array':
-                if not self.typeKnown(expr['args'][0]['elementType']):
+                if not 'elementType' in expr['args'][0] or not self.typeKnown(expr['args'][0]['elementType']):
                     # Add array info into expression
+                    expr['args'][0]['type'] == 'array'
                     expr['args'][0]['elementType'] = variable['elementType']
                     expr['args'][0]['size'] = variable['size']
             elif variable['type'] == 'map':
@@ -489,7 +493,7 @@ class BaseTranspiler():
         else:
             raise SyntaxError(f'Format assign with variableName {target} not implemented yet.')
 
-        if expr['type'] == 'array' and expr['elementType'] != self.currentScope[variableName]['elementType']:
+        if expr['type'] == 'array' and expr['elementType'] != varType:
             cast = self.nativeType(varType)
         elif self.typeKnown(expr['type']) and expr['type'] != varType and self.typeKnown(varType):
             cast = self.nativeType(varType)
@@ -506,7 +510,6 @@ class BaseTranspiler():
                 # Now set inMemory because it was already defined in global scope
                 inMemory = True
             self.insertCode(self.formatAssign(variableName, varType, cast, expr, inMemory=inMemory))
-
 
     def processAugAssign(self, token):
         op = token['operator']
@@ -634,6 +637,9 @@ class BaseTranspiler():
                 # ignore value type because of the scope
                 # Function arguments need explicit type
                 attr = {'type':tok['type'], 'value':arg['value']}
+                if tok['type'] == 'array':
+                    attr['elementType'] = arg['elementType']
+                    attr['size'] = arg['size']
                 if 'attribute' in tok:
                     attr['default'] = True
                     attr['value'] = tok['args'][0]['dotAccess'][-1]['name']
@@ -644,7 +650,10 @@ class BaseTranspiler():
         kwargs = []
         for tok in tokens:
             if tok['expr']['type'] == 'array' and not self.typeKnown(tok['expr']['args'][0]['elementType']):
-                tok['expr']['args'][0]['elementType'] = tok['target']['type']
+                if tok['target']['type'] == 'array':
+                    tok['expr']['args'][0]['elementType'] = tok['target']['elementType']
+                else:
+                    tok['expr']['args'][0]['elementType'] = tok['target']['type']
             kw = self.getValAndType(tok['expr'])
             if self.typeKnown(tok['target']['type']) and tok['target']['type'] == 'func':
                 # It's a callback
@@ -659,6 +668,7 @@ class BaseTranspiler():
     def processCall(self, token, className=None):
         name = self.getValAndType(token['name'])
         args = self.processArgs(token['args'], inferType=True)
+        outVal = {}
         if name['value'] in self.builtins:
             callType = self.builtins[name['value']]['type']
             name['value'] = self.builtins[name['value']]['value']
@@ -666,23 +676,28 @@ class BaseTranspiler():
             callType = name['type']
         callback = False
         # Put kwargs in the right order
-        if token['type'] == 'func':
+        if 'func' in token['type']:
             # It'a a callback
             kws = self.processKwargs(token['kwargs'], inferType=True)
             ags = args
         elif className is not None:
             kws = self.classes[className]['methods'][name['value']]['kwargs']
             ags = self.classes[className]['methods'][name['value']]['args']
+            callType = self.classes[className]['methods'][name['value']]['type']
+            if callType == 'array':
+                outVal['elementType'] = self.classes[className]['methods'][name['value']]['elementType']
+                outVal['size'] = self.classes[className]['methods'][name['value']]['size']
         elif name['value'] in self.classes:
             callType = name['value']
             if 'new' in self.classes[callType]['methods']:
                 kws = self.classes[callType]['methods']['new']['kwargs']
                 ags = self.classes[callType]['methods']['new']['args']
+                args.insert(0, {'value':'self', 'type':callType})
             else:
                 kws = []
                 ags = []
         elif name['value'] in self.currentScope:
-            if self.currentScope[name['value']]['token'] == 'nativeFunc':
+            if 'token' in self.currentScope[name['value']] and self.currentScope[name['value']]['token'] == 'nativeFunc':
                 kws = []
                 ags = args
             elif 'func' in self.currentScope[name['value']]['type']:
@@ -717,8 +732,9 @@ class BaseTranspiler():
         val = self.formatCall(name['value'], name['type'], arguments, kwargs, className, callback)
         if 'modifier' in token:
             val = token['modifier'].replace('not',self.notOperator) + val
-        outVal = {'value':val, 'type':callType}
-        if callType == 'array':
+        outVal['value'] = val
+        outVal['type'] = callType
+        if callType == 'array' and not 'elementType' in outVal:
             outVal['elementType'] = token['name']['elementType']
             outVal['size'] = token['name']['size']
         return outVal
@@ -778,8 +794,6 @@ class BaseTranspiler():
 
     def startScope(self):
         self.oldScope.append(deepcopy(self.currentScope))
-        # refresh returnType
-        self.returnValue = []
 
     def endScope(self):
         scope = deepcopy(self.currentScope)
@@ -806,6 +820,8 @@ class BaseTranspiler():
                 self.classes[name] = deepcopy(self.classes[inherited])
                 self.classes[name]['inherited'] = [inherited]
                 for methodName in self.classes[name]['methods']:
+                    if methodName == 'constructor':
+                        continue
                     self.classes[name]['scope'][methodName]['args'][0]['type'] = name
                     self.classes[name]['methods'][methodName]['scope']['self']['type'] = name
                     if inherited:
@@ -838,6 +854,19 @@ class BaseTranspiler():
             self.classHeader(index)
         # Write methods code
         for methodName, info in self.classes[name]['methods'].items():
+            if methodName == 'constructor':
+                continue
+            self.insertCode('')
+            self.classes[name]['scope'][methodName] = info['scope'][methodName]
+            if info['type'] == 'array':
+                self.classes[name]['scope'][methodName]['elementType'] = info['elementType']
+                self.classes[name]['scope'][methodName]['size'] = info['size']
+            for c in info['code']:
+                self.insertCode(c)
+        # Write the constructor if it has one
+        if 'constructor' in self.classes[name]['methods']:
+            methodName = 'constructor'
+            info = self.classes[name]['methods'][methodName]
             self.insertCode('')
             self.classes[name]['scope'][methodName] = info['scope'][methodName]
             if info['type'] == 'array':
@@ -874,11 +903,12 @@ class BaseTranspiler():
             except IndexError:
                 pass
             else:
-                inheritedKwargs = self.classes[inherited]['methods']['new']['tokens']['kwargs']
-                # Check if it's an inherited new method
-                # to avoid duplicating the attributes
-                if not inheritedKwargs == token['kwargs']:
-                    token['kwargs'] = inheritedKwargs + token['kwargs']
+                if 'new' in self.classes[inherited]['methods']:
+                    inheritedKwargs = self.classes[inherited]['methods']['new']['tokens']['kwargs']
+                    # Check if it's an inherited new method
+                    # to avoid duplicating the attributes
+                    if not inheritedKwargs == token['kwargs']:
+                        token['kwargs'] = inheritedKwargs + token['kwargs']
         self.processFunc(token)
         # delete self, because the next inheritance will insert it
         del token['args'][0]
@@ -912,7 +942,7 @@ class BaseTranspiler():
         kwargs = self.processKwargs(token['kwargs'])
         functionName = token['name']
         returnType = token['type']
-        self.returnValue = token
+        returnValue = {'value':None, 'type':returnType}
         self.inFunc = functionName
         # infer return type if not known
         if not self.typeKnown(returnType):
@@ -920,6 +950,7 @@ class BaseTranspiler():
             # change mode to not insert code on processing
             self.insertMode = False
             self.startScope()
+            self.returnValue = []
             if self.inClass:
                 self.startClassScope()
                 inherited = self.classes[self.inClass]['inherited']
@@ -930,6 +961,9 @@ class BaseTranspiler():
                 argType = arg['type']
                 argVal = arg['value']
                 self.currentScope[argVal] = {'type':argType}
+                if argType == 'array':
+                    self.currentScope[argVal]['elementType'] = arg['elementType']
+                    self.currentScope[argVal]['size'] = arg['size']
                 if argType in self.classes:
                     self.currentScope[argVal]['pointer'] = True
                 if self.inClass and 'default' in arg:
@@ -986,8 +1020,12 @@ class BaseTranspiler():
             self.insertMode = True
             # End pre processing
         self.startScope()
+        self.returnValue = []
         scopeName = 'new' if functionName == self.constructorName else functionName
         self.currentScope[scopeName] = {'type':returnType, 'token':'func', 'args':args, 'kwargs':kwargs}
+        if returnValue and returnValue['type'] == 'array':
+            self.currentScope[scopeName]['elementType'] = returnValue['elementType'] 
+            self.currentScope[scopeName]['size'] = returnValue['size']
         # put args in scope
         if self.inClass:
             inherited = self.classes[self.inClass]['inherited']
@@ -998,6 +1036,9 @@ class BaseTranspiler():
             argType = arg['type']
             argVal = arg['value']
             self.currentScope[argVal] = {'type':argType}
+            if argType == 'array':
+                self.currentScope[argVal]['elementType'] = arg['elementType']
+                self.currentScope[argVal]['size'] = arg['size']
             if argType in self.classes:
                 self.currentScope[argVal]['pointer'] = True
             if self.inClass and 'default' in arg:

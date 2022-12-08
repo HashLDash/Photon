@@ -6,6 +6,22 @@
 #include "asprintf.h"
 #include "list_!@valType@!.h"
 
+list_!@valType@!* list_!@valType@!_constructor(int len, int size, ...) {
+    list_!@valType@!* list = malloc(sizeof(list_!@valType@!));
+    list->len = len;
+    list->size = size;
+    list->values = malloc(sizeof(!@valType@!*)*size);
+
+    va_list ptr;
+    va_start(ptr, size); // size is the last argument before the ellipsis
+
+    for (int i = 0; i < len; i++) {
+        list->values[i] = va_arg(ptr, !@valType@!*);
+    }
+    va_end(ptr);
+    return list;
+}
+
 !@valType@!* list_!@valType@!_get(list_!@valType@!* list, int index) {
     if (index < 0) {
         // -1 is equivalent to the last element
@@ -114,4 +130,9 @@ char* list_!@valType@!_str(list_!@valType@!* list) {
     }
     return out;
 }
+
+void list_!@valType@!_clear(list_!@valType@!* list) {
+    list->len = 0;
+}
+
 #endif

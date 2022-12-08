@@ -12,6 +12,22 @@ typedef struct list_str {
     char** values;
 } list_str;
 
+list_str* list_str_constructor(int len, int size, ...) {
+    list_str* list = malloc(sizeof(list_str));
+    list->len = len;
+    list->size = size;
+    list->values = malloc(sizeof(char*)*size);
+
+    va_list ptr;
+    va_start(ptr, size); // size is the last argument before the ellipsis
+
+    for (int i = 0; i < len; i++) {
+        list->values[i] = va_arg(ptr, char*);
+    }
+    va_end(ptr);
+    return list;
+}
+
 char* list_str_get(list_str* list, int index) {
     if (index < 0) {
         // -1 is equivalent to the last element
@@ -119,4 +135,9 @@ char* list_str_str(list_str* list) {
     }
     return out;
 }
+
+void list_str_clear(list_str* list) {
+    list->len = 0;
+}
+
 #endif

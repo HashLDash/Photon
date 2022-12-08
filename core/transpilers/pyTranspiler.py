@@ -21,6 +21,7 @@ class Transpiler(BaseTranspiler):
         self.null = 'None'
         self.self = 'self'
         self.notOperator = 'not '
+        self.initializeGlobalVars = False
         self.nativeTypes = {
             'float':'float',
             'int':'int',
@@ -43,13 +44,8 @@ class Transpiler(BaseTranspiler):
         return
 
     def formatVarInit(self, name, varType):
-        if name in self.currentScope:
-            # If name in scope, then it doesn't need to be initiated
-            # this will print the name in the interpreter
-            return name
-        if varType:
-            return f'{name}:{varType} = None'
-        return f'{name} = None'
+        # Python doesn't need var init. But this is used in the interpreter
+        return f'{name}'
 
     def formatDotAccess(self, tokens):
         currentType = None
@@ -71,6 +67,10 @@ class Transpiler(BaseTranspiler):
                 else:
                     names.append(v['value'])
                     currentType = v['type']
+            elif v['value'] == 'len' and currentType == 'str':
+                currentType = 'int'
+                chain = '.'.join(names)
+                names = [f"len({chain})"]
             else:
                 names.append(v['value'])
                 currentType = v['type']
@@ -150,7 +150,7 @@ class Transpiler(BaseTranspiler):
         return f'{name}({arguments})'
 
     def formatExpr(self, value, cast=None):
-        if cast is None:
+        if cast is None or cast == self.nativeType(value['type']):
             return value['value']
         elif cast in {'str', 'int', 'float'}:
             return f"{cast}({value['value']})"
