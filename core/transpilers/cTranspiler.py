@@ -50,6 +50,9 @@ class Transpiler(BaseTranspiler):
         }
         self.initInternal = False
 
+    def processNamespace(self, var):
+        return f'{self.moduleName}__{var}'
+
     def formatNativeLibImport(self, expr):
         # TODO: Handle dotAccess imports
         name = expr['args'][0]['name']

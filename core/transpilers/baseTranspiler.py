@@ -12,7 +12,9 @@ class BaseTranspiler():
         self.libExtension = 'photonExt'
         self.filename = filename.split('/')[-1].replace('.w','.photon')
         self.header = []
+        self.moduleName = filename.split('.w')[0]
         self.module = module
+        self.modules = {}
 
         self.operators = ['**','*','%','/','-','+','==','!=','>','<','>=','<=','is','in','andnot','and','or','&', '<<', '>>'] # in order 
         self.instructions = {
@@ -92,6 +94,15 @@ class BaseTranspiler():
         if token is not None:
             self.instructions[token['opcode']](token)
 
+    def processNamespace(self, var):
+        return var
+
+    def validateNamespace(self, var, namespace=False):
+        if namespace:
+            return self.processNamespace(var)
+        else:
+            return var
+
     def nativeType(self, varType):
         if varType in self.nativeTypes:
             return self.nativeTypes[varType]
@@ -142,9 +153,9 @@ class BaseTranspiler():
         varType = token['args'][0]['type']
         if self.typeKnown(varType):
             self.currentScope[name] = {'type':varType}
-        self.insertCode(self.formatVarInit(name, varType))
+        self.insertCode(self.formatVarInit(self.processNamespace(name), varType))
 
-    def processVar(self, token):
+    def processVar(self, token, namespace=False):
         name = token['name']
         if self.typeKnown(token['type']):
             # Type was explicit
@@ -181,7 +192,7 @@ class BaseTranspiler():
                 v = self.processIndexAccess(token)
                 return {'value':v['value'],
                     'indexAccess':token['indexAccess'], 'type':v['type']}
-            return {'value':token['name'], 'type':varType,
+            return {'value':self.validateNamespace(token['name'], namespace=namespace), 'type':varType,
                 'elementType':token['elementType'], 'size':token['size']}
         if varType == 'map':
             if 'indexAccess' in token:
@@ -190,7 +201,7 @@ class BaseTranspiler():
                 v = self.processIndexAccess(token)
                 return {'value':v['value'],
                     'indexAccess':token['indexAccess'], 'type':v['type']}
-            return {'value':token['name'], 'type':varType,
+            return {'value':self.validateNamespace(token['name'], namespace=namespace), 'type':varType,
                 'keyType':token['keyType'], 'valType':token['valType']}
         if varType == 'str':
             if 'indexAccess' in token:
@@ -200,8 +211,8 @@ class BaseTranspiler():
                 return {'value':v['value'],
                     'indexAccess':token['indexAccess'], 'type':v['type']}
         if name in self.currentScope and 'pointer' in self.currentScope[name]:
-            return {'value':token['name'], 'type':varType, 'pointer':self.currentScope[name]['pointer']}
-        return {'value':token['name'], 'type':varType}
+            return {'value':self.validateNamespace(token['name'], namespace=namespace), 'type':varType, 'pointer':self.currentScope[name]['pointer']}
+        return {'value':self.validateNamespace(token['name'], namespace=namespace), 'type':varType}
 
     def processIndexAccess(self, token):
         if token['type'] == 'array':
@@ -286,7 +297,7 @@ class BaseTranspiler():
             'type':'map', 'elements':elements, 'valType':valType,
             'keyType':keyType, 'size':'unknown'}
 
-    def getValAndType(self, token):
+    def getValAndType(self, token, namespace=False):
         if 'value' in token and 'type' in token and (self.typeKnown(token['type']) or not self.insertMode):
             if token['type'] == 'str':
                 token = self.processFormatStr(token)
@@ -300,7 +311,7 @@ class BaseTranspiler():
                 del token['modifier']
             return token
         elif token['token'] == 'expr':
-            return self.processExpr(token)
+            return self.processExpr(token, namespace=namespace)
         elif token['token'] == 'call':
             return self.processCall(token)
         elif token['token'] == 'printFunc':
@@ -308,7 +319,7 @@ class BaseTranspiler():
         elif token['token'] == 'group':
             return self.processGroup(token)
         elif token['token'] == 'var':
-            return self.processVar(token)
+            return self.processVar(token, namespace=namespace)
         elif token['token'] == 'dotAccess':
             return self.processDotAccess(token)
         elif token['token'] == 'inputFunc':
@@ -324,20 +335,21 @@ class BaseTranspiler():
         ''' Process the expr token as a standalone code '''
         expr = self.processExpr(token)
         if 'token' in token['args'][0] and token['args'][0]['token'] == 'var':
-            self.insertCode(self.formatVarInit(expr['value'], expr['type']))
+            self.insertCode(self.formatVarInit(self.processNamespace(expr['value']), expr['type']))
         else:
-            self.insertCode(expr['value']+self.terminator)
+            self.insertCode(self.processNamespace(expr['value'])+self.terminator)
 
-    def processExpr(self, token):
+    def processExpr(self, token, namespace=False):
         ''' Process expr tokens as values, returning its type and value '''
         args = token['args']
         ops = token['ops']
         if not ops:
             tok = args[0]
-            return self.getValAndType(tok)
+            return self.getValAndType(tok, namespace=namespace)
         elif len(args) == 1 and len(ops) == 1:
             # modifier operator
             if self.typeKnown(token['type']):
+                # TODO: Maybe missing namespace here. Call getValAndType with namespace
                 return {'value':ops[0]+token['args'][0]['value'],'type':token['type']}
             else:
                 raise NotImplemented
@@ -347,8 +359,8 @@ class BaseTranspiler():
                     index = ops.index(op)
                     arg1 = args[index]
                     arg2 = args[index+1]
-                    arg1 = self.getValAndType(arg1)
-                    arg2 = self.getValAndType(arg2)
+                    arg1 = self.getValAndType(arg1, namespace=namespace)
+                    arg2 = self.getValAndType(arg2, namespace=namespace)
                     result = self.instructions[op](arg1, arg2)
                     args[index] = result
                     del ops[index]
@@ -504,6 +516,7 @@ class BaseTranspiler():
             target['type'] = varType
             self.insertCode(self.formatIndexAssign(target, expr, inMemory=inMemory))
         else:
+            variableName = self.processNamespace(variableName)
             if not inMemory and not self.inFunc and not self.inClass:
                 # It's a global variable, initialize it
                 self.insertCode(self.formatVarInit(variableName, varType), isGlobal=True)
@@ -1134,8 +1147,12 @@ class BaseTranspiler():
                         transpileOnly=True,
                         debug=self.debug)
                 interpreter.run()
-                self.classes.update(interpreter.engine.classes)
-                self.currentScope.update(interpreter.engine.currentScope)
+                self.modules[name] = {
+                    'classes':interpreter.engine.classes,
+                    'scope':interpreter.engine.currentScope,
+                }
+                #self.classes.update(interpreter.engine.classes)
+                #self.currentScope.update(interpreter.engine.currentScope)
                 self.imports = self.imports.union(interpreter.engine.imports)
                 self.links = self.links.union(interpreter.engine.links)
                 self.outOfMain += interpreter.engine.outOfMain
@@ -1153,7 +1170,7 @@ class BaseTranspiler():
 
     def processPrint(self, token):
         if token['args']:
-            value = self.getValAndType(token['args'][0])
+            value = self.getValAndType(token['args'][0], namespace=True)
         else:
             value = {'value':'','type':'null'}
         terminator = '\\n'
