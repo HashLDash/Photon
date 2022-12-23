@@ -3,5 +3,5 @@
 # photon --build shared
 
 def compute():
-    for i in 0..10:
+    for i in 0..11:
         print("Ok {i}")

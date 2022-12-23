@@ -51,7 +51,12 @@ class Transpiler(BaseTranspiler):
         self.initInternal = False
 
     def processNamespace(self, var):
-        return f'{self.moduleName}__{var}'
+        print(self.inFunc, self.inClass, var)
+        if self.inFunc or self.inClass:
+            return var
+        else:
+            print('moded')
+            return f'{self.moduleName}__{var}'
 
     def formatNativeLibImport(self, expr):
         # TODO: Handle dotAccess imports
@@ -90,16 +95,13 @@ class Transpiler(BaseTranspiler):
             self.links.add(f"-l{name}")
         return ''
 
-    def formatVarInit(self, name, varType):
+    def formatVarInit(self, name, varType, elementType=None, keyType=None, valType=None):
         if varType == 'array':
-            elementType = self.currentScope[name]['elementType']
             varType = f'list_{elementType}*'
         if varType == 'map':
-            keyType = self.currentScope[name]['keyType']
-            valType = self.currentScope[name]['valType']
             varType = f'dict_{keyType}_{valType}*'
         if varType in self.classes:
-            return f'{varType}* {name};'
+            return f'{self.moduleName}__{varType}* {name};'
         varType = self.nativeType(varType)
         return f'{varType} {name};'
 
@@ -145,6 +147,7 @@ class Transpiler(BaseTranspiler):
                     # include instance as the first arg in the call
                     v['args'] = [{'value':instance, 'type':currentType, 'pointer':True}] + v['args']
                     value = self.processCall(v, className=currentType)
+                    input(value)
                     if self.inFunc:
                         if self.inClass and instance == 'super':
                             # Call the method only without a dot access
@@ -157,7 +160,7 @@ class Transpiler(BaseTranspiler):
                             value['value'] = cleanChain(value['value'])
                     else:
                         # if outside, use . instead
-                        value['value'] = value['value'].replace('!@instance@!', currentType + '_')
+                        value['value'] = value['value'].replace('!@instance@!', f'{self.moduleName}__{currentType}_')
                     dotAccess = [value['value']]
                     chain = dotAccess[-1]
                     currentType = value['type']
@@ -362,7 +365,7 @@ class Transpiler(BaseTranspiler):
                 arguments += f"{arg['value']}, "
         arguments = arguments[:-2]
         if name in self.classes:
-            name = f'{name}_constructor'
+            name = f'{self.moduleName}__{name}_constructor'
         instance = '' if className is None else f'!@instance@!'
         if tempVars or permanentVars:
             self.insertCode(permanentVars)
@@ -742,7 +745,7 @@ class Transpiler(BaseTranspiler):
             if not arg['type'] in self.classes:
                 arguments += f', {self.nativeType(arg["type"])} {arg["value"]}' 
             else:
-                arguments += f', {self.nativeType(arg["type"])}* {arg["value"]}'
+                arguments += f', {self.moduleName}__{self.nativeType(arg["type"])}* {arg["value"]}'
 
         return arguments[2:]
 
@@ -761,7 +764,7 @@ class Transpiler(BaseTranspiler):
             ptr = '*'
         if self.inClass:
             # Its a method
-            return f'/*def*/{self.nativeType(returnType)}{ptr} {self.inClass}_{name}({args}) {{'
+            return f'/*def*/{self.nativeType(returnType)}{ptr} {self.moduleName}__{self.inClass}_{name}({args}) {{'
         else:
             return f'/*def*/{self.nativeType(returnType)}{ptr} {name}({args}) {{'
 
@@ -770,6 +773,9 @@ class Transpiler(BaseTranspiler):
 
     def formatClass(self, name, args):
         self.className = name
+        self.inClass = None
+        spaceName = self.processNamespace(name)
+        self.inClass = name
         from pprint import pprint
         #pprint(self.classes[self.className])
         #input() 
@@ -780,12 +786,12 @@ class Transpiler(BaseTranspiler):
         except KeyError:
             # No new method defined, create a constructor from scratch
             constructor = [
-                f'/*def*/{self.className}* {self.className}_constructor() {{',
-                f'{self.className}* self = malloc(sizeof({self.className}));',
+                f'/*def*/{spaceName}* {spaceName}_constructor() {{',
+                f'{spaceName}* self = malloc(sizeof({spaceName}));',
             ]
             for attr in self.classes[self.className]['attributes']:
                 if 'returnType' in attr:
-                    constructor.append(f"self->{attr['name']} = {self.className}_{attr['name']};")
+                    constructor.append(f"self->{attr['name']} = {spaceName}_{attr['name']};")
                 elif 'variable' in attr:
                     constructor.append(f"self->{attr['variable']['value']} = {attr['expr']['value']};")
                     #TODO Create list constructor and initialize it here with the default values
@@ -795,13 +801,13 @@ class Transpiler(BaseTranspiler):
         else:
             # New method was defined
             for n, i in enumerate(constructor):
-                if i.startswith(f'/*def*/void {self.className}_new('):
+                if i.startswith(f'/*def*/void {spaceName}_new('):
                     break
-            if f'{self.className}_new({self.className}* self, ' in constructor[n]:
-                constructor[n] = f'/*def*/{self.className}* {self.className}_constructor(' + constructor[n].split('self, ', 1)[1]
+            if f'{spaceName}_new({spaceName}* self, ' in constructor[n]:
+                constructor[n] = f'/*def*/{spaceName}* {spaceName}_constructor(' + constructor[n].split('self, ', 1)[1]
             else:
-                constructor[n] = f'/*def*/{self.className}* {self.className}_constructor() {{'
-            constructor.insert(n+1, f'{self.className}* self = malloc(sizeof({self.className}));')
+                constructor[n] = f'/*def*/{spaceName}* {spaceName}_constructor() {{'
+            constructor.insert(n+1, f'{spaceName}* self = malloc(sizeof({spaceName}));')
             defaultValues = []
             initArgs = []
             if 'kwargs' in self.classes[self.className]['methods']['new']:
@@ -810,7 +816,7 @@ class Transpiler(BaseTranspiler):
                 initArgs += [ a['value'] for a in self.classes[self.className]['methods']['new']['args'] ]
             for attr in self.classes[self.className]['attributes']:
                 if 'returnType' in attr:
-                    constructor.insert(n+2, f"self->{attr['name']} = {self.className}_{attr['name']};")
+                    constructor.insert(n+2, f"self->{attr['name']} = {spaceName}_{attr['name']};")
                     
                 elif 'variable' in attr:
                     attrName = attr['variable']['value']
@@ -835,17 +841,17 @@ class Transpiler(BaseTranspiler):
             self.classes[self.className]['methods']['constructor']['scope']['constructor'] = self.classes[self.className]['methods']['constructor']['scope'].pop('new')
             self.classes[self.className]['methods']['constructor']['tokens']['name'] = 'constructor'
 
-        return f'typedef struct {self.className} {{'
+        return f'typedef struct {spaceName} {{'
 
     def reformatInheritedMethodDefinition(self, definition, methodName, className, inheritedName):
         definition = definition.replace(
             f'{inheritedName}_{methodName}({inheritedName}',
-            f'{className}_{methodName}({className}')
+            f'{self.moduleName}__{className}_{methodName}({className}')
         self.classes[className]['methods'][methodName]['code'][0] = definition
 
     def formatEndClass(self):
         self.classes[self.className]['endline'] = len(self.outOfMain)
-        return f'}} {self.className};'
+        return f'}} {self.moduleName}__{self.className};'
 
     def formatArrayInit(self, array):
         elements = array['elements']
@@ -886,7 +892,7 @@ class Transpiler(BaseTranspiler):
                 attrClassName = a['variable']['type']
                 # Get initVals of the attribute class
                 argPermVars, argInit = self.formatClassInit(a['variable']['type'], f'{variable}.{a["variable"]["value"]}')
-                permanentVars += f"{argPermVars} {a['variable']['type']} __permVar{self.permVarCounter}__ = {argInit}; "
+                permanentVars += f"{argPermVars} {self.moduleName}__{a['variable']['type']} __permVar{self.permVarCounter}__ = {argInit}; "
                 defaultValues.append(f'&__permVar{self.permVarCounter}__')
                 self.permVarCounter += 1
             elif a['variable']['type'] == 'array':
@@ -899,7 +905,7 @@ class Transpiler(BaseTranspiler):
                         input(a)
         defaultValues = ', '.join(defaultValues)
         # TODO: Initialize dict values
-        return permanentVars, f'{className}_constructor({defaultValues})'
+        return permanentVars, f'{self.moduleName}__{className}_constructor({defaultValues})'
 
     def formatClassAttribute(self, attr):
         if 'returnType' in attr:
@@ -915,7 +921,7 @@ class Transpiler(BaseTranspiler):
                 if attrType == 'array':
                     argsTypes.append(f"list_{a['elementType']}*")
                 elif a['type'] in self.classes:
-                    argsTypes.append(f'struct {attrType}*')
+                    argsTypes.append(f'struct {self.moduleName}__{attrType}*')
                 elif 'func' in a['type']:
                     varType = self.nativeType(a['type'].replace(' func', '').strip())
                     argsTypes.append(f'{varType} (*)()')
@@ -936,7 +942,7 @@ class Transpiler(BaseTranspiler):
             expr = self.formatExpr(expr)
             varType = self.nativeType(varType)
             if varType in self.classes:
-                return f'{varType}* {name};'
+                return f'{self.moduleName}__{varType}* {name};'
             elif variable['type'] == 'func':
                 # Its a callback
                 #TODO: Handle real type
@@ -1029,7 +1035,7 @@ class Transpiler(BaseTranspiler):
             dictLib = template.read()
         valNativeType = self.nativeType(valType)
         if valType in self.classes:
-            valNativeType += "*"
+            valNativeType = f"{self.moduleName}__{valType}*"
         #TODO: Call instance repr if it exists instead of the placeholder
         dictLib = dictLib.replace('!@valType@!', valType).replace('!@valNativeType@!', valNativeType).replace('!@formatCode@!', formatCodes[valType] if valType in formatCodes else f'<class {valType}>')
         with open(f'Sources/c/dict_{keyType}_{valType}.h', 'w') as lib:
@@ -1037,14 +1043,18 @@ class Transpiler(BaseTranspiler):
 
     def renderListTemplate(self, valType):
         if not valType in {'str', 'int', 'float'}:
+            if valType in self.classes:
+                valTypeNative = f'{self.moduleName}__{valType}'
+            else:
+                valTypeNative = valType
             with open(f'{self.standardLibs}/native/c/list_template.h') as template:
                 listLib = template.read()
-            listLib = listLib.replace('!@valType@!', valType)
+            listLib = listLib.replace('!@valType@!', valTypeNative)
             with open(f'Sources/c/list_{valType}.h', 'w') as lib:
                 lib.write(listLib)
             with open(f'{self.standardLibs}/native/c/list_template.c') as template:
                 listLib = template.read()
-            listLib = listLib.replace('!@valType@!', valType)
+            listLib = listLib.replace('!@valType@!', valTypeNative)
             with open(f'Sources/c/list_{valType}.c', 'w') as lib:
                 lib.write(listLib)
 

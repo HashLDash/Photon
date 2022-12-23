@@ -148,12 +148,22 @@ class BaseTranspiler():
             expr = {'type':'null', 'value':''}
         return {'token':'inputFunc', 'type':'str', 'value':self.formatInput(expr)}
 
-    def processVarInit(self, token):
+    def processVarInit(self, token, isGlobal=False):
         name = token['args'][0]['name']
         varType = token['args'][0]['type']
-        if self.typeKnown(varType):
-            self.currentScope[name] = {'type':varType}
-        self.insertCode(self.formatVarInit(self.processNamespace(name), varType))
+        #if self.typeKnown(varType):
+        #    self.currentScope[name] = {'type':varType}
+        if varType == 'array':
+            elementType = self.currentScope[name]['elementType']
+        else:
+            elementType = None
+        if varType == 'map':
+            keyType = self.currentScope[name]['keyType']
+            valType = self.currentScope[name]['valType']
+        else:
+            keyType = None
+            valType = None
+        self.insertCode(self.formatVarInit(self.processNamespace(name), varType, elementType=elementType, keyType=keyType, valType=valType), isGlobal=isGlobal)
 
     def processVar(self, token, namespace=False):
         name = token['name']
@@ -516,13 +526,14 @@ class BaseTranspiler():
             target['type'] = varType
             self.insertCode(self.formatIndexAssign(target, expr, inMemory=inMemory))
         else:
-            variableName = self.processNamespace(variableName)
             if not inMemory and not self.inFunc and not self.inClass:
                 # It's a global variable, initialize it
-                self.insertCode(self.formatVarInit(variableName, varType), isGlobal=True)
+                token = {'args':[{'name':variableName, 'type':varType}]}
+                self.processVarInit(token, isGlobal=True)
+                #self.insertCode(self.formatVarInit(variableName, varType), isGlobal=True)
                 # Now set inMemory because it was already defined in global scope
                 inMemory = True
-            self.insertCode(self.formatAssign(variableName, varType, cast, expr, inMemory=inMemory))
+            self.insertCode(self.formatAssign(self.processNamespace(variableName), varType, cast, expr, inMemory=inMemory))
 
     def processAugAssign(self, token):
         op = token['operator']
@@ -643,7 +654,7 @@ class BaseTranspiler():
     def processArgs(self, tokens, inferType=False):
         args = []
         for tok in tokens:
-            arg = self.getValAndType(tok)
+            arg = self.getValAndType(tok, namespace=True)
             if inferType:
                 args.append( arg )
             else:
@@ -690,7 +701,7 @@ class BaseTranspiler():
         callback = False
         # Put kwargs in the right order
         if 'func' in token['type']:
-            # It'a a callback
+            # It's a callback
             kws = self.processKwargs(token['kwargs'], inferType=True)
             ags = args
         elif className is not None:
@@ -731,9 +742,13 @@ class BaseTranspiler():
         for kw in kws:
             for a in self.processKwargs(token['kwargs']):
                 if kw['name'] == a['name']:
+                    if a['value'] in self.currentScope:
+                        a['value'] = self.processNamespace(a['value'])
                     kwargs.append(a)
                     break
             else:
+                if kw['value'] in self.currentScope:
+                    kw['value'] = self.processNamespace(kw['value'])
                 kwargs.append(kw)
 
         arguments = []
@@ -754,7 +769,10 @@ class BaseTranspiler():
 
     def processDotAccess(self, token):
         tokens = token['dotAccess']
-        varType = self.getValAndType(tokens[0])['type']
+        first = self.getValAndType(tokens[0], namespace=True)
+        if 'name' in tokens[0]:
+            tokens[0]['name'] = first['value']
+        varType = first['type']
         currentType = varType
         tokens[0]['type'] = varType
         for n, v in enumerate(tokens[1:], 1):
@@ -897,7 +915,7 @@ class BaseTranspiler():
 
     def classHeader(self, index):
         ''' Construct the main header if it needs '''
-        self.header.append(f'typedef struct {self.inClass} {self.inClass};')
+        self.header.append(f'typedef struct {self.moduleName}__{self.inClass} {self.moduleName}__{self.inClass};')
 
     def processClassMethod(self, token):
         selfArg = {
@@ -953,10 +971,10 @@ class BaseTranspiler():
     def processFunc(self, token):
         args = self.processArgs(token['args'])
         kwargs = self.processKwargs(token['kwargs'])
-        functionName = token['name']
+        functionName = self.processNamespace(token['name'])
+        self.inFunc = functionName
         returnType = token['type']
         returnValue = {'value':None, 'type':returnType}
-        self.inFunc = functionName
         # infer return type if not known
         if not self.typeKnown(returnType):
             # Pre process code and get returnType

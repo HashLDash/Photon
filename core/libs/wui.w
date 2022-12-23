@@ -2,7 +2,7 @@ import wuiGraphics
 import raylib
 
 def pass():
-    print("Apertou!!")
+    print("pass")
 
 class Widget():
     def new(.x=0.0, .y=0.0, .width=100.0, .height=100.0):
