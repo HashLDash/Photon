@@ -771,6 +771,8 @@ class BaseTranspiler():
     def processDotAccess(self, token):
         tokens = token['dotAccess']
         varType = self.getValAndType(tokens[0])['type']
+        if 'name' in tokens[0]:
+            tokens[0]['name'] = self.processNamespace(tokens[0]['name'])
         currentType = varType
         tokens[0]['type'] = varType
         for n, v in enumerate(tokens[1:], 1):
@@ -779,11 +781,7 @@ class BaseTranspiler():
                     name = v['name']['name']
                 else:
                     name = v['name']
-                input(name)
-                print(varType)
-                input(self.classes[varType])
                 if name in self.classes[varType]['scope']:
-                    input('here')
                     currentType = self.classes[varType]['scope'][name]['type']
                     if currentType == 'array':
                         size = self.classes[varType]['scope'][name]['size']

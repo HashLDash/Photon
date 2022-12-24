@@ -51,11 +51,9 @@ class Transpiler(BaseTranspiler):
         self.initInternal = False
 
     def processNamespace(self, var):
-        print(self.inFunc, self.inClass, var)
         if self.inFunc or self.inClass:
             return var
         else:
-            print('moded')
             return f'{self.moduleName}__{var}'
 
     def formatNativeLibImport(self, expr):
@@ -807,10 +805,7 @@ class Transpiler(BaseTranspiler):
         else:
             # New method was defined
             for n, i in enumerate(constructor):
-                input(i)
-                input(f'/*def*/void {spaceName}_new(')
                 if i.startswith(f'/*def*/void {spaceName}_new('):
-                    input('yep')
                     break
             if f'{spaceName}_new({spaceName}* self, ' in constructor[n]:
                 constructor[n] = f'/*def*/{spaceName}* {spaceName}_constructor(' + constructor[n].split('self, ', 1)[1]
@@ -853,9 +848,10 @@ class Transpiler(BaseTranspiler):
         return f'typedef struct {spaceName} {{'
 
     def reformatInheritedMethodDefinition(self, definition, methodName, className, inheritedName):
+        inheritedName = f'{self.moduleName}__{inheritedName}'
         definition = definition.replace(
             f'{inheritedName}_{methodName}({inheritedName}',
-            f'{self.moduleName}__{className}_{methodName}({className}')
+            f'{self.moduleName}__{className}_{methodName}({self.moduleName}__{className}')
         self.classes[className]['methods'][methodName]['code'][0] = definition
 
     def formatEndClass(self):
