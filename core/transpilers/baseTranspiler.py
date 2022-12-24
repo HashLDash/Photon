@@ -12,7 +12,7 @@ class BaseTranspiler():
         self.libExtension = 'photonExt'
         self.filename = filename.split('/')[-1].replace('.w','.photon')
         self.header = []
-        self.moduleName = filename.split('.w')[0]
+        self.moduleName = filename.split('/')[-1].split('.w')[0]
         self.module = module
         self.modules = {}
 
@@ -770,10 +770,7 @@ class BaseTranspiler():
 
     def processDotAccess(self, token):
         tokens = token['dotAccess']
-        first = self.getValAndType(tokens[0], namespace=True)
-        if 'name' in tokens[0]:
-            tokens[0]['name'] = first['value']
-        varType = first['type']
+        varType = self.getValAndType(tokens[0])['type']
         currentType = varType
         tokens[0]['type'] = varType
         for n, v in enumerate(tokens[1:], 1):
@@ -815,7 +812,6 @@ class BaseTranspiler():
             return {'value':value, 'type':currentType,
                 'elementType':tokens[-1]['elementType'], 'size':'unknown'}
         #TODO: Implement map with indexAccess
-
         return {'value':value, 'type':varType}
 
     def startClassScope(self):

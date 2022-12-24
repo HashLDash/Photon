@@ -151,7 +151,6 @@ class Transpiler(BaseTranspiler):
                     # include instance as the first arg in the call
                     v['args'] = [{'value':instance, 'type':currentType, 'pointer':True}] + v['args']
                     value = self.processCall(v, className=currentType)
-                    input(value)
                     if self.inFunc:
                         if self.inClass and instance == 'super':
                             # Call the method only without a dot access
