@@ -651,10 +651,10 @@ class BaseTranspiler():
             for tok in token['block']:
                 self.process(tok)
 
-    def processArgs(self, tokens, inferType=False):
+    def processArgs(self, tokens, inferType=False, namespace=True): 
         args = []
         for tok in tokens:
-            arg = self.getValAndType(tok, namespace=True)
+            arg = self.getValAndType(tok, namespace=namespace)
             if inferType:
                 args.append( arg )
             else:
@@ -757,7 +757,7 @@ class BaseTranspiler():
                 arg['cast'] = a['type']
             arguments.append(arg)
                 
-        val = self.formatCall(name['value'], name['type'], arguments, kwargs, className, callback)
+        val = self.formatCall(self.processNamespace(name['value']), name['type'], arguments, kwargs, className, callback)
         if 'modifier' in token:
             val = token['modifier'].replace('not',self.notOperator) + val
         outVal['value'] = val
@@ -969,7 +969,7 @@ class BaseTranspiler():
         del self.currentScope[name]
 
     def processFunc(self, token):
-        args = self.processArgs(token['args'])
+        args = self.processArgs(token['args'], namespace=False)
         kwargs = self.processKwargs(token['kwargs'])
         functionName = self.processNamespace(token['name'])
         self.inFunc = functionName
