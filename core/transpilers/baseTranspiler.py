@@ -779,7 +779,11 @@ class BaseTranspiler():
                     name = v['name']['name']
                 else:
                     name = v['name']
+                input(name)
+                print(varType)
+                input(self.classes[varType])
                 if name in self.classes[varType]['scope']:
+                    input('here')
                     currentType = self.classes[varType]['scope'][name]['type']
                     if currentType == 'array':
                         size = self.classes[varType]['scope'][name]['size']
@@ -830,7 +834,7 @@ class BaseTranspiler():
 
     def processClass(self, token):
         name = token['name']
-        inheritedClasses = [v['value'] for v in self.processArgs(token['args'])]
+        inheritedClasses = [v['value'] for v in self.processArgs(token['args'], namespace=False)]
         if len(inheritedClasses) > 1:
             raise SyntaxError('Multiple Inheritance is not allowed yet.')
         self.classes[name] = {'scope':{}, 'attributes':[],'methods':{}, 'inherited':[]}

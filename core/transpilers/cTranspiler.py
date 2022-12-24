@@ -807,7 +807,10 @@ class Transpiler(BaseTranspiler):
         else:
             # New method was defined
             for n, i in enumerate(constructor):
+                input(i)
+                input(f'/*def*/void {spaceName}_new(')
                 if i.startswith(f'/*def*/void {spaceName}_new('):
+                    input('yep')
                     break
             if f'{spaceName}_new({spaceName}* self, ' in constructor[n]:
                 constructor[n] = f'/*def*/{spaceName}* {spaceName}_constructor(' + constructor[n].split('self, ', 1)[1]
