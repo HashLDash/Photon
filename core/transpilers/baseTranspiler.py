@@ -256,7 +256,7 @@ class BaseTranspiler():
         types = set()
         elements = []
         for tok in token['elements']:
-            element = self.getValAndType(tok)
+            element = self.getValAndType(tok, namespace=True)
             types.add(element['type'])
             elements.append(element)
         if self.typeKnown(token['elementType']):
@@ -323,7 +323,7 @@ class BaseTranspiler():
         elif token['token'] == 'expr':
             return self.processExpr(token, namespace=namespace)
         elif token['token'] == 'call':
-            return self.processCall(token)
+            return self.processCall(token, namespace=namespace)
         elif token['token'] == 'printFunc':
             return self.processPrint(token)
         elif token['token'] == 'group':
@@ -689,7 +689,7 @@ class BaseTranspiler():
             kwargs.append(kw)
         return kwargs
 
-    def processCall(self, token, className=None):
+    def processCall(self, token, className=None, namespace=False):
         name = self.getValAndType(token['name'])
         args = self.processArgs(token['args'], inferType=True)
         outVal = {}
@@ -713,10 +713,11 @@ class BaseTranspiler():
                 outVal['size'] = self.classes[className]['methods'][name['value']]['size']
         elif name['value'] in self.classes:
             callType = name['value']
+            name['value'] = f'{name["value"]}_constructor'
             if 'new' in self.classes[callType]['methods']:
                 kws = self.classes[callType]['methods']['new']['kwargs']
                 ags = self.classes[callType]['methods']['new']['args']
-                args.insert(0, {'value':'self', 'type':callType})
+                #args.insert(0, {'value':'self', 'type':callType})
             else:
                 kws = []
                 ags = []

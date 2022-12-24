@@ -97,8 +97,12 @@ class Transpiler(BaseTranspiler):
 
     def formatVarInit(self, name, varType, elementType=None, keyType=None, valType=None):
         if varType == 'array':
+            if elementType in self.classes:
+                elementType = f'{self.moduleName}__{elementType}'
             varType = f'list_{elementType}*'
         if varType == 'map':
+            if valType in self.classes:
+                valType = f'{self.moduleName}__{valType}'
             varType = f'dict_{keyType}_{valType}*'
         if varType in self.classes:
             return f'{self.moduleName}__{varType}* {name};'
@@ -239,7 +243,10 @@ class Transpiler(BaseTranspiler):
             raise SyntaxError(f'Array with elements of type {elementType} not supported yet.')
         if not elementType in self.listTypes:
             self.listTypes.add(elementType)
-        className = f'list_{elementType.replace("*", "ptr")}'
+        if elementType in self.classes:
+            className = f'list_{self.moduleName}__{elementType.replace("*", "ptr")}'
+        else:
+            className = f'list_{elementType.replace("*", "ptr")}'
         if elementType == 'str' or elementType not in {'int', 'float'}:
             self.imports.add('#include "asprintf.h"')
         self.imports.add(f'#include "{className}.h"')
@@ -990,10 +997,14 @@ class Transpiler(BaseTranspiler):
             return f'printf("{terminator}");'
         elif value['type'] == 'array':
             elementType = value['elementType']
+            if elementType in self.classes:
+                elementType = f'{self.moduleName}__{elementType}'
             return f'list_{elementType}_repr({value["value"]});'
         elif value['type'] == 'map':
             keyType = value['keyType']
             valType = value['valType']
+            if valType in self.classes:
+                valType = f'{self.moduleName}__{valType}'
             return f'dict_{keyType}_{valType}_repr({value["value"]});'
         elif value['type'] in self.classes:
             if 'repr' in self.classes[value['type']]['methods']:
@@ -1050,12 +1061,12 @@ class Transpiler(BaseTranspiler):
             with open(f'{self.standardLibs}/native/c/list_template.h') as template:
                 listLib = template.read()
             listLib = listLib.replace('!@valType@!', valTypeNative)
-            with open(f'Sources/c/list_{valType}.h', 'w') as lib:
+            with open(f'Sources/c/list_{valTypeNative}.h', 'w') as lib:
                 lib.write(listLib)
             with open(f'{self.standardLibs}/native/c/list_template.c') as template:
                 listLib = template.read()
             listLib = listLib.replace('!@valType@!', valTypeNative)
-            with open(f'Sources/c/list_{valType}.c', 'w') as lib:
+            with open(f'Sources/c/list_{valTypeNative}.c', 'w') as lib:
                 lib.write(listLib)
 
     def write(self):
@@ -1088,8 +1099,8 @@ class Transpiler(BaseTranspiler):
             listTypeHints = []
             for listType in self.listTypes:
                 if listType in self.classes:
-                    listTypeHints.append(f'typedef struct list_{listType} list_{listType};')
-                    self.outOfMain[self.classes[listType]['endline']] += f'\n#include "list_{listType}.c"\n'
+                    listTypeHints.append(f'typedef struct list_{self.moduleName}__{listType} list_{self.moduleName}__{listType};')
+                    self.outOfMain[self.classes[listType]['endline']] += f'\n#include "list_{self.moduleName}__{listType}.c"\n'
             #TODO: do the same type hint for dicts
             for line in listTypeHints + self.header:
                 if '}' in line:
