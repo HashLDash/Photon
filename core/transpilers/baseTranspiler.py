@@ -94,7 +94,7 @@ class BaseTranspiler():
         if token is not None:
             self.instructions[token['opcode']](token)
 
-    def processNamespace(self, var):
+    def processNamespace(self, var, force=False):
         return var
 
     def validateNamespace(self, var, namespace=False):
@@ -106,6 +106,8 @@ class BaseTranspiler():
     def nativeType(self, varType):
         if varType in self.nativeTypes:
             return self.nativeTypes[varType]
+        elif varType in self.classes:
+            return self.processNamespace(varType, force=True)
         elif self.typeKnown(varType):
             return varType
         else:
@@ -319,6 +321,9 @@ class BaseTranspiler():
             if 'modifier' in token:
                 token['value'] = token['modifier'].replace('not', self.notOperator) + token['value']
                 del token['modifier']
+            if 'pointer' in token and token['pointer']:
+                if not self.inFunc and not self.inClass:
+                    token['value'] = f'{self.moduleName}__{token["value"]}'
             return token
         elif token['token'] == 'expr':
             return self.processExpr(token, namespace=namespace)
@@ -689,7 +694,7 @@ class BaseTranspiler():
             kwargs.append(kw)
         return kwargs
 
-    def processCall(self, token, className=None, namespace=False):
+    def processCall(self, token, className=None, namespace=True):
         name = self.getValAndType(token['name'])
         args = self.processArgs(token['args'], inferType=True)
         outVal = {}
@@ -697,7 +702,12 @@ class BaseTranspiler():
             callType = self.builtins[name['value']]['type']
             name['value'] = self.builtins[name['value']]['value']
         else:
-            callType = name['type']
+            funcName = self.moduleName + '__' + name['value']
+            if funcName in self.currentScope:
+                callType = self.currentScope[funcName]['type']
+                
+            else:
+                callType = name['type']
         callback = False
         # Put kwargs in the right order
         if 'func' in token['type']:
@@ -713,7 +723,7 @@ class BaseTranspiler():
                 outVal['size'] = self.classes[className]['methods'][name['value']]['size']
         elif name['value'] in self.classes:
             callType = name['value']
-            name['value'] = f'{name["value"]}_constructor'
+            name['value'] = f'{self.moduleName}__{name["value"]}_constructor'
             if 'new' in self.classes[callType]['methods']:
                 kws = self.classes[callType]['methods']['new']['kwargs']
                 ags = self.classes[callType]['methods']['new']['args']
@@ -721,7 +731,7 @@ class BaseTranspiler():
             else:
                 kws = []
                 ags = []
-        elif name['value'] in self.currentScope:
+        elif self.processNamespace(name['value']) in self.currentScope:
             if 'token' in self.currentScope[name['value']] and self.currentScope[name['value']]['token'] == 'nativeFunc':
                 kws = []
                 ags = args
@@ -758,7 +768,7 @@ class BaseTranspiler():
                 arg['cast'] = a['type']
             arguments.append(arg)
                 
-        val = self.formatCall(self.processNamespace(name['value']), name['type'], arguments, kwargs, className, callback)
+        val = self.formatCall(self.validateNamespace(name['value'], namespace=namespace), name['type'], arguments, kwargs, className, callback)
         if 'modifier' in token:
             val = token['modifier'].replace('not',self.notOperator) + val
         outVal['value'] = val
@@ -770,12 +780,12 @@ class BaseTranspiler():
 
     def processDotAccess(self, token):
         tokens = token['dotAccess']
-        varType = self.getValAndType(tokens[0])['type']
-        if 'name' in tokens[0]:
-            tokens[0]['name'] = self.processNamespace(tokens[0]['name'])
+        varType = None
+        #if 'name' in tokens[0]:
+        #    tokens[0]['name'] = self.processNamespace(tokens[0]['name'])
         currentType = varType
-        tokens[0]['type'] = varType
-        for n, v in enumerate(tokens[1:], 1):
+        tokens[0]['type'] = self.getValAndType(tokens[0])['type']
+        for n, v in enumerate(tokens[0:], 0):
             if currentType in self.classes:
                 if v['token'] == 'call':
                     name = v['name']['name']

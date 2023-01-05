@@ -50,8 +50,8 @@ class Transpiler(BaseTranspiler):
         }
         self.initInternal = False
 
-    def processNamespace(self, var):
-        if self.inFunc or self.inClass:
+    def processNamespace(self, var, force=False):
+        if (self.inFunc or self.inClass) and not force:
             return var
         else:
             return f'{self.moduleName}__{var}'
@@ -148,7 +148,7 @@ class Transpiler(BaseTranspiler):
                         chain = chain[:-2]
                     # include instance as the first arg in the call
                     v['args'] = [{'value':instance, 'type':currentType, 'pointer':True}] + v['args']
-                    value = self.processCall(v, className=currentType)
+                    value = self.processCall(v, className=currentType, namespace=False)
                     if self.inFunc:
                         if self.inClass and instance == 'super':
                             # Call the method only without a dot access
@@ -161,7 +161,7 @@ class Transpiler(BaseTranspiler):
                             value['value'] = cleanChain(value['value'])
                     else:
                         # if outside, use . instead
-                        value['value'] = value['value'].replace('!@instance@!', f'{self.moduleName}__{currentType}_')
+                        value['value'] = value['value'].replace('!@instance@!', f'{instance}->')
                     dotAccess = [value['value']]
                     chain = dotAccess[-1]
                     currentType = value['type']
@@ -361,7 +361,7 @@ class Transpiler(BaseTranspiler):
                 
             elif arg['type'] in self.classes:
                 if 'cast' in arg:
-                    cast = f"({arg['cast']}*)"
+                    cast = f"({self.moduleName}__{arg['cast']}*)"
                 else:
                     cast = ''
                 arguments += f"{cast}{arg['value']}, "
@@ -749,7 +749,7 @@ class Transpiler(BaseTranspiler):
             if not arg['type'] in self.classes:
                 arguments += f', {self.nativeType(arg["type"])} {arg["value"]}' 
             else:
-                arguments += f', {self.moduleName}__{self.nativeType(arg["type"])}* {arg["value"]}'
+                arguments += f', {self.nativeType(arg["type"])}* {arg["value"]}'
 
         return arguments[2:]
 
@@ -778,7 +778,7 @@ class Transpiler(BaseTranspiler):
     def formatClass(self, name, args):
         self.className = name
         self.inClass = None
-        spaceName = self.processNamespace(name)
+        spaceName = name#self.processNamespace(name)
         self.inClass = name
         from pprint import pprint
         #pprint(self.classes[self.className])
@@ -926,7 +926,7 @@ class Transpiler(BaseTranspiler):
                 if attrType == 'array':
                     argsTypes.append(f"list_{a['elementType']}*")
                 elif a['type'] in self.classes:
-                    argsTypes.append(f'struct {self.moduleName}__{attrType}*')
+                    argsTypes.append(f'struct {attrType}*')
                 elif 'func' in a['type']:
                     varType = self.nativeType(a['type'].replace(' func', '').strip())
                     argsTypes.append(f'{varType} (*)()')
@@ -947,7 +947,7 @@ class Transpiler(BaseTranspiler):
             expr = self.formatExpr(expr)
             varType = self.nativeType(varType)
             if varType in self.classes:
-                return f'{self.moduleName}__{varType}* {name};'
+                return f'{varType}* {name};'
             elif variable['type'] == 'func':
                 # Its a callback
                 #TODO: Handle real type
@@ -1097,8 +1097,8 @@ class Transpiler(BaseTranspiler):
             listTypeHints = []
             for listType in self.listTypes:
                 if listType in self.classes:
-                    listTypeHints.append(f'typedef struct list_{self.moduleName}__{listType} list_{self.moduleName}__{listType};')
-                    self.outOfMain[self.classes[listType]['endline']] += f'\n#include "list_{self.moduleName}__{listType}.c"\n'
+                    listTypeHints.append(f'typedef struct list_{listType} list_{listType};')
+                    self.outOfMain[self.classes[listType]['endline']] += f'\n#include "list_{listType}.c"\n'
             #TODO: do the same type hint for dicts
             for line in listTypeHints + self.header:
                 if '}' in line:
