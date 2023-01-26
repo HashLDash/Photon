@@ -25,6 +25,9 @@ class Transpiler(BaseTranspiler):
         self.methodsInsideClass = False
         self.notOperator = '!'
         self.links = set()
+        self.outOfMain = []
+        self.source = []
+        self.header = []
         if self.debug:
             # compile with debug symbols for gdb
             self.links.add('-g')
@@ -1054,8 +1057,6 @@ class Transpiler(BaseTranspiler):
             'return 0;',
             '}'
         ]
-        indent = 0
-        count = 0
         if not 'Sources' in os.listdir():
             os.mkdir('Sources')
         if not 'c' in os.listdir('Sources'):
@@ -1085,7 +1086,6 @@ class Transpiler(BaseTranspiler):
                 if self.isBlock(line) and not ';' in line[-1]:
                     indent += 4
             f.write('#endif')
-        indent = 0
         with open(f'Sources/c/{self.filename}', 'w') as f:
             f.write('#ifndef __main\n#define __main\n')
             for imp in sorted(self.imports):
@@ -1101,22 +1101,8 @@ class Transpiler(BaseTranspiler):
                     self.renderListTemplate(valType)
                 for keyType, valType in self.dictTypes:
                     self.renderDictTemplate(keyType, valType)
-            for line in [''] + self.outOfMain + boilerPlateStart + [''] + self.source + boilerPlateEnd:
-                if line:
-                    if line[0] == '}':
-                        indent -= 4
-                    if self.debug:
-                        # pretty output
-                        for l in line.replace('/*def*/','').split(';'):
-                            l = l.strip()
-                            if l:
-                                f.write(' ' * indent + l + ';\n')
-                        f.write('\n')
-                    else:
-                        # Ugly, but faster
-                        f.write(' ' * indent + line.replace('/*def*/', '') + '\n')
-                    if self.isBlock(line):
-                        indent += 4
+            for line in [''] + self.outOfMain + boilerPlateStart + [''] + [self.sequence] + boilerPlateEnd:
+                f.write(f'{line}\n')
             f.write('#endif')
         debug('Generated ' + self.filename)
 
