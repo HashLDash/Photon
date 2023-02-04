@@ -55,8 +55,7 @@ class Obj():
 
     @property
     def index(self):
-        print(f'Index of {type(self)} is not implemented.')
-        exit(-1)
+        return None
 
 class Num(Obj):
     def __repr__(self):
@@ -224,9 +223,9 @@ class Map():
 # Representation Types
 
 class Sequence():
-    def __init__(self, *objs, terminator=';'):
+    def __init__(self, objs=None, terminator=';'):
         self.terminator = terminator
-        self.sequence = list(objs)
+        self.sequence = [] if objs is None else objs
 
     def add(self, obj):
         self.sequence.append(obj)
@@ -290,7 +289,6 @@ class Assign(Obj):
 class Args():
     def __init__(self, args, call=False):
         self.args = args
-        print(type(self.args[0]))
         if not call:
             for arg in args:
                 arg.namespace = ''
@@ -315,18 +313,20 @@ class Kwargs():
     def __repr__(self):
         return ', '.join([repr(kwarg) for kwarg in self.kwargs])
 
-class Call():
-    def __init__(self, name='', args='', kwargs=''):
+class Call(Obj):
+    def __init__(self, name='', args='', kwargs='', **defaults):
+        super().__init__(**defaults)
         self.name = name
         self.args = Args(args, call=True)
         self.kwargs = Kwargs(kwargs)
 
     def __repr__(self):
         separator = ', ' if self.args and self.kwargs else ''
-        return f'{self.name.value}({self.args}{separator}{self.kwargs})'
+        return f'{self.name}({self.args}{separator}{self.kwargs})'
 
-class Function():
-    def __init__(self, name='', args='', kwargs='', code=''):
+class Function(Obj):
+    def __init__(self, name='', args='', kwargs='', code='', **defaults):
+        super().__init__(**defaults)
         self.name = name
         self.args = Args(args)
         self.kwargs = Kwargs(kwargs)
@@ -335,6 +335,10 @@ class Function():
     def __repr__(self):
         separator = ', ' if self.args and self.kwargs else ''
         return f'{self.name.type} {self.name}({self.args}{separator}{self.kwargs}) {self.code}'
+
+    @property
+    def index(self):
+        return self.name
 
 class Class():
     def __init__(self, name='', args='', code=''):

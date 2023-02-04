@@ -2,19 +2,15 @@ from interpreter import Interpreter
 from copy import deepcopy
 import os
 from pprint import pprint
-from .tokens import Sequence, Num, String, Var, Expr, Assign, Call, Args, Kwargs, Type
+from .tokens import *
 
 class CurrentScope():
     def __init__(self):
         self.currentScope = {}
 
     def add(self, token):
-        if isinstance(token, Assign):
-            self.currentScope[repr(token.target)] = token
-        elif isinstance(token, Call):
-            pass
-        else:
-            raise NotImplemented
+        if token.index is not None:
+            self.currentScope[token.index] = token
 
     def __repr__(self):
         s = 'SCOPE DUMP\n'
@@ -56,6 +52,7 @@ class BaseTranspiler():
             'var': self.processVar,
             'floatNumber': self.processNum,
             'str': self.processString,
+            'call': self.processCall,
         }
 
         self.sequence = Sequence()
@@ -63,6 +60,10 @@ class BaseTranspiler():
         self.currentNamespace = self.moduleName
 
     def typeOf(self, obj):
+        if obj.type.known:
+            return obj.type.type
+        if isinstance(obj, String):
+            return 'str'
         try:
             return self.currentScope.typeOf(obj)
         except Exception as e:
@@ -89,7 +90,8 @@ class BaseTranspiler():
             self.imports.add(i)
         return String(
             value=token['value'],
-            expressions=[self.preprocess(t) for t in token['expressions']])
+            expressions=self.processTokens(token['expressions'])
+        )
 
     def processInput(self, token):
         pass
@@ -144,7 +146,12 @@ class BaseTranspiler():
         pass
 
     def processCall(self, token, className=None):
-        pass
+        return Call(
+            name=self.processVar(token['name']),
+            type=token['type'],
+            args=self.processTokens(token['args']),
+            kwargs=self.processTokens(token['kwargs']),
+        )
 
     def processDotAccess(self, token):
         pass
@@ -153,7 +160,16 @@ class BaseTranspiler():
         pass
 
     def processFunc(self, token):
-        pass
+        return Function(
+            name=Var(
+                token['name'],
+                type=token['type'],
+                namespace=self.currentNamespace,
+            ),
+            args=self.processTokens(token['args']),
+            kwargs=self.processTokens(token['kwargs']),
+            code=self.processTokens(token['block']),
+        )
 
     def processReturn(self, token):
         pass
@@ -167,6 +183,9 @@ class BaseTranspiler():
     def processImport(self, token):
         pass
 
+    def processTokens(self, tokens):
+        return [self.preprocess(t) for t in tokens]
+
     def processPrint(self, token):
         print(self.currentScope)
         formats = {
@@ -174,11 +193,11 @@ class BaseTranspiler():
             'int': '%ld',
             'float': '%g',
         }
-        args = [self.preprocess(t) for t in token['args']]
+        args = self.processTokens(token['args'])
         template = String(value='"'+" ".join([formats[self.typeOf(arg)] for arg in args])+'\\n"')
         args.insert(0, template)
         return Call(
-            name = Var('printf', 'unknown'),
+            name = Var('printf', 'unknown', namespace=''),
             args = args,
         )
 
