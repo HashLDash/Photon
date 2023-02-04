@@ -2,7 +2,7 @@ from interpreter import Interpreter
 from copy import deepcopy
 import os
 from pprint import pprint
-from .tokens import Sequence, Num, String, Var, Expr, Assign, Call, Args, Kwargs
+from .tokens import Sequence, Num, String, Var, Expr, Assign, Call, Args, Kwargs, Type
 
 class CurrentScope():
     def __init__(self):
@@ -23,7 +23,7 @@ class CurrentScope():
         return s
 
     def typeOf(self, obj):
-        return self.currentScope[repr(obj.value)].type.type
+        return self.currentScope[obj.index].type.type
 
 class BaseTranspiler():
     def __init__(self, filename, target='web', module=False, standardLibs='', debug=False):
@@ -54,6 +54,8 @@ class BaseTranspiler():
             'import': self.processImport,
             'num': self.processNum,
             'var': self.processVar,
+            'floatNumber': self.processNum,
+            'str': self.processString,
         }
 
         self.sequence = Sequence()
@@ -61,7 +63,11 @@ class BaseTranspiler():
         self.currentNamespace = self.moduleName
 
     def typeOf(self, obj):
-        return self.currentScope.typeOf(obj)
+        try:
+            return self.currentScope.typeOf(obj)
+        except Exception as e:
+            print(e)
+            return 'unknown'
 
     def process(self, token):
         print('Processing:')
@@ -78,15 +84,26 @@ class BaseTranspiler():
     def processNum(self, token):
         return Num(value=token['value'], type=token['type'])
 
+    def processString(self, token):
+        for i in String.imports:
+            self.imports.add(i)
+        return String(
+            value=token['value'],
+            expressions=[self.preprocess(t) for t in token['expressions']])
+
     def processInput(self, token):
         pass
 
     def processVar(self, token):
-        return Var(
+        print(self.currentScope)
+        var = Var(
             value=token['name'],
             type=token['type'],
             namespace=self.currentNamespace,
         )
+        var.type = Type(self.typeOf(var))
+        print(var, var.type)
+        return var
 
     def processArray(self, token):
         pass

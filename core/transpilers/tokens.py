@@ -53,21 +53,50 @@ class Obj():
     def __repr__(self):
         return 'Obj'
 
+    @property
+    def index(self):
+        print(f'Index of {type(self)} is not implemented.')
+        exit(-1)
+
 class Num(Obj):
     def __repr__(self):
         return str(self.value)
 
 class String(Obj):
-    def __init__(self, **kwargs):
-        print(kwargs)
+    imports = ['#include "asprintf.h"']
+    def __init__(self, expressions='', **kwargs):
         kwargs['type'] = 'str'
-        print(kwargs)
         super().__init__(**kwargs)
+        self.value = '"' + self.value[1:-1].replace('"', '\\"') + '"'
+        self.expressions = expressions if expressions else []
+        for expr in self.expressions:
+            valType = expr.type.type
+            if 'func' in valType:
+                valType = valType.replace(' func','').strip()
+            if valType == 'str':
+                self.value = self.value.replace('{}', '%s', 1)
+            elif valType == 'int':
+                self.value = self.value.replace('{}', '%ld', 1)
+            elif valType == 'float':
+                self.value = self.value.replace('{}', '%g', 1)
+            elif valType == 'bool':
+                self.value = self.value.replace('{}', '%s', 1)
+            elif valType == 'array':
+                self.value = self.value.replace('{}', '%s', 1)
+            elif valType == 'map':
+                self.value = self.value.replace('{}', '%s', 1)
+            #elif valType in self.classes:
+            #    self.value = self.value.replace('{}', '%s', 1)
+            else:
+                raise SyntaxError(f'Cannot format {valType} in formatStr')
 
     def __repr__(self):
+        if self.expressions:
+            return f'__photon_format_str({self.value}, {", ".join([repr(expr) for expr in self.expressions])})'
         return self.value
 
 class Var(Obj):
+    imports = []
     def __repr__(self):
         if self.namespace:
             return f'{self.namespace}__{self.value}'
@@ -75,6 +104,10 @@ class Var(Obj):
 
     def __hash__(self):
         return hash(self.namespace+self.value)
+
+    @property
+    def index(self):
+        return f'{self.namespace}__{self.value}'
 
 class Expr(Obj):
     operatorOrder = [
@@ -124,6 +157,12 @@ class Expr(Obj):
 
     def __repr__(self):
         return repr(self.value)
+
+    @property
+    def index(self):
+        if len(self.elements) == 1:
+            return self.elements[0].index
+        return super().index
 
 class Array():
     def __init__(self, *elements, elementType=''):
