@@ -9,7 +9,10 @@ class CurrentScope():
         self.currentScope = {}
 
     def add(self, token):
+        print('TRYING TO ADD', token)
+        print(token.index)
         if token.index is not None:
+            print(f'adding {token.index} with type {token.type.type}')
             self.currentScope[token.index] = token
 
     def __repr__(self):
@@ -157,7 +160,11 @@ class BaseTranspiler():
         pass
 
     def processClass(self, token):
-        pass
+        return Class(
+            name=Var(token['name']),
+            args=self.processTokens(token['args']),
+            code=self.processTokens(token['block'])
+        )
 
     def processFunc(self, token):
         return Function(

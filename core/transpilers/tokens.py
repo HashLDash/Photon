@@ -7,8 +7,8 @@ class Type():
         'str':'char*',
         'float':'double',
         'bool':'int',
-        'unknown':'auto',
-        '':'auto',
+        'unknown':'void',
+        '':'void',
         'obj':'obj',
     }
     def __init__(self, type, elementType='', keyType='', valType=''):
@@ -96,10 +96,18 @@ class String(Obj):
 
 class Var(Obj):
     imports = []
+    def __init__(self, *args, declaration=False, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.declaration = declaration
+
     def __repr__(self):
         if self.namespace:
-            return f'{self.namespace}__{self.value}'
-        return f'{self.value}'
+            value = f'{self.namespace}__{self.value}'
+        else:
+            value = f'{self.value}'
+        if self.declaration:
+            return f'{self.type} {value}'
+        return value
 
     def __hash__(self):
         return hash(self.namespace+self.value)
@@ -114,8 +122,9 @@ class Expr(Obj):
         'is','in','andnot','and','or','&', '<<', '>>'
     ]
     #TODO: not is not implemented
-    def __init__(self, *elements, ops=None, **kwargs):
+    def __init__(self, *elements, ops=None, declaration=False, **kwargs):
         super().__init__(**kwargs)
+        self.declaration = declaration
         self.elements = list(elements)
         self.ops = ops if ops else []
         if not self.value:
@@ -134,6 +143,7 @@ class Expr(Obj):
                 del ops[index]
                 del elements[index+1]
         self.value = elements[0]
+        self.value.declaration = self.declaration
         self.type = elements[0].type
 
     def operations(self, op, arg1, arg2):
@@ -155,6 +165,7 @@ class Expr(Obj):
         return Expr(value=f'{arg1} {op} {arg2}', type=t)
 
     def __repr__(self):
+        self.value.declaration = self.declaration
         return repr(self.value)
 
     @property
@@ -223,9 +234,10 @@ class Map():
 # Representation Types
 
 class Sequence():
-    def __init__(self, objs=None, terminator=';'):
+    def __init__(self, objs=None, terminator=';', apply=None):
         self.terminator = terminator
         self.sequence = [] if objs is None else objs
+        self.apply = apply
 
     def add(self, obj):
         self.sequence.append(obj)
@@ -233,6 +245,8 @@ class Sequence():
     def __repr__(self):
         representation = ''
         for obj in self.sequence:
+            if self.apply:
+                obj = self.apply(obj)
             representation += f'{obj}{self.terminator}\n'
         return representation
 
@@ -265,10 +279,11 @@ class Scope():
         return iter(self.sequence)
 
 class Assign(Obj):
-    def __init__(self, target='', inMemory=False, **kwargs):
+    def __init__(self, target='', inMemory=False, declaration=False, **kwargs):
         super().__init__(**kwargs)
         self.target = target
         self.inMemory = inMemory
+        self.declaration = declaration
         if self.target.type.known:
             self.type = self.target.type
         elif self.value.type.known:
@@ -281,23 +296,31 @@ class Assign(Obj):
             pass
 
     def __repr__(self):
-        if self.inMemory:
+        if self.declaration:
+            return f'{self.target.type} {self.target}'
+        elif self.inMemory:
             return f'{self.target} = {self.value}'
         else:
             return f'{self.target.type} {self.target} = {self.value}'
 
+    @property
+    def index(self):
+        return self.target.index
+
 class Args():
-    def __init__(self, args, call=False):
+    def __init__(self, args, call=False, declaration=False):
         self.args = args
-        if not call:
-            for arg in args:
-                arg.namespace = ''
-                self.args.append(arg)
+        self.call = call
+        self.declaration = declaration
     
     def __bool__(self):
         return True if repr(self) else False
 
     def __repr__(self):
+        for arg in self.args:
+            if self.call:
+                arg.namespace = ''
+            arg.declaration = self.declaration
         return ', '.join([repr(arg) for arg in self.args])
 
 class Kwargs():
@@ -325,8 +348,9 @@ class Call(Obj):
         return f'{self.name}({self.args}{separator}{self.kwargs})'
 
 class Function(Obj):
-    def __init__(self, name='', args='', kwargs='', code='', **defaults):
+    def __init__(self, name='', args='', kwargs='', code='', declaration=False, **defaults):
         super().__init__(**defaults)
+        self.declaration = declaration
         self.name = name
         self.args = Args(args)
         self.kwargs = Kwargs(kwargs)
@@ -334,7 +358,12 @@ class Function(Obj):
 
     def __repr__(self):
         separator = ', ' if self.args and self.kwargs else ''
-        return f'{self.name.type} {self.name}({self.args}{separator}{self.kwargs}) {self.code}'
+        if self.declaration:
+            self.args.declaration = True
+            self.kwargs.declaration = True
+            return f'{self.name.type} (*{self.name})({self.args}{separator}{self.kwargs})'
+        else:
+            return f'{self.name.type} {self.name}({self.args}{separator}{self.kwargs}) {self.code}'
 
     @property
     def index(self):
@@ -345,14 +374,36 @@ class Class():
         self.name = name
         self.args = Args(args)
         self.code = Scope(code)
+        self.type = Type(self.name)
+        self.parameters = {}
+        self.methods = {}
         for instruction in self.code:
             if isinstance(instruction, Assign):
                 instruction.target.namespace = ''
+                self.parameters[instruction.index] = instruction
             elif isinstance(instruction, Function):
                 instruction.name.value = f'{self.name.value}_{instruction.name.value}'
+                self.methods[instruction.index] = instruction
+
+    def declarationMode(self):
+        for t in self.code:
+            t.declaration = True
+    
+    def writeMode(self):
+        for t in self.code:
+            t.declaration = False
 
     def __repr__(self):
-        return f'typedef struct {self.name.value} {self.code} {self.name.value};'
+        self.declarationMode()
+        value = f'typedef struct {self.name.value} {self.code} {self.name.value};\n'
+        self.writeMode()
+        for method in self.methods.values():
+            value += f'{method}\n'
+        return value
+
+    @property
+    def index(self):
+        return self.name
 
 if __name__ == '__main__':
     pass
