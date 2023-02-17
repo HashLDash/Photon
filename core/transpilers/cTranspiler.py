@@ -35,6 +35,7 @@ class Transpiler(BaseTranspiler):
         self.expressionBuffer = None
         self.listTypes = set()
         self.dictTypes = set()
+        self.classes = {}
         self.permVarCounter = 0
         self.tempVarCounter = 0
         self.iterVar = []

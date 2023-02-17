@@ -11,18 +11,18 @@ class CurrentScope():
     def add(self, token):
         print('TRYING TO ADD', token)
         print(token.index)
-        if token.index is not None:
+        if not isinstance(token, Var) and token.index is not None:
             print(f'adding {token.index} with type {token.type.type}')
             self.currentScope[token.index] = token
 
     def __repr__(self):
         s = 'SCOPE DUMP\n'
-        for i in self.currentScope:
-            s += f'"{i}" \n'
+        for i, t in self.currentScope.items():
+            s += f'"{i}" {t.type}\n'
         return s
 
     def typeOf(self, obj):
-        return self.currentScope[obj.index].type.type
+        return self.currentScope[obj.index].type
 
 class BaseTranspiler():
     def __init__(self, filename, target='web', module=False, standardLibs='', debug=False):
@@ -56,6 +56,7 @@ class BaseTranspiler():
             'floatNumber': self.processNum,
             'str': self.processString,
             'call': self.processCall,
+            'array': self.processArray,
         }
 
         self.sequence = Sequence()
@@ -64,14 +65,14 @@ class BaseTranspiler():
 
     def typeOf(self, obj):
         if obj.type.known:
-            return obj.type.type
+            return obj.type
         if isinstance(obj, String):
-            return 'str'
+            return Type('str')
         try:
             return self.currentScope.typeOf(obj)
         except Exception as e:
             print(e)
-            return 'unknown'
+            return Type('unknown')
 
     def process(self, token):
         print('Processing:')
@@ -106,12 +107,18 @@ class BaseTranspiler():
             type=token['type'],
             namespace=self.currentNamespace,
         )
-        var.type = Type(self.typeOf(var))
+        var.type = self.typeOf(var)
         print(var, var.type)
         return var
 
     def processArray(self, token):
-        pass
+        array = Array(
+            *self.processTokens(token['elements'])
+        )
+        for i in array.imports:
+            self.imports.add(i)
+        self.listTypes.add(array.elementType)
+        return array
 
     def processMap(self, token):
         pass
@@ -199,10 +206,15 @@ class BaseTranspiler():
             'str': '%s',
             'int': '%ld',
             'float': '%g',
+            'array': '%s',
+            'map': '%s',
         }
         args = self.processTokens(token['args'])
-        template = String(value='"'+" ".join([formats[self.typeOf(arg)] for arg in args])+'\\n"')
+        template = String(value='"'+" ".join([formats[self.typeOf(arg).type] for arg in args])+'\\n"')
         args.insert(0, template)
+        for arg in args:
+            if arg.type.type == 'array':
+                arg.format = True
         return Call(
             name = Var('printf', 'unknown', namespace=''),
             args = args,

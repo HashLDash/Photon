@@ -33,9 +33,9 @@ class Type():
     
     def __repr__(self):
         if self.type == 'array':
-            return f'list_{self.elementType}'
+            return f'list_{self.elementType}*'
         elif self.type == 'map':
-            return f'dict_{self.keyType}_{self.valType}'
+            return f'dict_{self.keyType}_{self.valType}*'
         return self.nativeTypes[self.type] 
 
     def __hash__(self):
@@ -96,9 +96,10 @@ class String(Obj):
 
 class Var(Obj):
     imports = []
-    def __init__(self, *args, declaration=False, **kwargs):
+    def __init__(self, *args, declaration=False, format=False, **kwargs):
         super().__init__(*args, **kwargs)
         self.declaration = declaration
+        self.format = format
 
     def __repr__(self):
         if self.namespace:
@@ -107,6 +108,10 @@ class Var(Obj):
             value = f'{self.value}'
         if self.declaration:
             return f'{self.type} {value}'
+        if self.format:
+            if self.type.type not in ['str','int','float']:
+                call = repr(self.type).replace("*","")
+                return f'{call}_str({value})'
         return value
 
     def __hash__(self):
@@ -122,10 +127,11 @@ class Expr(Obj):
         'is','in','andnot','and','or','&', '<<', '>>'
     ]
     #TODO: not is not implemented
-    def __init__(self, *elements, ops=None, declaration=False, **kwargs):
+    def __init__(self, *elements, ops=None, declaration=False, format=False, **kwargs):
         super().__init__(**kwargs)
         self.declaration = declaration
-        self.elements = list(elements)
+        self.format = format
+        self.elements = elements
         self.ops = ops if ops else []
         if not self.value:
             self.process()
@@ -143,7 +149,6 @@ class Expr(Obj):
                 del ops[index]
                 del elements[index+1]
         self.value = elements[0]
-        self.value.declaration = self.declaration
         self.type = elements[0].type
 
     def operations(self, op, arg1, arg2):
@@ -166,6 +171,7 @@ class Expr(Obj):
 
     def __repr__(self):
         self.value.declaration = self.declaration
+        self.value.format = self.format
         return repr(self.value)
 
     @property
@@ -180,21 +186,23 @@ class Array():
         self.elementType = elementType
         if not self.elementType:
             self.inferType()
+            self.imports = [f'#include "list_{self.elementType}.h"']
         self.type = Type('array', elementType=self.elementType)
 
     def inferType(self):
         types = set()
         for element in self.elements:
-            types.add(element.type)
+            types.add(element.type.type)
         if len(types) == 1:
-            self.elementType = element.type
+            self.elementType = element.type.type
         elif types == {Type('int'), Type('float')}:
             self.elementType = Type('float')
         else:
             self.elementType = Type('unknown')
         
     def __repr__(self):
-        return f'{self.type}(' + ','.join([repr(e) for e in self.elements])+')'
+        size = 8 if (l:=len(self.elements)) < 8 else self.len
+        return f'list_{self.elementType}_constructor({l}, {size}, ' + ','.join([repr(e) for e in self.elements])+')'
 
 class KeyVal():
     def __init__(self, key='', val=''):
