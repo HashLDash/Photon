@@ -45,13 +45,34 @@ class Type():
         return hash(obj) == self.__hash__()
 
 class Obj():
-    def __init__(self, value='', type='', namespace='namespace'):
+    def __init__(self, value='', type='', namespace='namespace', mode='expr'):
         self.value = value
         self.type = Type(type)
         self.namespace = namespace
+        self.mode = mode
+
+    def prepare(self):
+        pass
+
+    def expression(self):
+        return 'Obj-expr'
+
+    def declaration(self):
+        return 'Obj-expr'
+
+    def format(self):
+        return 'Obj-expr'
 
     def __repr__(self):
-        return 'Obj'
+        self.prepare()
+        if self.mode == 'expr':
+            return self.expression()
+        elif self.mode == 'declaration':
+            return self.declaration()
+        elif self.mode == 'format':
+            return self.format()
+        else:
+            raise ValueError(f'Mode {self.mode} not implemented.')
 
     @property
     def index(self):
@@ -96,23 +117,23 @@ class String(Obj):
 
 class Var(Obj):
     imports = []
-    def __init__(self, *args, declaration=False, format=False, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.declaration = declaration
-        self.format = format
-
-    def __repr__(self):
+    def prepare(self):
         if self.namespace:
-            value = f'{self.namespace}__{self.value}'
+            self.name = f'{self.namespace}__{self.value}'
         else:
-            value = f'{self.value}'
-        if self.declaration:
-            return f'{self.type} {value}'
-        if self.format:
-            if self.type.type not in ['str','int','float']:
-                call = repr(self.type).replace("*","")
-                return f'{call}_str({value})'
-        return value
+            self.name = self.value
+
+    def declaration(self):
+        return f'{self.type} {self.value}'
+
+    def format(self):
+        if self.type.type not in ['str','int','float']:
+            call = repr(self.type).replace("*","")
+            return f'{call}_str({self.name})'
+        return self.name
+
+    def expression(self):
+        return self.name
 
     def __hash__(self):
         return hash(self.namespace+self.value)
@@ -127,10 +148,8 @@ class Expr(Obj):
         'is','in','andnot','and','or','&', '<<', '>>'
     ]
     #TODO: not is not implemented
-    def __init__(self, *elements, ops=None, declaration=False, format=False, **kwargs):
+    def __init__(self, *elements, ops=None, **kwargs):
         super().__init__(**kwargs)
-        self.declaration = declaration
-        self.format = format
         self.elements = elements
         self.ops = ops if ops else []
         if not self.value:
@@ -170,8 +189,7 @@ class Expr(Obj):
         return Expr(value=f'{arg1} {op} {arg2}', type=t)
 
     def __repr__(self):
-        self.value.declaration = self.declaration
-        self.value.format = self.format
+        self.value.mode = self.mode
         return repr(self.value)
 
     @property
@@ -287,11 +305,10 @@ class Scope():
         return iter(self.sequence)
 
 class Assign(Obj):
-    def __init__(self, target='', inMemory=False, declaration=False, **kwargs):
+    def __init__(self, target='', inMemory=False, **kwargs):
         super().__init__(**kwargs)
         self.target = target
         self.inMemory = inMemory
-        self.declaration = declaration
         if self.target.type.known:
             self.type = self.target.type
         elif self.value.type.known:
@@ -303,10 +320,11 @@ class Assign(Obj):
             print(f'cast {self.value.type} to {self.type}')
             pass
 
-    def __repr__(self):
-        if self.declaration:
-            return f'{self.target.type} {self.target}'
-        elif self.inMemory:
+    def declaration(self):
+        return f'{self.target.type} {self.target}'
+
+    def expression(self):
+        if self.inMemory:
             return f'{self.target} = {self.value}'
         else:
             return f'{self.target.type} {self.target} = {self.value}'
@@ -316,27 +334,26 @@ class Assign(Obj):
         return self.target.index
 
 class Args():
-    def __init__(self, args, call=False, declaration=False):
+    def __init__(self, args, mode='expr'):
         self.args = args
-        self.call = call
-        self.declaration = declaration
+        self.mode = mode
     
     def __bool__(self):
         return True if repr(self) else False
 
     def __repr__(self):
         for arg in self.args:
-            if self.call:
-                arg.namespace = ''
-            arg.declaration = self.declaration
+            arg.mode = self.mode
         return ', '.join([repr(arg) for arg in self.args])
 
 class Kwargs():
-    def __init__(self, kwargs):
-        self.kwargs = []
+    def __init__(self, kwargs, mode='expr'):
+        self.kwargs = kwargs
+        self.mode = mode
+
+    def prepare(self):
         for kwarg in kwargs:
-            kwarg.target.namespace = ''
-            self.kwargs.append(kwarg)
+            kwarg.mode = self.mode
     
     def __bool__(self):
         return True if repr(self) else False
@@ -348,7 +365,7 @@ class Call(Obj):
     def __init__(self, name='', args='', kwargs='', **defaults):
         super().__init__(**defaults)
         self.name = name
-        self.args = Args(args, call=True)
+        self.args = Args(args, mode='declaration')
         self.kwargs = Kwargs(kwargs)
 
     def __repr__(self):
@@ -356,22 +373,21 @@ class Call(Obj):
         return f'{self.name}({self.args}{separator}{self.kwargs})'
 
 class Function(Obj):
-    def __init__(self, name='', args='', kwargs='', code='', declaration=False, **defaults):
+    def __init__(self, name='', args='', kwargs='', code='', **defaults):
         super().__init__(**defaults)
-        self.declaration = declaration
         self.name = name
-        self.args = Args(args)
-        self.kwargs = Kwargs(kwargs)
+        self.args = Args(args, mode='declaration')
+        self.kwargs = Kwargs(kwargs, mode='declaration')
         self.code = Scope(code)
 
-    def __repr__(self):
-        separator = ', ' if self.args and self.kwargs else ''
-        if self.declaration:
-            self.args.declaration = True
-            self.kwargs.declaration = True
-            return f'{self.name.type} (*{self.name})({self.args}{separator}{self.kwargs})'
-        else:
-            return f'{self.name.type} {self.name}({self.args}{separator}{self.kwargs}) {self.code}'
+    def prepare(self):
+        self.separator = ', ' if self.args and self.kwargs else ''
+
+    def declaration(self):
+        return f'{self.name.type} (*{self.name})({self.args}{self.separator}{self.kwargs})'
+
+    def expression(self):
+        return f'{self.name.type} {self.name}({self.args}{self.separator}{self.kwargs}) {self.code}'
 
     @property
     def index(self):
@@ -395,15 +411,15 @@ class Class():
 
     def declarationMode(self):
         for t in self.code:
-            t.declaration = True
+            t.mode = 'declaration'
     
     def writeMode(self):
         for t in self.code:
-            t.declaration = False
+            t.mode = 'expr'
 
     def __repr__(self):
         self.declarationMode()
-        value = f'typedef struct {self.name.value} {self.code} {self.name.value};\n'
+        value = f'typedef struct {self.name} {self.code} {self.name};\n'
         self.writeMode()
         for method in self.methods.values():
             value += f'{method}\n'

@@ -168,7 +168,7 @@ class BaseTranspiler():
 
     def processClass(self, token):
         return Class(
-            name=Var(token['name']),
+            name=Var(token['name'], namespace=self.currentNamespace),
             args=self.processTokens(token['args']),
             code=self.processTokens(token['block'])
         )
