@@ -25,18 +25,28 @@ class Type():
             self.known = True
         else:
             self.known = False
+        if self.known and self.type in self.nativeTypes:
+            self.isClass = False
+        else:
+            self.isClass = True
 
     def isKnown(self, type):
         if type not in ['unknown', '']:
             return True
         return False
     
+    def __str__(self):
+        return repr(self)
+
     def __repr__(self):
         if self.type == 'array':
             return f'list_{self.elementType}*'
         elif self.type == 'map':
             return f'dict_{self.keyType}_{self.valType}*'
-        return self.nativeTypes[self.type] 
+        elif self.type in self.nativeTypes:
+            return self.nativeTypes[self.type] 
+        else:
+            return f'{self.type}'
 
     def __hash__(self):
         return hash((self.type, self.elementType, self.keyType, self.valType))
@@ -309,6 +319,8 @@ class Assign(Obj):
         super().__init__(**kwargs)
         self.target = target
         self.inMemory = inMemory
+        input(f'target type {self.target.type}')
+        input(f'expr type {self.value.type}')
         if self.target.type.known:
             self.type = self.target.type
         elif self.value.type.known:
@@ -365,12 +377,16 @@ class Call(Obj):
     def __init__(self, name='', args='', kwargs='', **defaults):
         super().__init__(**defaults)
         self.name = name
-        self.args = Args(args, mode='declaration')
+        self.type = self.name.type
+        self.args = Args(args)
         self.kwargs = Kwargs(kwargs)
 
     def __repr__(self):
         separator = ', ' if self.args and self.kwargs else ''
-        return f'{self.name}({self.args}{separator}{self.kwargs})'
+        if self.type.isClass:
+            return f'{self.name}_new({self.args}{separator}{self.kwargs})'
+        else:
+            return f'{self.name}_new({self.args}{separator}{self.kwargs})'
 
 class Function(Obj):
     def __init__(self, name='', args='', kwargs='', code='', **defaults):
@@ -391,14 +407,14 @@ class Function(Obj):
 
     @property
     def index(self):
-        return self.name
+        return self.name.index
 
 class Class():
     def __init__(self, name='', args='', code=''):
         self.name = name
         self.args = Args(args)
         self.code = Scope(code)
-        self.type = Type(self.name)
+        self.type = Type(repr(self.name))
         self.parameters = {}
         self.methods = {}
         for instruction in self.code:
@@ -427,7 +443,7 @@ class Class():
 
     @property
     def index(self):
-        return self.name
+        return self.name.index
 
 if __name__ == '__main__':
     pass

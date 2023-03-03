@@ -9,8 +9,6 @@ class CurrentScope():
         self.currentScope = {}
 
     def add(self, token):
-        print('TRYING TO ADD', token)
-        print(token.index)
         if not isinstance(token, Var) and token.index is not None:
             print(f'adding {token.index} with type {token.type.type}')
             self.currentScope[token.index] = token
@@ -22,6 +20,10 @@ class CurrentScope():
         return s
 
     def typeOf(self, obj):
+        print('GET', obj)
+        print(obj.index in self.currentScope)
+        print(obj.index, self.currentScope[obj.index].type)
+        #TODO CLASS INSTANCE IS NOT BEING FOUND
         return self.currentScope[obj.index].type
 
 class BaseTranspiler():
@@ -101,7 +103,7 @@ class BaseTranspiler():
         pass
 
     def processVar(self, token):
-        print(self.currentScope)
+        #print(self.currentScope)
         var = Var(
             value=token['name'],
             type=token['type'],
@@ -124,6 +126,7 @@ class BaseTranspiler():
         pass
 
     def processExpr(self, token):
+        print('here2')
         return Expr(
             *[self.preprocess(t) for t in token['args']],
             ops = token['ops']
@@ -158,7 +161,6 @@ class BaseTranspiler():
     def processCall(self, token, className=None):
         return Call(
             name=self.processVar(token['name']),
-            type=token['type'],
             args=self.processTokens(token['args']),
             kwargs=self.processTokens(token['kwargs']),
         )
@@ -174,15 +176,21 @@ class BaseTranspiler():
         )
 
     def processFunc(self, token):
+        args=self.processTokens(token['args'])
+        kwargs=self.processTokens(token['kwargs'])
+        for t in args + kwargs:
+            print(t)
+            self.currentScope.add(t)
+        code=self.processTokens(token['block'])
         return Function(
             name=Var(
                 token['name'],
                 type=token['type'],
                 namespace=self.currentNamespace,
             ),
-            args=self.processTokens(token['args']),
-            kwargs=self.processTokens(token['kwargs']),
-            code=self.processTokens(token['block']),
+            args=args,
+            kwargs=kwargs,
+            code=code,
         )
 
     def processReturn(self, token):
