@@ -45,6 +45,8 @@ class Type():
             return f'dict_{self.keyType}_{self.valType}*'
         elif self.type in self.nativeTypes:
             return self.nativeTypes[self.type] 
+        elif self.isClass:
+            return f'{self.type}*'
         else:
             return f'{self.type}'
 
@@ -319,8 +321,6 @@ class Assign(Obj):
         super().__init__(**kwargs)
         self.target = target
         self.inMemory = inMemory
-        input(f'target type {self.target.type}')
-        input(f'expr type {self.value.type}')
         if self.target.type.known:
             self.type = self.target.type
         elif self.value.type.known:
@@ -400,6 +400,7 @@ class Function(Obj):
         self.separator = ', ' if self.args and self.kwargs else ''
 
     def declaration(self):
+        input(self.name.type)
         return f'{self.name.type} (*{self.name})({self.args}{self.separator}{self.kwargs})'
 
     def expression(self):
@@ -422,6 +423,8 @@ class Class():
                 instruction.target.namespace = ''
                 self.parameters[instruction.index] = instruction
             elif isinstance(instruction, Function):
+                if instruction.name.value == 'new':
+                    instruction.name.type = f'struct {self.name}*'
                 instruction.name.value = f'{self.name.value}_{instruction.name.value}'
                 self.methods[instruction.index] = instruction
 
