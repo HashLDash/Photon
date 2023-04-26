@@ -25,10 +25,13 @@ class Type():
             self.known = True
         else:
             self.known = False
+
         if self.known and self.type in self.nativeTypes:
             self.isClass = False
-        else:
+        elif self.known and not self.type in self.nativeTypes:
             self.isClass = True
+        else:
+            self.isClass = False
 
     def isKnown(self, type):
         if type not in ['unknown', '']:
@@ -386,7 +389,7 @@ class Call(Obj):
         if self.type.isClass:
             return f'{self.name}_new({self.args}{separator}{self.kwargs})'
         else:
-            return f'{self.name}_new({self.args}{separator}{self.kwargs})'
+            return f'{self.name}({self.args}{separator}{self.kwargs})'
 
 class Function(Obj):
     def __init__(self, name='', args='', kwargs='', code='', **defaults):
