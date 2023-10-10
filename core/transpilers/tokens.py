@@ -155,7 +155,9 @@ class Var(Obj):
 
     @property
     def index(self):
-        return f'{self.namespace}__{self.value}'
+        if self.namespace:
+            return f'{self.namespace}__{self.value}'
+        return f'{self.value}'
 
 class Expr(Obj):
     operatorOrder = [
@@ -205,6 +207,7 @@ class Expr(Obj):
 
     def __repr__(self):
         self.value.mode = self.mode
+        input(f'using mode {self.mode}')
         return repr(self.value)
 
     @property
@@ -234,6 +237,7 @@ class Array():
             self.elementType = Type('unknown')
         
     def __repr__(self):
+        input(f'mode is {self.mode}')
         size = 8 if (l:=len(self.elements)) < 8 else self.len
         return f'list_{self.elementType}_constructor({l}, {size}, ' + ','.join([repr(e) for e in self.elements])+')'
 
@@ -349,7 +353,7 @@ class Assign(Obj):
         return self.target.index
 
 class Args():
-    def __init__(self, args, mode='expr'):
+    def __init__(self, args, mode=None):
         self.args = args
         self.mode = mode
     
@@ -357,8 +361,10 @@ class Args():
         return True if repr(self) else False
 
     def __repr__(self):
-        for arg in self.args:
-            arg.mode = self.mode
+        if self.mode is not None:
+            # override mode
+            for arg in self.args:
+                arg.mode = self.mode
         return ', '.join([repr(arg) for arg in self.args])
 
 class Kwargs():
@@ -403,7 +409,6 @@ class Function(Obj):
         self.separator = ', ' if self.args and self.kwargs else ''
 
     def declaration(self):
-        input(self.name.type)
         return f'{self.name.type} (*{self.name})({self.args}{self.separator}{self.kwargs})'
 
     def expression(self):

@@ -7,24 +7,40 @@ from .tokens import *
 class CurrentScope():
     def __init__(self):
         self.currentScope = {}
+        self.localScope = {}
+        self.local = False
+
+    def startLocalScope(self):
+        self.local = True
+        self.localScope = {}
+
+    def endLocalScope(self):
+        self.local = False
+        self.localScope = {}
 
     def add(self, token):
         if not isinstance(token, Var) and token.index is not None:
             print(f'adding {token.index} with type {token.type.type}')
-            self.currentScope[token.index] = token
+            if self.local:
+                self.localScope[token.index] = token
+            else:
+                self.currentScope[token.index] = token
 
     def __repr__(self):
         s = 'SCOPE DUMP\n'
-        for i, t in self.currentScope.items():
+        for i, t in {**self.currentScope, **self.localScope}.items():
             s += f'"{i}" {t.type}\n'
         return s
 
     def typeOf(self, obj):
-        print('GET', obj)
+        print('GET')
+        print(obj)
         print(obj.index in self.currentScope)
-        print(obj.index, self.currentScope[obj.index].type)
+        print(obj.index in {**self.currentScope, **self.localScope})
+        print(self)
+        #print(obj.index, self.currentScope[obj.index].type)
         #TODO CLASS INSTANCE IS NOT BEING FOUND
-        return self.currentScope[obj.index].type
+        return {**self.currentScope, **self.localScope}[obj.index].type
 
 class BaseTranspiler():
     def __init__(self, filename, target='web', module=False, standardLibs='', debug=False):
@@ -81,8 +97,9 @@ class BaseTranspiler():
         print(token)
         if token is not None:
             processedToken = self.instructions[token['opcode']](token)
-            self.currentScope.add(processedToken)
-            self.sequence.add(processedToken)
+            if processedToken is not None:
+                self.currentScope.add(processedToken)
+                self.sequence.add(processedToken)
 
     def preprocess(self, token, inferType=True):
         processedToken = self.instructions[token['token']](token)
@@ -176,12 +193,21 @@ class BaseTranspiler():
         )
 
     def processFunc(self, token):
+        self.currentScope.startLocalScope()
+        oldNamespace = self.currentNamespace
+        self.currentNamespace = ''
+        #TODO WARNING: Global variables cannot be called inside
+        #because the namespace will be different
+        #in the local scope
+        #use global syntax or try to infer global variables
         args=self.processTokens(token['args'])
         kwargs=self.processTokens(token['kwargs'])
+        print('Processing func')
         for t in args + kwargs:
-            print(t)
             self.currentScope.add(t)
         code=self.processTokens(token['block'])
+        self.currentNamespace = oldNamespace
+        self.currentScope.endLocalScope()
         return Function(
             name=Var(
                 token['name'],
@@ -210,6 +236,7 @@ class BaseTranspiler():
 
     def processPrint(self, token):
         print(self.currentScope)
+        input(token)
         formats = {
             'str': '%s',
             'int': '%ld',
@@ -218,11 +245,16 @@ class BaseTranspiler():
             'map': '%s',
         }
         args = self.processTokens(token['args'])
+        input(type(args[0]))
         template = String(value='"'+" ".join([formats[self.typeOf(arg).type] for arg in args])+'\\n"')
         args.insert(0, template)
+        print('start')
         for arg in args:
-            if arg.type.type == 'array':
-                arg.format = True
+            arg.mode = 'format'
+            #if arg.type.type == 'array':
+            #    arg.mode = 'format'
+        print(args[-1].mode)
+        input(f'args are {args}')
         return Call(
             name = Var('printf', 'unknown', namespace=''),
             args = args,
