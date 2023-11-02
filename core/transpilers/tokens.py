@@ -59,8 +59,15 @@ class Type():
     def __eq__(self, obj):
         return hash(obj) == self.__hash__()
 
+class NativeCode():
+    def __init__(self, code):
+        self.code = Scope(code)
+
+    def __repr__(self):
+        return repr(self.code)
+
 class Obj():
-    def __init__(self, value='', type='', namespace='namespace', mode='expr'):
+    def __init__(self, value='', type='', namespace='', mode='expr'):
         self.value = value
         self.type = Type(type)
         self.namespace = namespace
@@ -86,6 +93,8 @@ class Obj():
             return self.declaration()
         elif self.mode == 'format':
             return self.format()
+        elif self.mode == 'types':
+            return self.types()
         else:
             raise ValueError(f'Mode {self.mode} not implemented.')
 
@@ -150,6 +159,9 @@ class Var(Obj):
     def expression(self):
         return self.name
 
+    def types(self):
+        return f'{self.type}'
+
     def __hash__(self):
         return hash(self.namespace+self.value)
 
@@ -207,7 +219,6 @@ class Expr(Obj):
 
     def __repr__(self):
         self.value.mode = self.mode
-        input(f'using mode {self.mode}')
         return repr(self.value)
 
     @property
@@ -215,6 +226,19 @@ class Expr(Obj):
         if len(self.elements) == 1:
             return self.elements[0].index
         return super().index
+
+class DotAccess():
+    def __init__(self, chain=None, namespace=''):
+        self.chain = chain
+        self.chain[0].namespace = namespace
+        self.type = chain[-1].type
+
+    def __repr__(self):
+        return '->'.join([repr(c) for c in self.chain])
+
+    @property
+    def index(self):
+        return None
 
 class Array():
     def __init__(self, *elements, elementType=''):
@@ -237,7 +261,6 @@ class Array():
             self.elementType = Type('unknown')
         
     def __repr__(self):
-        input(f'mode is {self.mode}')
         size = 8 if (l:=len(self.elements)) < 8 else self.len
         return f'list_{self.elementType}_constructor({l}, {size}, ' + ','.join([repr(e) for e in self.elements])+')'
 
@@ -348,6 +371,9 @@ class Assign(Obj):
         else:
             return f'{self.target.type} {self.target} = {self.value}'
 
+    def types(self):
+        return f'{self.type}'
+
     @property
     def index(self):
         return self.target.index
@@ -409,7 +435,11 @@ class Function(Obj):
         self.separator = ', ' if self.args and self.kwargs else ''
 
     def declaration(self):
-        return f'{self.name.type} (*{self.name})({self.args}{self.separator}{self.kwargs})'
+        oldMode = self.args.mode
+        self.args.mode = 'types'
+        result = f'{self.name.type} (*{self.name})({self.args}{self.separator}{self.kwargs})'
+        self.args.mode = oldMode
+        return result
 
     def expression(self):
         return f'{self.name.type} {self.name}({self.args}{self.separator}{self.kwargs}) {self.code}'
@@ -433,6 +463,13 @@ class Class():
             elif isinstance(instruction, Function):
                 if instruction.name.value == 'new':
                     instruction.name.type = f'struct {self.name}*'
+                    #TODO Include new args here
+                    #instruction.args = Args(list(self.parameters.values()), mode='declaration')
+                    instruction.code = NativeCode([
+                        f'{self.type} self = malloc(sizeof({self.name}))',
+                        *[f'self->{a.target} = {a.value}' for a in self.parameters.values()],
+                        f'return self'
+                    ])
                 instruction.name.value = f'{self.name.value}_{instruction.name.value}'
                 self.methods[instruction.index] = instruction
 

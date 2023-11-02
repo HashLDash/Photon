@@ -32,6 +32,9 @@ class CurrentScope():
             s += f'"{i}" {t.type}\n'
         return s
 
+    def get(self, index):
+        return {**self.currentScope, **self.localScope}[index]
+        
     def typeOf(self, obj):
         print('GET')
         print(obj)
@@ -75,6 +78,7 @@ class BaseTranspiler():
             'str': self.processString,
             'call': self.processCall,
             'array': self.processArray,
+            'dotAccess': self.processDotAccess,
         }
 
         self.sequence = Sequence()
@@ -176,6 +180,10 @@ class BaseTranspiler():
         pass
 
     def processCall(self, token, className=None):
+        callType = self.preprocess(token['name']).type
+        if callType.isClass:
+            scope = self.currentScope.get(callType.type).parameters
+            #args = [f for f in scope]
         return Call(
             name=self.processVar(token['name']),
             args=self.processTokens(token['args']),
@@ -183,7 +191,28 @@ class BaseTranspiler():
         )
 
     def processDotAccess(self, token):
-        pass
+        initialType = self.preprocess(token['dotAccess'][0]).type
+        oldNamespace = self.currentNamespace
+        self.currentNamespace = ''
+        chain = self.processTokens(token['dotAccess'])
+        chain[0].type = initialType
+        currentType = initialType
+        for c in chain:
+            if currentType.isClass:
+                scope = self.currentScope.get(initialType.type).__dict__
+                if c.index in scope['parameters']:
+                    c.type = scope['parameters'][c.index].type
+                else:
+                    pass
+                    #TODO check methods too
+        for c in chain:
+            print(c.type)
+        input('Correct?')
+        self.currentNamespace = oldNamespace
+        return DotAccess(
+            chain,
+            namespace=oldNamespace,
+        )
 
     def processClass(self, token):
         return Class(
@@ -202,7 +231,6 @@ class BaseTranspiler():
         #use global syntax or try to infer global variables
         args=self.processTokens(token['args'])
         kwargs=self.processTokens(token['kwargs'])
-        print('Processing func')
         for t in args + kwargs:
             self.currentScope.add(t)
         code=self.processTokens(token['block'])
@@ -235,8 +263,6 @@ class BaseTranspiler():
         return [self.preprocess(t) for t in tokens]
 
     def processPrint(self, token):
-        print(self.currentScope)
-        input(token)
         formats = {
             'str': '%s',
             'int': '%ld',
@@ -245,16 +271,12 @@ class BaseTranspiler():
             'map': '%s',
         }
         args = self.processTokens(token['args'])
-        input(type(args[0]))
         template = String(value='"'+" ".join([formats[self.typeOf(arg).type] for arg in args])+'\\n"')
         args.insert(0, template)
-        print('start')
         for arg in args:
             arg.mode = 'format'
             #if arg.type.type == 'array':
             #    arg.mode = 'format'
-        print(args[-1].mode)
-        input(f'args are {args}')
         return Call(
             name = Var('printf', 'unknown', namespace=''),
             args = args,
