@@ -456,22 +456,27 @@ class Class():
         self.type = Type(repr(self.name))
         self.parameters = {}
         self.methods = {}
+        self.new = None
         for instruction in self.code:
             if isinstance(instruction, Assign):
                 instruction.target.namespace = ''
                 self.parameters[instruction.index] = instruction
             elif isinstance(instruction, Function):
                 if instruction.name.value == 'new':
-                    instruction.name.type = f'struct {self.name}*'
-                    #TODO Include new args here
-                    #instruction.args = Args(list(self.parameters.values()), mode='declaration')
-                    instruction.code = NativeCode([
-                        f'{self.type} self = malloc(sizeof({self.name}))',
-                        *[f'self->{a.target} = {a.value}' for a in self.parameters.values()],
-                        f'return self'
-                    ])
+                    self.new = instruction
                 instruction.name.value = f'{self.name.value}_{instruction.name.value}'
                 self.methods[instruction.index] = instruction
+        if self.new is None:
+            self.new = Function(name=Var(f'{self.name.value}_new',namespace=self.name.namespace))
+            self.methods[self.new.index] = self.new
+        self.new.name.type = f'struct {self.name}*'
+        #TODO Include new args here
+        #instruction.args = Args(list(self.parameters.values()), mode='declaration')
+        self.new.code = NativeCode([
+            f'{self.type} self = malloc(sizeof({self.name}))',
+            *[f'self->{a.target} = {a.value}' for a in self.parameters.values()],
+            f'return self'
+        ])
 
     def declarationMode(self):
         for t in self.code:
