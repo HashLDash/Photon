@@ -386,6 +386,9 @@ class Args():
     def __bool__(self):
         return True if repr(self) else False
 
+    def __getitem__(self, index):
+        return self.args[index]
+
     def __repr__(self):
         if self.mode is not None:
             # override mode
@@ -497,6 +500,34 @@ class Class():
     @property
     def index(self):
         return self.name.index
+
+class For():
+    def __init__(self, args=None, iterable=None, code=None):
+        self.args = Args(args)
+        self.iterable = iterable
+        self.code = Scope(code)
+        print(iterable)
+
+    def __repr__(self):
+        if isinstance(self.iterable, Range):
+            if len(self.args.args) == 1:
+                return f'for ({self.args[0].type} {self.args[0]}={self.iterable.initial}; {self.args[0]} < {self.iterable.final}; {self.args[0]} += {self.iterable.step}) {self.code}'
+            if len(self.args.args) == 2:
+                return f'{{{self.args[0].type} {self.args[0]}=0; for ({self.args[1].type} {self.args[1]}={self.iterable.initial}; {self.args[1]} < {self.iterable.final}; {self.args[0]}++, {self.args[1]} += {self.iterable.step}) {self.code}}}'
+
+    @property
+    def index(self):
+        return None
+
+class Range():
+    def __init__(self, initial=None, final=None, step=None):
+        self.initial = initial
+        self.final = final
+        self.step = step
+        if self.initial.type.type == 'int' and self.step.type.type == 'int':
+            self.type = Type('int')
+        else:
+            self.type = Type('float')
 
 if __name__ == '__main__':
     pass

@@ -79,6 +79,7 @@ class BaseTranspiler():
             'call': self.processCall,
             'array': self.processArray,
             'dotAccess': self.processDotAccess,
+            'range': self.processRange,
         }
 
         self.sequence = Sequence()
@@ -98,7 +99,7 @@ class BaseTranspiler():
 
     def process(self, token):
         print('Processing:')
-        print(token)
+        pprint(token)
         if token is not None:
             processedToken = self.instructions[token['opcode']](token)
             if processedToken is not None:
@@ -174,7 +175,34 @@ class BaseTranspiler():
         pass
 
     def processFor(self, token):
-        pass
+        self.currentScope.startLocalScope()
+        oldNamespace = self.currentNamespace
+        self.currentNamespace = ''
+        #TODO WARNING: Global variables cannot be called inside
+        #because the namespace will be different
+        #in the local scope
+        #use global syntax or try to infer global variables
+        args = self.processTokens(token['vars'])
+        iterable = self.preprocess(token['iterable'])
+        if isinstance(iterable, Range):
+            if len(args) == 1:
+                args[0].type = iterable.type
+            elif len(args) == 2:
+                args[0].type = Type('int')
+                args[1].type = iterable.type
+            else:
+                raise SyntaxError('For with range cannot have more than 2 variables')
+        for t in args:
+            self.currentScope.add(Assign(target=t, value=Num(0, t.type)))
+        input(self.currentScope)
+        code=self.processTokens(token['block'])
+        self.currentNamespace = oldNamespace
+        self.currentScope.endLocalScope()
+        return For(
+            code=code,
+            args=args,
+            iterable=iterable,
+        )
 
     def processForTarget(self, token):
         pass
@@ -245,6 +273,13 @@ class BaseTranspiler():
             args=args,
             kwargs=kwargs,
             code=code,
+        )
+
+    def processRange(self, token):
+        return Range(
+            initial=self.preprocess(token['from']),
+            final=self.preprocess(token['to']),
+            step=self.preprocess(token['step']) if 'step' in token else Num(1, 'int'),
         )
 
     def processReturn(self, token):
