@@ -1028,7 +1028,7 @@ class Transpiler(BaseTranspiler):
         formatCodes = {'int':'%ld', 'str':'\\"%s\\"', 'float':'%lf'}
         with open(f'{self.standardLibs}/native/c/dict_{keyType}.template') as template:
             dictLib = template.read()
-        valNativeType = self.nativeType(valType)
+        valNativeType = self.nativeTypes[valType]
         if valType in self.classes:
             valNativeType += "*"
         #TODO: Call instance repr if it exists instead of the placeholder
@@ -1108,6 +1108,7 @@ class Transpiler(BaseTranspiler):
         debug('Generated ' + self.filename)
 
     def run(self):
+        input('RUNNNNNNNNNNNNNNNNNNNNN')
         from subprocess import call, check_call
         import sys
         self.write()

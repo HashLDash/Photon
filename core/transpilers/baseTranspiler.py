@@ -36,12 +36,8 @@ class CurrentScope():
         return {**self.currentScope, **self.localScope}[index]
         
     def typeOf(self, obj):
-        print('GET')
-        print(obj)
-        print(obj.index in self.currentScope)
-        print(obj.index in {**self.currentScope, **self.localScope})
-        print(self)
-        #print(obj.index, self.currentScope[obj.index].type)
+        print(f'GET: {obj}')
+        print({**self.currentScope, **self.localScope})
         #TODO CLASS INSTANCE IS NOT BEING FOUND
         return {**self.currentScope, **self.localScope}[obj.index].type
 
@@ -78,6 +74,8 @@ class BaseTranspiler():
             'str': self.processString,
             'call': self.processCall,
             'array': self.processArray,
+            'map': self.processMap,
+            'keyVal': self.processKeyVal,
             'dotAccess': self.processDotAccess,
             'range': self.processRange,
         }
@@ -94,7 +92,7 @@ class BaseTranspiler():
         try:
             return self.currentScope.typeOf(obj)
         except Exception as e:
-            print(e)
+            print(f'Exception in typeOf {e}')
             return Type('unknown')
 
     def process(self, token):
@@ -132,7 +130,6 @@ class BaseTranspiler():
             namespace=self.currentNamespace,
         )
         var.type = self.typeOf(var)
-        print(var, var.type)
         return var
 
     def processArray(self, token):
@@ -145,10 +142,21 @@ class BaseTranspiler():
         return array
 
     def processMap(self, token):
-        pass
+        obj = Map(
+            *self.processTokens(token['elements'])
+        )
+        for i in obj.imports:
+            self.imports.add(i)
+        self.dictTypes.add((obj.keyType.type, obj.valType.type))
+        return obj
+
+    def processKeyVal(self, token):
+        return KeyVal(
+            key=self.preprocess(token['key']),
+            val=self.preprocess(token['val'])
+        )
 
     def processExpr(self, token):
-        print('here2')
         return Expr(
             *[self.preprocess(t) for t in token['args']],
             ops = token['ops']
@@ -175,6 +183,7 @@ class BaseTranspiler():
         pass
 
     def processFor(self, token):
+        iterable = self.preprocess(token['iterable'])
         self.currentScope.startLocalScope()
         oldNamespace = self.currentNamespace
         self.currentNamespace = ''
@@ -183,7 +192,6 @@ class BaseTranspiler():
         #in the local scope
         #use global syntax or try to infer global variables
         args = self.processTokens(token['vars'])
-        iterable = self.preprocess(token['iterable'])
         if isinstance(iterable, Range):
             if len(args) == 1:
                 args[0].type = iterable.type
@@ -192,7 +200,23 @@ class BaseTranspiler():
                 args[1].type = iterable.type
             else:
                 raise SyntaxError('For with range cannot have more than 2 variables')
+        elif isinstance(iterable, Expr):
+            if iterable.type.type == 'array':
+                if len(args) == 1:
+                    args[0].type = Type(iterable.type.elementType)
+                elif len(args) == 2:
+                    args[0].type = Type('int')
+                    args[1].type = Type(iterable.type.elementType)
+            elif iterable.type.type == 'map':
+                if len(args) == 1:
+                    args[0].type = Type(iterable.type.keyType)
+                elif len(args) == 2:
+                    args[0].type = Type(iterable.type.keyType)
+                    args[1].type = Type(iterable.type.valType)
+        else:
+            raise ValueError(f'Iterable with type {type(iterable)} not supported in processFor')
         for t in args:
+            input(f'T: {t}')
             self.currentScope.add(Assign(target=t, value=Num(0, t.type)))
         input(self.currentScope)
         code=self.processTokens(token['block'])
@@ -306,6 +330,7 @@ class BaseTranspiler():
             'map': '%s',
         }
         args = self.processTokens(token['args'])
+        input(f'Arg is {self.typeOf(args[0])}')
         template = String(value='"'+" ".join([formats[self.typeOf(arg).type] for arg in args])+'\\n"')
         args.insert(0, template)
         for arg in args:

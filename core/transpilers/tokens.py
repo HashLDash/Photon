@@ -45,7 +45,7 @@ class Type():
         if self.type == 'array':
             return f'list_{self.elementType}*'
         elif self.type == 'map':
-            return f'dict_{self.keyType}_{self.valType}*'
+            return f'dict_{self.keyType.type}_{self.valType.type}*'
         elif self.type in self.nativeTypes:
             return self.nativeTypes[self.type] 
         elif self.isClass:
@@ -279,6 +279,7 @@ class Map():
         self.valType = valType
         if not self.keyType or not self.valType:
             self.inferType()
+            self.imports = [f'#include "dict_{self.keyType.type}_{self.valType.type}.h"']
         self.type = Type('map', keyType=self.keyType, valType=self.valType)
 
     def inferType(self):
@@ -297,7 +298,7 @@ class Map():
             raise NotImplemented('Vals of different types not implemented yet')
         
     def __repr__(self):
-        return f'{self.type}(' + ','.join([repr(kv) for kv in self.keyVals])+')'
+        return f'dict_{self.valType.type}_{self.keyType.type}_constructor({len(self.keyVals)},{len(self.keyVals)},' + ','.join([repr(kv) for kv in self.keyVals])+')'
 
 # Representation Types
 
@@ -514,6 +515,19 @@ class For():
                 return f'for ({self.args[0].type} {self.args[0]}={self.iterable.initial}; {self.args[0]} < {self.iterable.final}; {self.args[0]} += {self.iterable.step}) {self.code}'
             if len(self.args.args) == 2:
                 return f'{{{self.args[0].type} {self.args[0]}=0; for ({self.args[1].type} {self.args[1]}={self.iterable.initial}; {self.args[1]} < {self.iterable.final}; {self.args[0]}++, {self.args[1]} += {self.iterable.step}) {self.code}}}'
+        elif isinstance(self.iterable, Expr):
+            if self.iterable.type.type == 'array':
+                if len(self.args.args) == 1:
+                    return f'{{{self.args[0].type} {self.args[0]} = {self.iterable}->values[0]; for (long __forIndex=0; __forIndex < {self.iterable}->len; __forIndex++, {self.args[0]} = {self.iterable}->values[__forIndex]) {self.code}}}'
+                if len(self.args.args) == 2:
+                    return f'{{{self.args[1].type} {self.args[1]} = {self.iterable}->values[0]; for ({self.args[0].type} {self.args[0]}=0; {self.args[0]} < {self.iterable}->len; {self.args[0]}++, {self.args[1]} = {self.iterable}->values[{self.args[1]}]) {self.code}}}'
+            if self.iterable.type.type == 'map':
+                if len(self.args.args) == 1:
+                    return f'{{{self.args[0].type} {self.args[0]} = {self.iterable}->entries[0].key; for (long __forIndex=0; __forIndex < {self.iterable}->len; __forIndex++, {self.args[0]} = {self.iterable}->entries[__forIndex].key) {self.code}}}'
+                if len(self.args.args) == 2:
+                    return f'{{{self.args[1].type} {self.args[1]} = {self.iterable}->values[0]; for ({self.args[0].type} {self.args[0]}=0; {self.args[0]} < {self.iterable}->len; {self.args[0]}++, {self.args[1]} = {self.iterable}->values[{self.args[1]}]) {self.code}}}'
+        else:
+            raise ValueError(f'Iterable of type {type(self.iterable)} no supported in for.')
 
     @property
     def index(self):
