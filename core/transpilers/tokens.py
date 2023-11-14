@@ -298,7 +298,7 @@ class Map():
             raise NotImplemented('Vals of different types not implemented yet')
         
     def __repr__(self):
-        return f'dict_{self.valType.type}_{self.keyType.type}_constructor({len(self.keyVals)},{len(self.keyVals)},' + ','.join([repr(kv) for kv in self.keyVals])+')'
+        return f'dict_{self.keyType.type}_{self.valType.type}_constructor({len(self.keyVals)},{len(self.keyVals)},' + ','.join([repr(kv) for kv in self.keyVals])+')'
 
 # Representation Types
 
@@ -525,7 +525,7 @@ class For():
                 if len(self.args.args) == 1:
                     return f'{{{self.args[0].type} {self.args[0]} = {self.iterable}->entries[0].key; for (long __forIndex=0; __forIndex < {self.iterable}->len; __forIndex++, {self.args[0]} = {self.iterable}->entries[__forIndex].key) {self.code}}}'
                 if len(self.args.args) == 2:
-                    return f'{{{self.args[1].type} {self.args[1]} = {self.iterable}->values[0]; for ({self.args[0].type} {self.args[0]}=0; {self.args[0]} < {self.iterable}->len; {self.args[0]}++, {self.args[1]} = {self.iterable}->values[{self.args[1]}]) {self.code}}}'
+                    return f'{{{self.args[1].type} {self.args[1]} = {self.iterable}->entries[0].key; for ({self.args[0].type} {self.args[0]}=0; {self.args[0]} < {self.iterable}->len; {self.args[0]}++, {self.args[1]} = {self.iterable}->entries[{self.args[0]}].key) {self.code}}}'
         else:
             raise ValueError(f'Iterable of type {type(self.iterable)} no supported in for.')
 
