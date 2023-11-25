@@ -107,7 +107,9 @@ dict_str_!@valType@!* dict_str_!@valType@!_constructor(int len, int size, ...) {
     va_start(ptr, size); // size is the last argument before the ellipsis
 
     for (int i = 0; i < len; i++) {
-        dict_str_!@valType@!_set(dict, va_arg(ptr, char*), va_arg(ptr, !@valNativeType@!));
+        char* tempKey = va_arg(ptr, char*);
+        !@valNativeType@! tempVal = va_arg(ptr, !@valNativeType@!);
+        dict_str_!@valType@!_set(dict, tempKey, tempVal);
     }
     va_end(ptr);
     return dict;

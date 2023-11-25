@@ -270,7 +270,7 @@ class KeyVal():
         self.val = val
 
     def __repr__(self):
-        return f'{self.key}, {self.val}'
+        return f'{self.key},{self.val}'
 
 class Map():
     def __init__(self, *keyVals, keyType='', valType=''):
@@ -298,7 +298,7 @@ class Map():
             raise NotImplemented('Vals of different types not implemented yet')
         
     def __repr__(self):
-        return f'dict_{self.keyType.type}_{self.valType.type}_constructor({len(self.keyVals)},{len(self.keyVals)},' + ','.join([repr(kv) for kv in self.keyVals])+')'
+        return f'dict_{self.keyType.type}_{self.valType.type}_constructor({len(self.keyVals)},{len(self.keyVals)},' + ', '.join([repr(kv) for kv in self.keyVals])+')'
 
 # Representation Types
 
@@ -526,10 +526,12 @@ class For():
             if self.iterable.type.type == 'map':
                 if len(self.args.args) == 1:
                     iterableVar = f'__iterable_{self.args[0]}'
-                    return f'{{{self.iterable.type} {iterableVar} = {self.iterable};\n{self.args[0].type} {self.args[0]} = {iterableVar}->entries[0].key; for (long __forIndex=0; __forIndex < {iterableVar}->len; __forIndex++, {self.args[0]} = {iterableVar}->entries[__forIndex].key) {self.code}}}'
+                    iterableIndex = f'__iterable_index_{self.args[0]}'
+                    return f'{{{self.iterable.type} {iterableVar} = {self.iterable};\n{self.args[0].type} {self.args[0]} = {iterableVar}->entries[0].key; for (long {iterableIndex}=0; {iterableIndex} < {iterableVar}->len; {iterableIndex}++, {self.args[0]} = {iterableVar}->entries[{iterableIndex}].key) {self.code}}}'
                 if len(self.args.args) == 2:
                     iterableVar = f'__iterable_{self.args[1]}'
-                    return f'{{{self.iterable.type} {iterableVar} = {self.iterable};\n{self.args[1].type} {self.args[1]} = {iterableVar}->entries[0].key; for ({self.args[0].type} {self.args[0]}=0; {self.args[0]} < {iterableVar}->len; {self.args[0]}++, {self.args[1]} = {iterableVar}->entries[{self.args[0]}].key) {self.code}}}'
+                    iterableIndex = f'__iterable_index_{self.args[1]}'
+                    return f'{{{self.iterable.type} {iterableVar} = {self.iterable};\n{self.args[0].type} {self.args[0]} = {iterableVar}->entries[0].key;\n{self.args[1].type} {self.args[1]} = {iterableVar}->entries[0].val;\nfor (long {iterableIndex}=0; {iterableIndex} < {iterableVar}->len; {iterableIndex}++, {self.args[0]} = {iterableVar}->entries[{iterableIndex}].key, {self.args[1]} = {iterableVar}->entries[{iterableIndex}].val) {self.code}}}'
         else:
             raise ValueError(f'Iterable of type {type(self.iterable)} no supported in for.')
 
