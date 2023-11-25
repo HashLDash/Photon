@@ -518,14 +518,18 @@ class For():
         elif isinstance(self.iterable, Expr):
             if self.iterable.type.type == 'array':
                 if len(self.args.args) == 1:
-                    return f'{{{self.args[0].type} {self.args[0]} = {self.iterable}->values[0]; for (long __forIndex=0; __forIndex < {self.iterable}->len; __forIndex++, {self.args[0]} = {self.iterable}->values[__forIndex]) {self.code}}}'
+                    iterableVar = f'__iterable_{self.args[0]}'
+                    return f'{{{self.iterable.type} {iterableVar} = {self.iterable};\n{self.args[0].type} {self.args[0]} = {iterableVar}->values[0]; for (long __forIndex=0; __forIndex < {iterableVar}->len; __forIndex++, {self.args[0]} = {iterableVar}->values[__forIndex]) {self.code}}}'
                 if len(self.args.args) == 2:
-                    return f'{{{self.args[1].type} {self.args[1]} = {self.iterable}->values[0]; for ({self.args[0].type} {self.args[0]}=0; {self.args[0]} < {self.iterable}->len; {self.args[0]}++, {self.args[1]} = {self.iterable}->values[{self.args[1]}]) {self.code}}}'
+                    iterableVar = f'__iterable_{self.args[1]}'
+                    return f'{{{self.iterable.type} {iterableVar} = {self.iterable};\n{self.args[1].type} {self.args[1]} = {iterableVar}->values[0]; for ({self.args[0].type} {self.args[0]}=0; {self.args[0]} < {iterableVar}->len; {self.args[0]}++, {self.args[1]} = {iterableVar}->values[{self.args[1]}]) {self.code}}}'
             if self.iterable.type.type == 'map':
                 if len(self.args.args) == 1:
-                    return f'{{{self.args[0].type} {self.args[0]} = {self.iterable}->entries[0].key; for (long __forIndex=0; __forIndex < {self.iterable}->len; __forIndex++, {self.args[0]} = {self.iterable}->entries[__forIndex].key) {self.code}}}'
+                    iterableVar = f'__iterable_{self.args[0]}'
+                    return f'{{{self.iterable.type} {iterableVar} = {self.iterable};\n{self.args[0].type} {self.args[0]} = {iterableVar}->entries[0].key; for (long __forIndex=0; __forIndex < {iterableVar}->len; __forIndex++, {self.args[0]} = {iterableVar}->entries[__forIndex].key) {self.code}}}'
                 if len(self.args.args) == 2:
-                    return f'{{{self.args[1].type} {self.args[1]} = {self.iterable}->entries[0].key; for ({self.args[0].type} {self.args[0]}=0; {self.args[0]} < {self.iterable}->len; {self.args[0]}++, {self.args[1]} = {self.iterable}->entries[{self.args[0]}].key) {self.code}}}'
+                    iterableVar = f'__iterable_{self.args[1]}'
+                    return f'{{{self.iterable.type} {iterableVar} = {self.iterable};\n{self.args[1].type} {self.args[1]} = {iterableVar}->entries[0].key; for ({self.args[0].type} {self.args[0]}=0; {self.args[0]} < {iterableVar}->len; {self.args[0]}++, {self.args[1]} = {iterableVar}->entries[{self.args[0]}].key) {self.code}}}'
         else:
             raise ValueError(f'Iterable of type {type(self.iterable)} no supported in for.')
 
