@@ -169,8 +169,6 @@ class BaseTranspiler():
         value = self.preprocess(token['expr'])
         if not target.type.known:
             target.type = value.type
-        print(f'Target: {target} -> {target.type}')
-        print(f'Value: {value} -> {value.type}')
         assign = Assign(
             target = target,
             value = value,
@@ -182,11 +180,16 @@ class BaseTranspiler():
         pass
 
     def processIf(self, token):
-        pprint(token)
-        input()
+        # TODO: Scope from ifBlock probably will leak to elif and else blocks. Separation of scopes is necessary. Reset scope for each block
         return If(
             expr = self.preprocess(token['expr']),
-            block = self.processTokens(token['block'], addToScope=True),
+            ifBlock = self.processTokens(token['block'], addToScope=True),
+            elifs = None if not 'elifs' in token else [
+                Elif(
+                    self.preprocess(e['expr']),
+                    self.processTokens(e['elifBlock'], addToScope=True))
+                        for e in token['elifs']],
+            elseBlock = None if not 'else' in token else self.processTokens(token['else']),
         )
 
     def processWhile(self, token):

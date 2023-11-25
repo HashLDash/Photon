@@ -1,5 +1,6 @@
 # Basic Types
 from copy import deepcopy
+from pprint import pprint
 
 class Type():
     nativeTypes = {
@@ -506,13 +507,30 @@ class Class():
     def index(self):
         return self.name.index
 
-class If():
+class Elif():
     def __init__(self, expr, block):
         self.expr = expr
         self.block = Scope(block)
 
     def __repr__(self):
-        return f'if ({self.expr}) {self.block}'
+        return f'else if ({self.expr}) {self.block}'
+
+class Else():
+    def __init__(self, block):
+        self.block = Scope(block)
+
+    def __repr__(self):
+        return f'else {self.block}'
+
+class If():
+    def __init__(self, expr, ifBlock, elifs=None, elseBlock=None):
+        self.expr = expr
+        self.ifBlock = Scope(ifBlock)
+        self.elifs = elifs
+        self.elseBlock = Else(elseBlock) if elseBlock is not None else ''
+
+    def __repr__(self):
+        return f'if ({self.expr}) {self.ifBlock} {"".join(repr(e) for e in self.elifs)} {self.elseBlock}'
 
     @property
     def index(self):
