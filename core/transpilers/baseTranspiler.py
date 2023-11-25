@@ -19,6 +19,7 @@ class CurrentScope():
         self.localScope = {}
 
     def add(self, token):
+        print(f'Called for token {token}')
         if not isinstance(token, Var) and token.index is not None:
             print(f'adding {token.index} with type {token.type.type}')
             if self.local:
@@ -124,6 +125,7 @@ class BaseTranspiler():
 
     def processVar(self, token):
         #print(self.currentScope)
+        input(token)
         var = Var(
             value=token['name'],
             type=token['type'],
@@ -163,9 +165,15 @@ class BaseTranspiler():
         )
 
     def processAssign(self, token):
+        target = self.preprocess(token['target'])
+        value = self.preprocess(token['expr'])
+        if not target.type.known:
+            target.type = value.type
+        print(f'Target: {target} -> {target.type}')
+        print(f'Value: {value} -> {value.type}')
         assign = Assign(
-            target = self.processVar(token['target']),
-            value = self.processExpr(token['expr']),
+            target = target,
+            value = value,
             namespace=self.currentNamespace,
         )
         return assign
@@ -285,7 +293,7 @@ class BaseTranspiler():
         kwargs=self.processTokens(token['kwargs'])
         for t in args + kwargs:
             self.currentScope.add(t)
-        code=self.processTokens(token['block'])
+        code=self.processTokens(token['block'], addToScope=True)
         self.currentNamespace = oldNamespace
         self.currentScope.endLocalScope()
         return Function(
@@ -318,7 +326,14 @@ class BaseTranspiler():
     def processImport(self, token):
         pass
 
-    def processTokens(self, tokens):
+    def processTokens(self, tokens, addToScope=False):
+        if addToScope:
+            processedTokens = []
+            for t in tokens:
+                processedToken = self.preprocess(t)
+                self.currentScope.add(processedToken)
+                processedTokens.append(processedToken)
+            return processedTokens
         return [self.preprocess(t) for t in tokens]
 
     def processPrint(self, token):

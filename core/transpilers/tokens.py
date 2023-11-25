@@ -59,12 +59,31 @@ class Type():
     def __eq__(self, obj):
         return hash(obj) == self.__hash__()
 
-class NativeCode():
-    def __init__(self, code):
-        self.code = Scope(code)
+class Scope():
+    beginSymbol = '{'
+    endSymbol = '}'
+    def __init__(self, obj, indent=4):
+        if not isinstance(obj, Sequence):
+            self.sequence = Sequence(obj)
+        else: 
+            self.sequence = obj
+        self.indent = ' '*indent
 
     def __repr__(self):
-        return repr(self.code)
+        return f'{self.beginSymbol}\n' + '\n'.join(
+            [self.indent + r 
+                for r in repr(self.sequence).split('\n')]
+        ) + f'\n{self.endSymbol}'
+
+    def __iter__(self):
+        return iter(self.sequence)
+
+class NativeCode():
+    def __init__(self, line):
+        self.line = line
+
+    def __repr__(self):
+        return self.line
 
 class Obj():
     def __init__(self, value='', type='', namespace='', mode='expr'):
@@ -328,25 +347,6 @@ class Sequence():
     def __iter__(self):
         return iter(self.sequence)
 
-class Scope():
-    beginSymbol = '{'
-    endSymbol = '}'
-    def __init__(self, obj, indent=4):
-        if not isinstance(obj, Sequence):
-            self.sequence = Sequence(obj)
-        else: 
-            self.sequence = obj
-        self.indent = ' '*indent
-
-    def __repr__(self):
-        return f'{self.beginSymbol}\n' + '\n'.join(
-            [self.indent + r 
-                for r in repr(self.sequence).split('\n')]
-        ) + f'\n{self.endSymbol}'
-
-    def __iter__(self):
-        return iter(self.sequence)
-
 class Assign(Obj):
     def __init__(self, target='', inMemory=False, **kwargs):
         super().__init__(**kwargs)
@@ -367,7 +367,7 @@ class Assign(Obj):
         return f'{self.target.type} {self.target}'
 
     def expression(self):
-        if self.inMemory:
+        if self.inMemory or isinstance(self.target, DotAccess):
             return f'{self.target} = {self.value}'
         else:
             return f'{self.target.type} {self.target} = {self.value}'
@@ -476,10 +476,11 @@ class Class():
         self.new.name.type = f'struct {self.name}*'
         #TODO Include new args here
         #instruction.args = Args(list(self.parameters.values()), mode='declaration')
-        self.new.code = NativeCode([
-            f'{self.type} self = malloc(sizeof({self.name}))',
-            *[f'self->{a.target} = {a.value}' for a in self.parameters.values()],
-            f'return self'
+        self.new.code = Scope([
+            NativeCode(f'{self.type} self = malloc(sizeof({self.name}))'),
+            *[NativeCode(f'self->{a.target} = {a.value}') for a in self.parameters.values()],
+            *self.new.code,
+            NativeCode(f'return self')
         ])
 
     def declarationMode(self):
