@@ -180,16 +180,29 @@ class BaseTranspiler():
         pass
 
     def processIf(self, token):
-        # TODO: Scope from ifBlock probably will leak to elif and else blocks. Separation of scopes is necessary. Reset scope for each block
+        #TODO: create context manager for localScope
+        self.currentScope.startLocalScope()
+        ifBlock = self.processTokens(token['block'], addToScope=True)
+        self.currentScope.endLocalScope()
+        elifs = []
+        if 'elifs' in token:
+            for e in token['elifs']:
+                self.currentScope.startLocalScope()
+                elifs.append(
+                    Elif(
+                        self.preprocess(e['expr']),
+                        self.processTokens(e['elifBlock'], addToScope=True)
+                    )
+                )
+                self.currentScope.endLocalScope()
+        self.currentScope.startLocalScope()
+        elseBlock = None if not 'else' in token else self.processTokens(token['else'], addToScope=True)
+        self.currentScope.endLocalScope()
         return If(
             expr = self.preprocess(token['expr']),
-            ifBlock = self.processTokens(token['block'], addToScope=True),
-            elifs = None if not 'elifs' in token else [
-                Elif(
-                    self.preprocess(e['expr']),
-                    self.processTokens(e['elifBlock'], addToScope=True))
-                        for e in token['elifs']],
-            elseBlock = None if not 'else' in token else self.processTokens(token['else']),
+            ifBlock = ifBlock,
+            elifs = elifs,
+            elseBlock = elseBlock,
         )
 
     def processWhile(self, token):
