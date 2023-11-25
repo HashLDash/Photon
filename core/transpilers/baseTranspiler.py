@@ -182,7 +182,12 @@ class BaseTranspiler():
         pass
 
     def processIf(self, token):
-        pass
+        pprint(token)
+        input()
+        return If(
+            expr = self.preprocess(token['expr']),
+            block = self.processTokens(token['block'], addToScope=True),
+        )
 
     def processWhile(self, token):
         pass

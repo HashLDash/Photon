@@ -198,10 +198,13 @@ class Expr(Obj):
     #TODO: not is not implemented
     def __init__(self, *elements, ops=None, **kwargs):
         super().__init__(**kwargs)
-        self.elements = elements
+        self.elements = list(elements)
         self.ops = ops if ops else []
         if not self.value:
             self.process()
+        else:
+            # Already processed, so it's native code
+            self.value = NativeCode(self.value)
 
     def process(self):
         ops = self.ops.copy()
@@ -502,6 +505,18 @@ class Class():
     @property
     def index(self):
         return self.name.index
+
+class If():
+    def __init__(self, expr, block):
+        self.expr = expr
+        self.block = Scope(block)
+
+    def __repr__(self):
+        return f'if ({self.expr}) {self.block}'
+
+    @property
+    def index(self):
+        return None
 
 class For():
     def __init__(self, args=None, iterable=None, code=None):
