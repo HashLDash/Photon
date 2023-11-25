@@ -35,12 +35,19 @@ class CurrentScope():
 
     def get(self, index):
         return {**self.currentScope, **self.localScope}[index]
+
+    def inMemory(self, obj):
+        try:
+            print('Checking memory')
+            a = self.get(obj.index)
+            print(f'Yep, in memory: {a}')
+            return True
+        except KeyError:
+            return False
         
     def typeOf(self, obj):
-        print(f'GET: {obj}')
-        print({**self.currentScope, **self.localScope})
         #TODO CLASS INSTANCE IS NOT BEING FOUND
-        return {**self.currentScope, **self.localScope}[obj.index].type
+        return self.get(obj).type
 
 class BaseTranspiler():
     def __init__(self, filename, target='web', module=False, standardLibs='', debug=False):
@@ -173,6 +180,7 @@ class BaseTranspiler():
             target = target,
             value = value,
             namespace=self.currentNamespace,
+            inMemory=self.currentScope.inMemory(target),
         )
         return assign
 
