@@ -47,7 +47,10 @@ class CurrentScope():
         
     def typeOf(self, obj):
         #TODO CLASS INSTANCE IS NOT BEING FOUND
-        return self.get(obj).type
+        try:
+            return self.get(obj.index).type
+        except KeyError:
+            return Type('unknown')
 
 class BaseTranspiler():
     def __init__(self, filename, target='web', module=False, standardLibs='', debug=False):
@@ -131,12 +134,12 @@ class BaseTranspiler():
         pass
 
     def processVar(self, token):
-        #print(self.currentScope)
-        input(token)
+        indexAccess = self.preprocess(token['indexAccess']) if 'indexAccess' in token else None
         var = Var(
             value=token['name'],
             type=token['type'],
             namespace=self.currentNamespace,
+            indexAccess=indexAccess,
         )
         var.type = self.typeOf(var)
         return var
@@ -175,6 +178,7 @@ class BaseTranspiler():
         target = self.preprocess(token['target'])
         value = self.preprocess(token['expr'])
         if not target.type.known:
+            print(f'Infering type from expr {target} {target.type} {self.typeOf(target)}')
             target.type = value.type
         assign = Assign(
             target = target,

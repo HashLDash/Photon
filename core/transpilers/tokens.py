@@ -161,6 +161,11 @@ class String(Obj):
 
 class Var(Obj):
     imports = []
+    def __init__(self, *args, indexAccess=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.indexAccess = indexAccess
+        self.prepare()
+
     def prepare(self):
         if self.namespace:
             self.name = f'{self.namespace}__{self.value}'
@@ -177,13 +182,20 @@ class Var(Obj):
         return self.name
 
     def expression(self):
+        if self.indexAccess:
+            if self.type.type == 'array':
+                return f'list_{self.elementType.type}_get({self.name}, {indexAccess})'
+            if self.type.type == 'map':
+                return f'dict_{self.type.keyType.type}_{self.type.valType.type}_get({self.name}, {self.indexAccess})'
+            else:
+                return f'{self.name}[{self.indexAccess}]'
         return self.name
 
     def types(self):
         return f'{self.type}'
 
     def __hash__(self):
-        return hash(self.namespace+self.value)
+        return hash(self.namespace+self.name)
 
     @property
     def index(self):
@@ -372,6 +384,13 @@ class Assign(Obj):
 
     def expression(self):
         if self.inMemory or isinstance(self.target, DotAccess):
+            if self.target.indexAccess:
+                if self.target.type.type == 'array':
+                    return f'list_{self.target.type.elementType}_set({self.target.name}, {self.target.indexAccess}, {self.value})'
+                if self.target.type.type == 'map':
+                    return f'dict_{self.type.keyType.type}_{self.type.valType.type}_set({self.target.name}, {self.target.indexAccess}, {self.value})'
+                else:
+                    return f'{self.target.name}[{self.indexAccess}] = {self.value}'
             return f'{self.target} = {self.value}'
         else:
             return f'{self.target.type} {self.target} = {self.value}'
