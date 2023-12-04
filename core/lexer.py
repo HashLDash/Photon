@@ -264,6 +264,7 @@ def typeDeclaration(i, t):
         t[i]['size'] = 'unknown'
     for _ in range(n):
         del t[i+1] # type and var types
+    print('DECLARATIONNNNNNNN', t)
     return t
 
 def floatNumber(i, t):
@@ -299,6 +300,7 @@ def convertToExpr(token):
             varType = 'float'
         return {'token':'expr', 'type':varType, 'args':[token], 'ops':[]}
     elif token['token'] in {'var','group','inputFunc', 'call', 'array', 'dotAccess', 'map'}:
+        print('TOKEEEEEEEEEEEEEEEENNN', token)
         return {'token':'expr', 'type':token['type'], 'args':[token], 'ops':[]}
     else:
         raise SyntaxError(f'Cant convert token {token} to expr')

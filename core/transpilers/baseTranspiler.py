@@ -115,7 +115,7 @@ class BaseTranspiler():
                 self.currentScope.add(processedToken)
                 self.sequence.add(processedToken)
 
-    def preprocess(self, token, inferType=True):
+    def preprocess(self, token):
         processedToken = self.instructions[token['token']](token)
         return processedToken
 
@@ -137,11 +137,14 @@ class BaseTranspiler():
         indexAccess = self.preprocess(token['indexAccess']) if 'indexAccess' in token else None
         var = Var(
             value=token['name'],
-            type=token['type'],
+            type=Type(**token),
             namespace=self.currentNamespace,
             indexAccess=indexAccess,
         )
-        var.type = self.typeOf(var)
+        print('VAR TYPEEE', var.type)
+        if not var.type.known:
+            var.type = self.typeOf(var)
+        print('VAR TYPEEE', var.type)
         return var
 
     def processArray(self, token):
@@ -177,15 +180,26 @@ class BaseTranspiler():
     def processAssign(self, token):
         target = self.preprocess(token['target'])
         value = self.preprocess(token['expr'])
+        inMemory = self.currentScope.inMemory(target)
+        if inMemory:
+            target.type = self.typeOf(target)
+
         if not target.type.known:
             print(f'Infering type from expr {target} {target.type} {self.typeOf(target)}')
             target.type = value.type
+        if not value.type.known:
+            print(f'Infering type from target {target} {target.type} {self.typeOf(target)}')
+            value.type = target.type
         assign = Assign(
             target = target,
             value = value,
             namespace=self.currentNamespace,
-            inMemory=self.currentScope.inMemory(target),
+            inMemory=inMemory,
         )
+        value.prepare()
+        print('IMPORTSSSS', value.imports)
+        for i in value.imports:
+            self.imports.add(i)
         return assign
 
     def processAugAssign(self, token):

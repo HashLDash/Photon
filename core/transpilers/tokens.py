@@ -12,27 +12,37 @@ class Type():
         '':'void',
         'obj':'obj',
     }
-    def __init__(self, type, elementType='', keyType='', valType=''):
-        self.type = type if isinstance(type, str) else type.type
-        self.elementType = elementType
-        self.keyType = keyType
-        self.valType = valType
-        
-        if self.type == 'array' and self.isKnown(self.elementType):
-            self.known = True
-        elif self.type == 'map' and self.isKnown(self.valType) and self.isKnown(self.keyType):
-            self.known = True
-        elif self.isKnown(self.type):
-            self.known = True
+    def __init__(self, type, elementType='', keyType='', valType='', **kwargs):
+        if isinstance(type, Type):
+            self.type = type.type
+            self.elementType = type.elementType
+            self.keyType = type.keyType
+            self.valType = type.valType
         else:
-            self.known = False
+            self.type = type if isinstance(type, str) else type.type
+            self.elementType = elementType
+            self.keyType = keyType
+            self.valType = valType
 
-        if self.known and self.type in self.nativeTypes:
-            self.isClass = False
-        elif self.known and not self.type in self.nativeTypes:
-            self.isClass = True
+    @property
+    def known(self):
+        if self.type == 'array' and self.isKnown(self.elementType):
+            return True
+        elif self.type == 'map' and self.isKnown(self.valType) and self.isKnown(self.keyType):
+            return True
+        elif self.type not in ['array', 'map'] and self.isKnown(self.type):
+            return True
         else:
-            self.isClass = False
+            return False
+    
+    @property
+    def isClass(self):
+        if self.known and self.type in self.nativeTypes:
+            return False
+        elif self.known and not self.type in self.nativeTypes:
+            return True
+        else:
+            return False
 
     def isKnown(self, type):
         if type not in ['unknown', '']:
@@ -80,8 +90,12 @@ class Scope():
         return iter(self.sequence)
 
 class NativeCode():
+    imports = []
     def __init__(self, line):
         self.line = line
+
+    def prepare(self):
+        pass
 
     def __repr__(self):
         return self.line
@@ -92,6 +106,7 @@ class Obj():
         self.type = Type(type)
         self.namespace = namespace
         self.mode = mode
+        self.imports = []
 
     def prepare(self):
         pass
@@ -219,6 +234,12 @@ class Expr(Obj):
             # Already processed, so it's native code
             self.value = NativeCode(self.value)
 
+    def prepare(self):
+        self.value.mode = self.mode
+        self.value.type = self.type
+        self.value.prepare()
+        self.imports = self.value.imports
+
     def process(self):
         ops = self.ops.copy()
         elements = deepcopy(self.elements)
@@ -253,7 +274,9 @@ class Expr(Obj):
         return Expr(value=f'{arg1} {op} {arg2}', type=t)
 
     def __repr__(self):
-        self.value.mode = self.mode
+        self.prepare()
+        #self.value.mode = self.mode
+        #self.value.type = self.type
         return repr(self.value)
 
     @property
@@ -263,10 +286,15 @@ class Expr(Obj):
         return super().index
 
 class DotAccess():
+    imports = []
     def __init__(self, chain=None, namespace=''):
         self.chain = chain
         self.chain[0].namespace = namespace
         self.type = chain[-1].type
+        self.indexAccess = None
+
+    def prepare(self):
+        pass
 
     def __repr__(self):
         return '->'.join([repr(c) for c in self.chain])
@@ -281,8 +309,16 @@ class Array():
         self.elementType = elementType
         if not self.elementType:
             self.inferType()
-            self.imports = [f'#include "list_{self.elementType}.h"']
         self.type = Type('array', elementType=self.elementType)
+        self.prepare()
+
+    def prepare(self):
+        print('PREPARE', self.type)
+        self.elementType = self.type.elementType
+        if self.elementType not in ['unknown', '']:
+            self.imports = [f'#include "list_{self.elementType}.h"']
+        else:
+            self.imports = []
 
     def inferType(self):
         types = set()
@@ -291,13 +327,16 @@ class Array():
         if len(types) == 1:
             self.elementType = element.type.type
         elif types == {Type('int'), Type('float')}:
-            self.elementType = Type('float')
+            self.elementType = 'float'
         else:
-            self.elementType = Type('unknown')
+            self.elementType = 'unknown'
         
     def __repr__(self):
+        self.prepare()
         size = 8 if (l:=len(self.elements)) < 8 else self.len
-        return f'list_{self.elementType}_constructor({l}, {size}, ' + ','.join([repr(e) for e in self.elements])+')'
+        if self.elements:
+            return f'list_{self.elementType}_constructor({l}, {size}, ' + ','.join([repr(e) for e in self.elements])+')'
+        return f'list_{self.elementType}_constructor({l}, {size})'
 
 class KeyVal():
     def __init__(self, key='', val=''):
@@ -316,6 +355,9 @@ class Map():
             self.inferType()
             self.imports = [f'#include "dict_{self.keyType.type}_{self.valType.type}.h"']
         self.type = Type('map', keyType=self.keyType, valType=self.valType)
+    
+    def prepare(self):
+        pass
 
     def inferType(self):
         keyTypes = set()
@@ -368,12 +410,7 @@ class Assign(Obj):
         super().__init__(**kwargs)
         self.target = target
         self.inMemory = inMemory
-        if self.target.type.known:
-            self.type = self.target.type
-        elif self.value.type.known:
-            self.type = self.value.type
-            self.target.type = self.type
-
+        self.type = self.target.type
         if self.type != self.value.type:
             #TODO: cast value
             print(f'cast {self.value.type} to {self.type}')
@@ -560,7 +597,6 @@ class For():
         self.args = Args(args)
         self.iterable = iterable
         self.code = Scope(code)
-        print(iterable)
 
     def __repr__(self):
         if isinstance(self.iterable, Range):
