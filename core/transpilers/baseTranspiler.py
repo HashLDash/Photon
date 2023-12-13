@@ -149,21 +149,62 @@ class BaseTranspiler():
         return var
 
     def processArray(self, token):
+        def inferType():
+            types = set()
+            for element in elements:
+                types.add(element.type.type)
+            if len(types) == 1:
+                elementType = element.type.type
+            elif types == {Type('int'), Type('float')}:
+                elementType = 'float'
+            else:
+                elementType = 'unknown'
+            return Type('array', elementType=elementType)
+
+        elements = self.processTokens(token['elements'])
+        arrayType = Type(**token)
+        if not arrayType.known:
+            arrayType = inferType()
         array = Array(
-            *self.processTokens(token['elements'])
+            *elements,
+            type=arrayType,
         )
         for i in array.imports:
             self.imports.add(i)
-        self.listTypes.add(array.elementType)
+        self.listTypes.add(array.type.elementType.type)
         return array
 
     def processMap(self, token):
+        def inferType():
+            keyTypes = set()
+            valTypes = set()
+            for keyVal in keyVals:
+                keyTypes.add(keyVal.key.type)
+                valTypes.add(keyVal.val.type)
+            if len(keyTypes) == 0:
+                return Type('map')
+            if len(keyTypes) == 1:
+                keyType = keyVal.key.type
+            else:
+                raise NotImplemented('Keys of different types not implemented yet')
+            if len(valTypes) == 1:
+                valType = keyVal.val.type
+            else:
+                raise NotImplemented('Vals of different types not implemented yet')
+            return Type('map', keyType=keyType, valType=valType)
+
+        keyVals = self.processTokens(token['elements'])
+        mapType = Type(**token)
+        if not mapType.known:
+            mapType = inferType()
         obj = Map(
-            *self.processTokens(token['elements'])
+            *keyVals,
+            type=mapType,
         )
         for i in obj.imports:
             self.imports.add(i)
-        self.dictTypes.add((obj.keyType.type, obj.valType.type))
+        if obj.type.known:
+            self.dictTypes.add((obj.type.keyType.type, obj.type.valType.type))
         return obj
 
     def processKeyVal(self, token):

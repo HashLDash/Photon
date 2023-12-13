@@ -12,17 +12,17 @@ class Type():
         '':'void',
         'obj':'obj',
     }
-    def __init__(self, type, elementType='', keyType='', valType='', **kwargs):
+    def __init__(self, type, elementType=None, keyType=None, valType=None, **kwargs):
         if isinstance(type, Type):
             self.type = type.type
             self.elementType = type.elementType
             self.keyType = type.keyType
             self.valType = type.valType
         else:
-            self.type = type if isinstance(type, str) else type.type
-            self.elementType = elementType
-            self.keyType = keyType
-            self.valType = valType
+            self.type = type if type is not None else 'unknown'
+            self.elementType = Type(elementType) if self.isKnown(self.type) else 'unknown'
+            self.keyType = Type(keyType) if self.isKnown(self.type) else 'unknown'
+            self.valType = Type(valType) if self.isKnown(self.type) else 'unknown'
 
     @property
     def known(self):
@@ -45,6 +45,8 @@ class Type():
             return False
 
     def isKnown(self, type):
+        if isinstance(type, Type):
+            return type.known
         if type not in ['unknown', '']:
             return True
         return False
@@ -54,7 +56,7 @@ class Type():
 
     def __repr__(self):
         if self.type == 'array':
-            return f'list_{self.elementType}*'
+            return f'list_{self.elementType.type}*'
         elif self.type == 'map':
             return f'dict_{self.keyType.type}_{self.valType.type}*'
         elif self.type in self.nativeTypes:
@@ -325,39 +327,23 @@ class Return():
         return None
 
 class Array():
-    def __init__(self, *elements, elementType=''):
+    def __init__(self, *elements, type=None):
         self.elements = elements
-        self.elementType = elementType
-        if not self.elementType:
-            self.inferType()
-        self.type = Type('array', elementType=self.elementType)
+        self.type = type
         self.prepare()
 
     def prepare(self):
-        print('PREPARE', self.type)
-        self.elementType = self.type.elementType
-        if self.elementType not in ['unknown', '']:
-            self.imports = [f'#include "list_{self.elementType}.h"']
+        if self.type.known:
+            self.imports = [f'#include "list_{self.type.elementType.type}.h"']
         else:
             self.imports = []
 
-    def inferType(self):
-        types = set()
-        for element in self.elements:
-            types.add(element.type.type)
-        if len(types) == 1:
-            self.elementType = element.type.type
-        elif types == {Type('int'), Type('float')}:
-            self.elementType = 'float'
-        else:
-            self.elementType = 'unknown'
-        
     def __repr__(self):
         self.prepare()
         size = 8 if (l:=len(self.elements)) < 8 else self.len
         if self.elements:
-            return f'list_{self.elementType}_constructor({l}, {size}, ' + ','.join([repr(e) for e in self.elements])+')'
-        return f'list_{self.elementType}_constructor({l}, {size})'
+            return f'list_{self.type.elementType.type}_constructor({l}, {size}, ' + ','.join([repr(e) for e in self.elements])+')'
+        return f'list_{self.type.elementType.type}_constructor({l}, {size})'
 
 class KeyVal():
     def __init__(self, key='', val=''):
@@ -368,35 +354,23 @@ class KeyVal():
         return f'{self.key},{self.val}'
 
 class Map():
-    def __init__(self, *keyVals, keyType='', valType=''):
+    def __init__(self, *keyVals, type=None):
         self.keyVals = keyVals
-        self.keyType = keyType
-        self.valType = valType
-        if not self.keyType or not self.valType:
-            self.inferType()
-            self.imports = [f'#include "dict_{self.keyType.type}_{self.valType.type}.h"']
-        self.type = Type('map', keyType=self.keyType, valType=self.valType)
+        self.type = type
+        self.prepare()
     
     def prepare(self):
-        pass
+        print(self.type)
+        if self.type.known:
+            self.imports = [f'#include "dict_{self.type.keyType.type}_{self.type.valType.type}.h"']
+        else:
+            self.imports = []
 
-    def inferType(self):
-        keyTypes = set()
-        valTypes = set()
-        for keyVal in self.keyVals:
-            keyTypes.add(keyVal.key.type)
-            valTypes.add(keyVal.val.type)
-        if len(keyTypes) == 1:
-            self.keyType = keyVal.key.type
-        else:
-            raise NotImplemented('Keys of different types not implemented yet')
-        if len(valTypes) == 1:
-            self.valType = keyVal.val.type
-        else:
-            raise NotImplemented('Vals of different types not implemented yet')
-        
     def __repr__(self):
-        return f'dict_{self.keyType.type}_{self.valType.type}_constructor({len(self.keyVals)},{len(self.keyVals)},' + ', '.join([repr(kv) for kv in self.keyVals])+')'
+        self.prepare()
+        if self.keyVals:
+            return f'dict_{self.type.keyType.type}_{self.type.valType.type}_constructor({len(self.keyVals)},{len(self.keyVals)},' + ', '.join([repr(kv) for kv in self.keyVals])+')'
+        return f'dict_{self.type.keyType.type}_{self.type.valType.type}_constructor({len(self.keyVals)},{len(self.keyVals)})'
 
 # Representation Types
 
