@@ -275,8 +275,6 @@ class Expr(Obj):
 
     def __repr__(self):
         self.prepare()
-        #self.value.mode = self.mode
-        #self.value.type = self.type
         return repr(self.value)
 
     @property
@@ -297,7 +295,18 @@ class DotAccess():
         pass
 
     def __repr__(self):
-        return '->'.join([repr(c) for c in self.chain])
+        chain = [repr(self.chain[0])]
+        currentType = self.chain[0].type
+        for n, c in enumerate(self.chain[1:]):
+            if currentType.isClass and isinstance(c, Call):
+                chain[n-1] = currentType.type
+                chain.append('_')
+                chain.append(repr(c))
+            else:
+                chain.append('->')
+                chain.append(repr(c))
+            currentType = c.type
+        return ''.join(chain)
 
     @property
     def index(self):

@@ -305,13 +305,18 @@ class BaseTranspiler():
         chain[0].type = initialType
         currentType = initialType
         for c in chain:
+            print(f'Chaining {c}')
             if currentType.isClass:
                 scope = self.currentScope.get(initialType.type).__dict__
                 if c.index in scope['parameters']:
+                    print('parameter')
                     c.type = scope['parameters'][c.index].type
-                else:
-                    pass
-                    #TODO check methods too
+                elif isinstance(c, Call):
+                    methodIndex = f'{currentType.type}_{c.name}'
+                    if methodIndex in scope['methods']:
+                        c.type = scope['methods'][methodIndex].type
+                        print(f'ITS A METHODDDDDDDDDDDDDDDDDDDdd with type {c.type}')
+            currentType = c.type
         for c in chain:
             print(c.type)
         input('Correct?')
