@@ -312,6 +312,18 @@ class DotAccess():
     def index(self):
         return None
 
+class Return():
+    def __init__(self, expr=None):
+        self.expr = expr
+        self.type = expr.type
+
+    def __repr__(self):
+        return f'return {self.expr}'
+
+    @property
+    def index(self):
+        return None
+
 class Array():
     def __init__(self, *elements, elementType=''):
         self.elements = elements
@@ -500,6 +512,7 @@ class Function(Obj):
     def __init__(self, name='', args='', kwargs='', code='', **defaults):
         super().__init__(**defaults)
         self.name = name
+        self.type = name.type
         self.args = Args(args, mode='declaration')
         self.kwargs = Kwargs(kwargs, mode='declaration')
         self.code = Scope(code)

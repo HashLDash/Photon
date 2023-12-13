@@ -89,6 +89,7 @@ class BaseTranspiler():
             'keyVal': self.processKeyVal,
             'dotAccess': self.processDotAccess,
             'range': self.processRange,
+            'return': self.processReturn,
         }
 
         self.sequence = Sequence()
@@ -348,10 +349,22 @@ class BaseTranspiler():
         code=self.processTokens(token['block'], addToScope=True)
         self.currentNamespace = oldNamespace
         self.currentScope.endLocalScope()
+        returnType = Type(token['type'])
+        if not returnType.known:
+            print('infering function returnType')
+            types = []
+            for t in code:
+                if isinstance(t, Return):
+                    types.append(t.type.type)
+            if len(set(types)) == 1:
+                returnType = Type(types[0])
+            elif len(set(types)) == 2 and 'int' in types and 'float' in types:
+                returnType = Type('float')
+        print(f'Return type is {returnType}') 
         return Function(
             name=Var(
                 token['name'],
-                type=token['type'],
+                type=returnType,
                 namespace=self.currentNamespace,
             ),
             args=args,
@@ -367,7 +380,10 @@ class BaseTranspiler():
         )
 
     def processReturn(self, token):
-        pass
+        input(token)
+        return Return(
+            expr=self.preprocess(token['expr'])
+        )
 
     def processBreak(self, token):
         pass
