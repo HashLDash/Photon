@@ -139,6 +139,10 @@ class Obj():
     def index(self):
         return None
 
+class Bool(Obj):
+    def __repr__(self):
+        return '1' if self.value == 'true' else '0'
+
 class Num(Obj):
     def __repr__(self):
         return str(self.value)
@@ -607,6 +611,18 @@ class If():
 
     def __repr__(self):
         return f'if ({self.expr}) {self.ifBlock} {"".join(repr(e) for e in self.elifs)} {self.elseBlock}'
+
+    @property
+    def index(self):
+        return None
+
+class While():
+    def __init__(self, expr, block=None):
+        self.expr = expr
+        self.block = Scope(block)
+
+    def __repr__(self):
+        return f'while ({self.expr}) {self.block}'
 
     @property
     def index(self):

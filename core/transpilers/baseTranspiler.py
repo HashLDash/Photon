@@ -90,6 +90,7 @@ class BaseTranspiler():
             'dotAccess': self.processDotAccess,
             'range': self.processRange,
             'return': self.processReturn,
+            'bool': self.processBool,
         }
 
         self.sequence = Sequence()
@@ -122,6 +123,9 @@ class BaseTranspiler():
 
     def processNum(self, token):
         return Num(value=token['value'], type=token['type'])
+
+    def processBool(self, token):
+        return Bool(value=token['value'])
 
     def processString(self, token):
         for i in String.imports:
@@ -276,7 +280,11 @@ class BaseTranspiler():
         )
 
     def processWhile(self, token):
-        pass
+        input(token)
+        return While(
+            expr=self.preprocess(token['expr']),
+            block=self.processTokens(token['block'])
+        )
 
     def processFor(self, token):
         iterable = self.preprocess(token['iterable'])
