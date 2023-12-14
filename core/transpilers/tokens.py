@@ -674,6 +674,21 @@ class Range():
         else:
             self.type = Type('float')
 
+class AugAssign():
+    def __init__(self, target=None, expr=None, operator=None):
+        self.target = target
+        self.expr = expr
+        self.operator = operator
+
+    def __repr__(self):
+        if self.operator in ['+','-','*','/','%','&']:
+            return f'{self.target} {self.operator}= {self.expr}'
+        raise NotImplemented('operator not implemented')
+
+    @property
+    def index(self):
+        return None
+
 if __name__ == '__main__':
     pass
     #print(

@@ -251,7 +251,12 @@ class BaseTranspiler():
         return assign
 
     def processAugAssign(self, token):
-        pass
+        input(token)
+        return AugAssign(
+            target=self.preprocess(token['target']),
+            expr=self.preprocess(token['expr']),
+            operator=token['operator']
+        )
 
     def processIf(self, token):
         #TODO: create context manager for localScope
