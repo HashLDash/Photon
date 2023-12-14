@@ -388,6 +388,14 @@ class Input():
     def index(self):
         return None
 
+class Break():
+    def __repr__(self):
+        return f'break'
+
+    @property
+    def index(self):
+        return None
+
 # Representation Types
 
 class Sequence():

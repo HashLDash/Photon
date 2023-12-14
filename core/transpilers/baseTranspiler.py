@@ -278,9 +278,6 @@ class BaseTranspiler():
     def processWhile(self, token):
         pass
 
-    def processRange(self, token):
-        pass
-
     def processFor(self, token):
         iterable = self.preprocess(token['iterable'])
         self.currentScope.startLocalScope()
@@ -429,7 +426,7 @@ class BaseTranspiler():
         )
 
     def processBreak(self, token):
-        pass
+        return Break()
 
     def processComment(self, token):
         pass
