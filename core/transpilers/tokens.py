@@ -372,6 +372,22 @@ class Map():
             return f'dict_{self.type.keyType.type}_{self.type.valType.type}_constructor({len(self.keyVals)},{len(self.keyVals)},' + ', '.join([repr(kv) for kv in self.keyVals])+')'
         return f'dict_{self.type.keyType.type}_{self.type.valType.type}_constructor({len(self.keyVals)},{len(self.keyVals)})'
 
+class Input():
+    def __init__(self, expr=None):
+        self.expr = expr
+        self.imports = ['#include "photonInput.h"']
+        self.type = Type('str')
+
+    def prepare(self):
+        pass
+
+    def __repr__(self):
+        return f'photonInput({self.expr})'
+
+    @property
+    def index(self):
+        return None
+
 # Representation Types
 
 class Sequence():

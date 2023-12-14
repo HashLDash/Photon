@@ -132,7 +132,9 @@ class BaseTranspiler():
         )
 
     def processInput(self, token):
-        pass
+        return Input(
+            expr=self.preprocess(token['expr']),
+        )
 
     def processVar(self, token):
         indexAccess = self.preprocess(token['indexAccess']) if 'indexAccess' in token else None

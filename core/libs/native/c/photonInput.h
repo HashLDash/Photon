@@ -4,8 +4,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-char *photonInput()
+char *photonInput(char* message)
 {
+    printf(message);
     int c;
     size_t size = 5;
     size_t read_size = 0;
