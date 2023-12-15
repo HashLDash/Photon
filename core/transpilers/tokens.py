@@ -411,6 +411,11 @@ class Sequence():
     def add(self, obj):
         self.sequence.append(obj)
 
+    def __add__(self, sequence):
+        if isinstance(sequence, Sequence):
+            return Sequence(self.sequence + sequence.sequence)
+        raise ValueError(f'Object of type {type(sequence)} cannot be added to Sequence.')
+
     def __repr__(self):
         representation = ''
         for obj in self.sequence:

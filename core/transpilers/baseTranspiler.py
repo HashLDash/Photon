@@ -27,6 +27,10 @@ class CurrentScope():
             else:
                 self.currentScope[token.index] = token
 
+    def update(self, scope):
+        self.currentScope.update(scope.currentScope)
+        self.localScope.update(scope.localScope)
+
     def __repr__(self):
         s = 'SCOPE DUMP\n'
         for i, t in {**self.currentScope, **self.localScope}.items():
@@ -436,7 +440,6 @@ class BaseTranspiler():
         )
 
     def processReturn(self, token):
-        input(token)
         return Return(
             expr=self.preprocess(token['expr'])
         )
@@ -448,7 +451,49 @@ class BaseTranspiler():
         pass
 
     def processImport(self, token):
-        pass
+        #TODO: relative path and package imports
+        folder = None
+        self.oldNamespace = self.currentNamespace
+        self.currentNamespace = ''
+        packageName = self.preprocess(token['expr'])
+        self.currentNamespace = self.oldNamespace
+        print(f'Package is {packageName} of type {type(packageName)}')
+        name = packageName
+        print(f'Importing {name}')
+        if f"{name}.w" in os.listdir(folder) + os.listdir(self.standardLibs):
+            if f"{name}.w" in os.listdir(self.standardLibs):
+                # Photon module import
+                # Inject assets folder
+                raise SyntaxError('Standard lib import not implemented yet.')
+            else:
+                # Local module import
+                filename = f'{name}.w'
+            interpreter = Interpreter(
+                    filename=filename,
+                    lang=self.lang,
+                    target=self.target,
+                    module=True,
+                    standardLibs=self.standardLibs,
+                    transpileOnly=True,
+                    debug=self.debug)
+            interpreter.run()
+            self.classes.update(interpreter.engine.classes)
+            self.currentScope.update(interpreter.engine.currentScope)
+            self.imports = self.imports.union(interpreter.engine.imports)
+            self.links = self.links.union(interpreter.engine.links)
+            self.outOfMain += interpreter.engine.outOfMain
+            self.source += interpreter.engine.source
+            self.header += interpreter.engine.header
+            self.sequence = self.sequence + interpreter.engine.sequence
+        elif f"{name}.{self.libExtension}" in os.listdir(self.standardLibs + f'/native/{self.lang}/'):
+            # Native Photon lib module import
+            raise SyntaxError('Native Photon lib module import not implemented yet.')
+        elif f"{name}.{self.libExtension}" in os.listdir():
+            # Native Photon local module import
+            raise SyntaxError('Native Photon local module import not implemented yet.')
+        else:
+            # System library import
+            raise SyntaxError('System library import not implemented yet.')
 
     def processTokens(self, tokens, addToScope=False):
         if addToScope:
