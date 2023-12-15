@@ -382,6 +382,12 @@ class BaseTranspiler():
                     if methodIndex in scope['methods']:
                         c.type = scope['methods'][methodIndex].type
                         print(f'ITS A METHODDDDDDDDDDDDDDDDDDDdd with type {c.type}')
+            elif currentType.type == 'map': #TODO: Make this part of the token class
+                if f'{c}' == 'len':
+                    c.type = Type('int')
+            elif currentType.type == 'array': #TODO: Make this part of the token class
+                if f'{c}' == 'len':
+                    c.type = Type('int')
             currentType = c.type
         for c in chain:
             print(c.type)
