@@ -492,7 +492,7 @@ class Assign(Obj):
                 if self.target.type.type == 'map':
                     return f'dict_{self.type.keyType.type}_{self.type.valType.type}_set({self.target.name}, {self.target.indexAccess}, {self.value})'
                 else:
-                    return f'{self.target.name}[{self.indexAccess}] = {self.value}'
+                    return f'{self.target.name}[{self.target.indexAccess}] = {self.value}'
             return f'{self.target} = {self.value}'
         else:
             return f'{self.target.type} {self.target} = {self.value}'
