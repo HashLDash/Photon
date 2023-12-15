@@ -39,7 +39,7 @@ class Type():
     def isClass(self):
         if self.known and self.type in self.nativeTypes:
             return False
-        elif self.known and not self.type in self.nativeTypes:
+        elif self.known and not self.type in self.nativeTypes and self.type not in ['array', 'map']:
             return True
         else:
             return False
@@ -364,7 +364,6 @@ class Map():
         self.prepare()
     
     def prepare(self):
-        print(self.type)
         if self.type.known:
             self.imports = [f'#include "dict_{self.type.keyType.type}_{self.type.valType.type}.h"']
         else:
@@ -453,20 +452,24 @@ class Cast():
         }
     }
 
-    def __init__(self, expr, castFrom, castTo):
+    def __init__(self, expr, castTo):
         self.expr = expr
-        self.castFrom = castFrom
         self.castTo = castTo
-        self.type = self.castTo
+        self.type = self.expr.type
 
     def __repr__(self):
+        castFrom = self.expr.type.type
+        castTo = self.castTo.type
+        if castTo == 'map':
+            castTo = self.castTo.valType.type
+        if castTo == 'array':
+            castTo = self.castTo.elementType.type
         try:
-            if self.castTo.type != self.castFrom.type:
-                return self.conversion[self.castTo.type][self.castFrom.type].format(self=self)
-            else:
-                return repr(self.expr)
+            if castTo != castFrom:
+                return self.conversion[castTo][castFrom].format(self=self)
+            return repr(self.expr)
         except KeyError as e:
-            raise SyntaxError(f'Cast not implemented for type {self.castTo.type} from {self.castFrom.type} {e}')
+            raise SyntaxError(f'Cast not implemented for type {self.castTo.type} from {self.expr.type.type} {e}')
 
 class Assign(Obj):
     def __init__(self, target='', inMemory=False, cast=None, **kwargs):
@@ -481,7 +484,7 @@ class Assign(Obj):
 
     def expression(self):
         if self.cast is not None:
-            self.value = Cast(self.value, self.value.type, self.cast)
+            self.value = Cast(self.value, self.cast)
         if self.inMemory or isinstance(self.target, DotAccess):
             if self.target.indexAccess:
                 if self.target.type.type == 'array':
