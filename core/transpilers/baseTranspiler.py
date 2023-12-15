@@ -236,6 +236,10 @@ class BaseTranspiler():
         if inMemory:
             target.type = self.typeOf(target)
 
+        if target.type.known and value.type.known:
+            cast = target.type
+        else:
+            cast = None
         if not target.type.known:
             print(f'Infering type from expr {target} {target.type} {self.typeOf(target)}')
             target.type = value.type
@@ -243,10 +247,11 @@ class BaseTranspiler():
             print(f'Infering type from target {target} {target.type} {self.typeOf(target)}')
             value.type = target.type
         assign = Assign(
-            target = target,
-            value = value,
+            target=target,
+            value=value,
             namespace=self.currentNamespace,
             inMemory=inMemory,
+            cast=cast,
         )
         value.prepare()
         for i in value.imports:

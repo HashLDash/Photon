@@ -437,21 +437,51 @@ class Sequence():
     def index(self):
         return None
 
+class Cast():
+    conversion = {
+        'int':{
+            'str': 'strtol({self.expr}, NULL, 10)',
+            'float': '(long)({self.expr})',
+        },
+        'float':{
+            'str': 'strtod({self.expr}, NULL)',
+            'int': '(double)({self.expr})',
+        },
+        'str':{
+            'int': '__photon_format_str("%ld", {self.expr})',
+            'float': '__photon_format_str("%lf", {self.expr})',
+        }
+    }
+
+    def __init__(self, expr, castFrom, castTo):
+        self.expr = expr
+        self.castFrom = castFrom
+        self.castTo = castTo
+        self.type = self.castTo
+
+    def __repr__(self):
+        try:
+            if self.castTo.type != self.castFrom.type:
+                return self.conversion[self.castTo.type][self.castFrom.type].format(self=self)
+            else:
+                return repr(self.expr)
+        except KeyError as e:
+            raise SyntaxError(f'Cast not implemented for type {self.castTo.type} from {self.castFrom.type} {e}')
+
 class Assign(Obj):
-    def __init__(self, target='', inMemory=False, **kwargs):
+    def __init__(self, target='', inMemory=False, cast=None, **kwargs):
         super().__init__(**kwargs)
         self.target = target
         self.inMemory = inMemory
         self.type = self.target.type
-        if self.type != self.value.type:
-            #TODO: cast value
-            print(f'cast {self.value.type} to {self.type}')
-            pass
+        self.cast = cast
 
     def declaration(self):
         return f'{self.target.type} {self.target}'
 
     def expression(self):
+        if self.cast is not None:
+            self.value = Cast(self.value, self.value.type, self.cast)
         if self.inMemory or isinstance(self.target, DotAccess):
             if self.target.indexAccess:
                 if self.target.type.type == 'array':
