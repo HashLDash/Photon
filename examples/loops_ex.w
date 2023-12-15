@@ -7,8 +7,9 @@ for i in 0..5:
 # Separate output with a new line
 print()
 
+i = 5
 # WHILE iteration structure
-# The `i` variable that was previously defined in the FOR loop will now be decremented by 1 in 1 within the WHILE loop.
+
 while i >= 0:
     print("While: {i}")
     i = i - 1

@@ -514,7 +514,6 @@ class BaseTranspiler():
             'map': '%s',
         }
         args = self.processTokens(token['args'])
-        input(f'Arg is {self.typeOf(args[0])}')
         template = String(value='"'+" ".join([formats[self.typeOf(arg).type] for arg in args])+'\\n"')
         args.insert(0, template)
         for arg in args:
