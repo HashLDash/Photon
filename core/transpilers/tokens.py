@@ -428,6 +428,10 @@ class Sequence():
     def __iter__(self):
         return iter(self.sequence)
 
+    @property
+    def index(self):
+        return None
+
 class Assign(Obj):
     def __init__(self, target='', inMemory=False, **kwargs):
         super().__init__(**kwargs)

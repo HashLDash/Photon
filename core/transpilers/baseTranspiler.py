@@ -245,13 +245,11 @@ class BaseTranspiler():
             inMemory=inMemory,
         )
         value.prepare()
-        print('IMPORTSSSS', value.imports)
         for i in value.imports:
             self.imports.add(i)
         return assign
 
     def processAugAssign(self, token):
-        input(token)
         return AugAssign(
             target=self.preprocess(token['target']),
             expr=self.preprocess(token['expr']),
@@ -338,7 +336,12 @@ class BaseTranspiler():
         )
 
     def processForTarget(self, token):
-        pass
+        target = token['target'].lower()
+        if target in [self.lang, self.target]:
+            block = self.processTokens(token['block'])
+        else:
+            block = []
+        return Sequence(block)
 
     def processCall(self, token, className=None):
         callType = self.preprocess(token['name']).type
