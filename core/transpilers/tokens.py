@@ -338,13 +338,15 @@ class Array():
 
     def prepare(self):
         if self.type.known:
-            self.imports = [f'#include "list_{self.type.elementType.type}.h"']
+            self.imports = [
+                f'#include "list_{self.type.elementType.type}.h"',
+                '#include "asprintf.h"']
         else:
             self.imports = []
 
     def __repr__(self):
         self.prepare()
-        size = 8 if (l:=len(self.elements)) < 8 else self.len
+        size = 8 if (l:=len(self.elements)) < 8 else l
         if self.elements:
             return f'list_{self.type.elementType.type}_constructor({l}, {size}, ' + ','.join([repr(e) for e in self.elements])+')'
         return f'list_{self.type.elementType.type}_constructor({l}, {size})'
@@ -365,15 +367,18 @@ class Map():
     
     def prepare(self):
         if self.type.known:
-            self.imports = [f'#include "dict_{self.type.keyType.type}_{self.type.valType.type}.h"']
+            self.imports = [
+                f'#include "dict_{self.type.keyType.type}_{self.type.valType.type}.h"',
+                '#include "asprintf.h"']
         else:
             self.imports = []
 
     def __repr__(self):
         self.prepare()
+        size = 8 if (l:=len(self.keyVals)) < 8 else l
         if self.keyVals:
-            return f'dict_{self.type.keyType.type}_{self.type.valType.type}_constructor({len(self.keyVals)},{len(self.keyVals)},' + ', '.join([repr(kv) for kv in self.keyVals])+')'
-        return f'dict_{self.type.keyType.type}_{self.type.valType.type}_constructor({len(self.keyVals)},{len(self.keyVals)})'
+            return f'dict_{self.type.keyType.type}_{self.type.valType.type}_constructor({len(self.keyVals)},{size},' + ', '.join([repr(kv) for kv in self.keyVals])+')'
+        return f'dict_{self.type.keyType.type}_{self.type.valType.type}_constructor({len(self.keyVals)},{size})'
 
 class Input():
     def __init__(self, expr=None):

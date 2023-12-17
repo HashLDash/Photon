@@ -215,6 +215,7 @@ class BaseTranspiler():
             self.imports.add(i)
         if obj.type.known:
             self.dictTypes.add((obj.type.keyType.type, obj.type.valType.type))
+        input(f'{self.dictTypes} {obj.type} {mapType}')
         return obj
 
     def processKeyVal(self, token):
@@ -256,6 +257,10 @@ class BaseTranspiler():
         value.prepare()
         for i in value.imports:
             self.imports.add(i)
+            if value.type.type == 'map':
+                self.dictTypes.add((value.type.keyType.type, value.type.valType.type))
+            if value.type.type == 'array':
+                self.listTypes.add(value.type.elementType.type)
         return assign
 
     def processAugAssign(self, token):

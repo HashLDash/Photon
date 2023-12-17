@@ -1025,6 +1025,7 @@ class Transpiler(BaseTranspiler):
             raise NotImplemented
 
     def renderDictTemplate(self, keyType, valType):
+        print(f'Rendering template for map {keyType} {valType}')
         formatCodes = {'int':'%ld', 'str':'\\"%s\\"', 'float':'%lf'}
         with open(f'{self.standardLibs}/native/c/dict_{keyType}.template') as template:
             dictLib = template.read()
