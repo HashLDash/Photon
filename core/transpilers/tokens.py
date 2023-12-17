@@ -186,6 +186,7 @@ class Var(Obj):
         super().__init__(*args, **kwargs)
         self.indexAccess = indexAccess
         self.prepare()
+        #TODO Type may be dict, but with indexAccess type should be valType
 
     def prepare(self):
         if self.namespace:

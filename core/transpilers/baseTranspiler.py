@@ -134,9 +134,10 @@ class BaseTranspiler():
     def processString(self, token):
         for i in String.imports:
             self.imports.add(i)
+        expressions = self.processTokens(token['expressions'])
         return String(
             value=token['value'],
-            expressions=self.processTokens(token['expressions'])
+            expressions=expressions,
         )
 
     def processInput(self, token):
@@ -152,10 +153,8 @@ class BaseTranspiler():
             namespace=self.currentNamespace,
             indexAccess=indexAccess,
         )
-        print('VAR TYPEEE', var.type)
         if not var.type.known:
             var.type = self.typeOf(var)
-        print('VAR TYPEEE', var.type)
         return var
 
     def processArray(self, token):
@@ -297,7 +296,6 @@ class BaseTranspiler():
         )
 
     def processWhile(self, token):
-        input(token)
         return While(
             expr=self.preprocess(token['expr']),
             block=self.processTokens(token['block'])
@@ -306,12 +304,6 @@ class BaseTranspiler():
     def processFor(self, token):
         iterable = self.preprocess(token['iterable'])
         self.currentScope.startLocalScope()
-        oldNamespace = self.currentNamespace
-        self.currentNamespace = ''
-        #TODO WARNING: Global variables cannot be called inside
-        #because the namespace will be different
-        #in the local scope
-        #use global syntax or try to infer global variables
         args = self.processTokens(token['vars'])
         if isinstance(iterable, Range):
             if len(args) == 1:
@@ -337,11 +329,8 @@ class BaseTranspiler():
         else:
             raise ValueError(f'Iterable with type {type(iterable)} not supported in processFor')
         for t in args:
-            input(f'T: {t}')
             self.currentScope.add(Assign(target=t, value=Num(0, t.type)))
-        input(self.currentScope)
         code=self.processTokens(token['block'])
-        self.currentNamespace = oldNamespace
         self.currentScope.endLocalScope()
         return For(
             code=code,
@@ -530,6 +519,8 @@ class BaseTranspiler():
             'map': '%s',
         }
         args = self.processTokens(token['args'])
+        for arg in args:
+            print(arg, arg.type)
         template = String(value='"'+" ".join([formats[self.typeOf(arg).type] for arg in args])+'\\n"')
         args.insert(0, template)
         for arg in args:
