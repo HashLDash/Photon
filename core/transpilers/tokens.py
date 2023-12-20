@@ -12,17 +12,25 @@ class Type():
         '':'void',
         'obj':'obj',
     }
-    def __init__(self, type, elementType=None, keyType=None, valType=None, **kwargs):
+    def __init__(self, type, elementType=None, keyType=None, valType=None, returnType=None, funcName=None, argsTypes=None, **kwargs):
         if isinstance(type, Type):
             self.type = type.type
             self.elementType = type.elementType
             self.keyType = type.keyType
             self.valType = type.valType
+            self.returnType = type.returnType
+            self.funcName = type.funcName
+            self.argsTypes = type.argsTypes
         else:
+            if type is not None and type.split(' ')[-1] == 'func':
+                returnType, type = type.split(' ')
             self.type = type if type is not None else 'unknown'
             self.elementType = Type(elementType) if self.isKnown(self.type) else 'unknown'
             self.keyType = Type(keyType) if self.isKnown(self.type) else 'unknown'
             self.valType = Type(valType) if self.isKnown(self.type) else 'unknown'
+            self.returnType = Type(returnType) if self.isKnown(self.type) else 'unknown'
+            self.funcName = funcName if self.isKnown(self.type) else None
+            self.argsTypes = argsTypes if self.isKnown(self.type) and isinstance(argsTypes, list) else []
 
     @property
     def known(self):
@@ -39,7 +47,7 @@ class Type():
     def isClass(self):
         if self.known and self.type in self.nativeTypes:
             return False
-        elif self.known and not self.type in self.nativeTypes and self.type not in ['array', 'map']:
+        elif self.known and not self.type in self.nativeTypes and self.type not in ['array', 'map'] and not 'func' in self.type.split(' '):
             return True
         else:
             return False
@@ -59,6 +67,8 @@ class Type():
             return f'list_{self.elementType.type}*'
         elif self.type == 'map':
             return f'dict_{self.keyType.type}_{self.valType.type}*'
+        elif self.type == 'func':
+            return f'{self.returnType} (*{self.funcName})({", ".join(self.argsTypes)})'
         elif self.type in self.nativeTypes:
             return self.nativeTypes[self.type] 
         elif self.isClass:
@@ -195,6 +205,9 @@ class Var(Obj):
             self.name = self.value
 
     def declaration(self):
+        if self.type.type == 'func':
+            self.type.funcName = self.value
+            return f'{self.type}'
         return f'{self.type} {self.value}'
 
     def format(self):

@@ -528,14 +528,14 @@ class BaseTranspiler():
             elif argType.type == 'array':
                 if getattr(arg, 'indexAccess', None) is not None:
                     argType = argType.elementType
+            elif argType.type == 'func':
+                argType = argType.returnType
+                argType.funcName = arg.value
             types.append(argType)
-        input(types)
         template = String(value='"'+" ".join([formats[t.type] for t in types])+'\\n"')
         args.insert(0, template)
         for arg in args:
             arg.mode = 'format'
-            #if arg.type.type == 'array':
-            #    arg.mode = 'format'
         return Call(
             name = Var('printf', 'unknown', namespace=''),
             args = args,
