@@ -23,7 +23,11 @@ class Type():
             self.argsTypes = type.argsTypes
         else:
             if type is not None and type.split(' ')[-1] == 'func':
-                returnType, type = type.split(' ')
+                if ' ' in type:
+                    returnType, type = type.split(' ')
+                else:
+                    type = 'func'
+                    returnType = ''
             self.type = type if type is not None else 'unknown'
             self.elementType = Type(elementType) if self.isKnown(self.type) else 'unknown'
             self.keyType = Type(keyType) if self.isKnown(self.type) else 'unknown'
