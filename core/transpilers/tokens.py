@@ -459,23 +459,31 @@ class Cast():
     }
 
     def __init__(self, expr, castTo):
-        self.expr = expr
+        if isinstance(expr, Cast):
+            self.expr = expr.expr
+        else:
+            self.expr = expr
         self.castTo = castTo
-        self.type = self.expr.type
+        self.type = self.castTo
 
     def __repr__(self):
+        print('Repr', self.expr)
         castFrom = self.expr.type.type
         castTo = self.castTo.type
         if castTo == 'map':
             castTo = self.castTo.valType.type
-        if castTo == 'array':
+        elif castTo == 'array':
             castTo = self.castTo.elementType.type
+        if castFrom == 'map' and self.expr.indexAccess is not None:
+            castFrom = self.expr.type.valType
+        elif castFrom == 'array' and self.expr.indexAccess is not None:
+            castFrom = self.expr.type.elementType
         try:
             if castTo != castFrom:
                 return self.conversion[castTo][castFrom].format(self=self)
             return repr(self.expr)
         except KeyError as e:
-            raise SyntaxError(f'Cast not implemented for type {self.castTo.type} from {self.expr.type.type} {e}')
+            raise SyntaxError(f'Cast not implemented for type {castTo} from {castFrom} {e}')
 
 class Assign(Obj):
     def __init__(self, target='', inMemory=False, cast=None, **kwargs):
@@ -491,6 +499,7 @@ class Assign(Obj):
     def expression(self):
         if self.cast is not None:
             self.value = Cast(self.value, self.cast)
+            print('Cast assign', self.value)
         if self.inMemory or isinstance(self.target, DotAccess):
             if self.target.indexAccess:
                 if self.target.type.type == 'array':

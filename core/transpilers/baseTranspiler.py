@@ -519,9 +519,18 @@ class BaseTranspiler():
             'map': '%s',
         }
         args = self.processTokens(token['args'])
+        types = []
         for arg in args:
-            print(arg, arg.type)
-        template = String(value='"'+" ".join([formats[self.typeOf(arg).type] for arg in args])+'\\n"')
+            argType = self.typeOf(arg)
+            if argType.type == 'map':
+                if getattr(arg, 'indexAccess', None) is not None:
+                    argType = argType.valType
+            elif argType.type == 'array':
+                if getattr(arg, 'indexAccess', None) is not None:
+                    argType = argType.elementType
+            types.append(argType)
+        input(types)
+        template = String(value='"'+" ".join([formats[t.type] for t in types])+'\\n"')
         args.insert(0, template)
         for arg in args:
             arg.mode = 'format'
