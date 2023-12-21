@@ -368,10 +368,10 @@ class BaseTranspiler():
         chain = self.processTokens(token['dotAccess'])
         chain[0].type = initialType
         currentType = initialType
-        for c in chain:
-            print(f'Chaining {c}')
+        for c in chain[1:]:
+            input(f'Chaining {c}')
             if currentType.isClass:
-                scope = self.currentScope.get(initialType.type).__dict__
+                scope = self.currentScope.get(currentType.type).__dict__
                 if c.index in scope['parameters']:
                     print('parameter')
                     c.type = scope['parameters'][c.index].type
@@ -386,6 +386,17 @@ class BaseTranspiler():
             elif currentType.type == 'array': #TODO: Make this part of the token class
                 if f'{c}' == 'len':
                     c.type = Type('int')
+            elif currentType.type == 'module':
+                if isinstance(c, Call):
+                    print(self.currentScope)
+                    c.name.namespace = currentType.name
+                    c.type = self.currentScope.get(c.name).type
+                elif isinstance(c, Var):
+                    c.namespace = currentType.name
+                    print(self.currentScope)
+                    input(c.index)
+                    c.type = self.currentScope.get(c.index).type
+
             currentType = c.type
         for c in chain:
             print(c.type)
@@ -462,12 +473,15 @@ class BaseTranspiler():
     def processImport(self, token):
         #TODO: relative path and package imports
         folder = None
-        self.oldNamespace = self.currentNamespace
-        self.currentNamespace = ''
-        packageName = self.preprocess(token['expr'])
-        self.currentNamespace = self.oldNamespace
-        print(f'Package is {packageName} of type {type(packageName)}')
-        name = packageName
+        #self.oldNamespace = self.currentNamespace
+        #self.currentNamespace = ''
+        moduleExpr = self.preprocess(token['expr'])
+        input(moduleExpr.namespace)
+        input(token['expr'])
+        #self.currentNamespace = self.oldNamespace
+        moduleExpr.namespace = ''
+        name = f'{moduleExpr}'
+        moduleExpr.namespace = self.currentNamespace
         print(f'Importing {name}')
         if f"{name}.w" in os.listdir(folder) + os.listdir(self.standardLibs):
             if f"{name}.w" in os.listdir(self.standardLibs):
@@ -477,7 +491,9 @@ class BaseTranspiler():
                 #raise SyntaxError('Standard lib import not implemented yet.')
             else:
                 # Local module import
+                moduleExpr.namespace = ''
                 filename = f'{name}.w'
+                moduleExpr.namespace = self.currentNamespace
             interpreter = Interpreter(
                     filename=filename,
                     lang=self.lang,
@@ -488,6 +504,7 @@ class BaseTranspiler():
                     debug=self.debug)
             interpreter.run()
             self.classes.update(interpreter.engine.classes)
+            print('Added scope: {interpreter.engine.currentScope}')
             self.currentScope.update(interpreter.engine.currentScope)
             self.imports = self.imports.union(interpreter.engine.imports)
             self.links = self.links.union(interpreter.engine.links)
@@ -503,8 +520,9 @@ class BaseTranspiler():
             raise SyntaxError('Native Photon local module import not implemented yet.')
         else:
             # System library import
-            self.imports.add(f'#include "{name}".h')
+            pass
             #raise SyntaxError('System library import not implemented yet.')
+        return Module(moduleExpr, name)
 
     def processTokens(self, tokens, addToScope=False):
         if addToScope:

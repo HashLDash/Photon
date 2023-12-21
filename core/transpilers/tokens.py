@@ -12,7 +12,7 @@ class Type():
         '':'void',
         'obj':'obj',
     }
-    def __init__(self, type, elementType=None, keyType=None, valType=None, returnType=None, funcName=None, argsTypes=None, **kwargs):
+    def __init__(self, type, elementType=None, keyType=None, valType=None, returnType=None, funcName=None, argsTypes=None, name=None, **kwargs):
         if isinstance(type, Type):
             self.type = type.type
             self.elementType = type.elementType
@@ -21,6 +21,7 @@ class Type():
             self.returnType = type.returnType
             self.funcName = type.funcName
             self.argsTypes = type.argsTypes
+            self.name = type.name
         else:
             if type is not None and type.split(' ')[-1] == 'func':
                 if ' ' in type:
@@ -35,6 +36,7 @@ class Type():
             self.returnType = Type(returnType) if self.isKnown(self.type) else 'unknown'
             self.funcName = funcName if self.isKnown(self.type) else None
             self.argsTypes = argsTypes if self.isKnown(self.type) and isinstance(argsTypes, list) else []
+            self.name = name
 
     @property
     def known(self):
@@ -42,16 +44,25 @@ class Type():
             return True
         elif self.type == 'map' and self.isKnown(self.valType) and self.isKnown(self.keyType):
             return True
+        elif self.type == 'func' and self.isKnown(self.returnType):
+            return True
         elif self.type not in ['array', 'map'] and self.isKnown(self.type):
             return True
         else:
             return False
     
     @property
+    def isModule(self):
+        if self.type == 'module' and self.name is not None:
+            return True
+        else:
+            return False
+
+    @property
     def isClass(self):
         if self.known and self.type in self.nativeTypes:
             return False
-        elif self.known and not self.type in self.nativeTypes and self.type not in ['array', 'map'] and not 'func' in self.type.split(' '):
+        elif self.known and not self.type in self.nativeTypes and self.type not in ['array', 'map', 'module'] and not 'func' in self.type.split(' '):
             return True
         else:
             return False
@@ -86,10 +97,25 @@ class Type():
     def __eq__(self, obj):
         return hash(obj) == self.__hash__()
 
+class Module():
+    def __init__(self, expr, name):
+        self.expr = expr
+        self.name = name
+        self.type = Type('module', name=name)
+        self.imports = [f'#include "{self.name}.h"']
+
+    def __repr__(self):
+        return f'//module {self.name}'
+
+    @property
+    def index(self):
+        return self.expr.index
+
 class Group():
     imports = []
     def __init__(self, expr):
         self.expr = expr
+        self.namespace = expr.namespace
         self.type = expr.type
 
     def prepare(self):
@@ -246,7 +272,8 @@ class Var(Obj):
         return f'{self.type}'
 
     def __hash__(self):
-        return hash(self.namespace+self.name)
+        self.prepare()
+        return hash(self.name)
 
     @property
     def index(self):
@@ -273,6 +300,7 @@ class Expr(Obj):
     def prepare(self):
         self.value.mode = self.mode
         self.value.type = self.type
+        self.value.namespace = self.namespace
         self.value.prepare()
         self.imports = self.value.imports
 
@@ -289,6 +317,7 @@ class Expr(Obj):
                 del ops[index]
                 del elements[index+1]
         self.value = elements[0]
+        self.namespace = elements[0].namespace
         self.type = elements[0].type
 
     def operations(self, op, arg1, arg2):
@@ -337,6 +366,9 @@ class DotAccess():
             if currentType.isClass and isinstance(c, Call):
                 chain[n-1] = currentType.type
                 chain.append('_')
+                chain.append(repr(c))
+            elif currentType.isModule:
+                chain[n-1] = ''
                 chain.append(repr(c))
             else:
                 chain.append('->')
