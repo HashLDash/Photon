@@ -95,6 +95,7 @@ class BaseTranspiler():
             'range': self.processRange,
             'return': self.processReturn,
             'bool': self.processBool,
+            'group': self.processGroup,
         }
 
         self.sequence = Sequence()
@@ -130,6 +131,9 @@ class BaseTranspiler():
 
     def processBool(self, token):
         return Bool(value=token['value'])
+
+    def processGroup(self, token):
+        return Group(expr=self.preprocess(token['expr']))
 
     def processString(self, token):
         for i in String.imports:
@@ -467,9 +471,10 @@ class BaseTranspiler():
         print(f'Importing {name}')
         if f"{name}.w" in os.listdir(folder) + os.listdir(self.standardLibs):
             if f"{name}.w" in os.listdir(self.standardLibs):
+                filename = f'{self.standardLibs}/{name}.w'
                 # Photon module import
                 # Inject assets folder
-                raise SyntaxError('Standard lib import not implemented yet.')
+                #raise SyntaxError('Standard lib import not implemented yet.')
             else:
                 # Local module import
                 filename = f'{name}.w'
@@ -498,7 +503,8 @@ class BaseTranspiler():
             raise SyntaxError('Native Photon local module import not implemented yet.')
         else:
             # System library import
-            raise SyntaxError('System library import not implemented yet.')
+            self.imports.add(f'#include "{name}".h')
+            #raise SyntaxError('System library import not implemented yet.')
 
     def processTokens(self, tokens, addToScope=False):
         if addToScope:

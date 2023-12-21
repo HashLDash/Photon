@@ -86,6 +86,18 @@ class Type():
     def __eq__(self, obj):
         return hash(obj) == self.__hash__()
 
+class Group():
+    imports = []
+    def __init__(self, expr):
+        self.expr = expr
+        self.type = expr.type
+
+    def prepare(self):
+        pass
+
+    def __repr__(self):
+        return f'({self.expr})'
+
 class Scope():
     beginSymbol = '{'
     endSymbol = '}'
