@@ -352,6 +352,7 @@ class DotAccess():
     imports = []
     def __init__(self, chain=None, namespace=''):
         self.chain = chain
+        self.namespace = namespace
         self.chain[0].namespace = namespace
         self.type = chain[-1].type
         self.indexAccess = None
