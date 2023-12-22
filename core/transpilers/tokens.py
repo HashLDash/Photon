@@ -362,12 +362,10 @@ class Delete():
 
     def __repr__(self):
         self.expr.mode = 'method'
-        if self.expr.type.type == 'array':
-            print(type(self.expr.value))
-            if isinstance(self.expr.value, Var):
-                return f'list_{self.expr.type.elementType.type}_del({self.expr}, {self.expr.value.indexAccess})'
-            elif isinstance(self.expr.value, DotAccess):
-                return f'list_{self.expr.type.elementType.type}_del({self.expr}, {self.expr.value.indexAccess})'
+        if self.expr.type.type in ['array', 'map']:
+            call = f'{self.expr.type}'.replace('*','')
+            return f'{call}_del({self.expr}, {self.expr.value.indexAccess})'
+        raise SyntaxError(f'Delete not supported for type {type(self.expr.value)}')
 
     @property
     def index(self):
