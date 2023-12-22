@@ -175,6 +175,7 @@ class Obj():
         return 'Obj-expr'
 
     def __repr__(self):
+        print(f'in obj with mode {self.mode}')
         self.prepare()
         if self.mode == 'expr':
             return self.expression()
@@ -207,6 +208,7 @@ class String(Obj):
         self.value = '"' + self.value[1:-1].replace('"', '\\"') + '"'
         self.expressions = expressions if expressions else []
         for expr in self.expressions:
+            expr.mode = 'format'
             valType = expr.type.type
             if 'func' in valType:
                 valType = valType.replace(' func','').strip()
@@ -394,12 +396,16 @@ class Return():
         return None
 
 class Array():
-    def __init__(self, *elements, type=None):
+    def __init__(self, *elements, type=None, mode='expr'):
         self.elements = elements
         self.type = type
         self.prepare()
+        self.namespace = ''
+        self.mode = mode
 
     def prepare(self):
+        self.len = len(self.elements)
+        self.size = 8 if self.len < 8 else self.len
         if self.type.known:
             self.imports = [
                 f'#include "list_{self.type.elementType.type}.h"',
@@ -407,12 +413,17 @@ class Array():
         else:
             self.imports = []
 
+    def expression(self):
+        if self.elements:
+            return f'list_{self.type.elementType.type}_constructor({self.len}, {self.size}, ' + ','.join([repr(e) for e in self.elements])+')'
+        return f'list_{self.type.elementType.type}_constructor({self.len}, {self.size})'
+
     def __repr__(self):
         self.prepare()
-        size = 8 if (l:=len(self.elements)) < 8 else l
-        if self.elements:
-            return f'list_{self.type.elementType.type}_constructor({l}, {size}, ' + ','.join([repr(e) for e in self.elements])+')'
-        return f'list_{self.type.elementType.type}_constructor({l}, {size})'
+        value = self.expression()
+        if self.mode == 'format':
+            return f'list_{self.type.elementType.type}_str({value})'
+        return value
 
 class KeyVal():
     def __init__(self, key='', val=''):
@@ -529,7 +540,6 @@ class Cast():
         self.type = self.castTo
 
     def __repr__(self):
-        print('Repr', self.expr)
         castFrom = self.expr.type.type
         castTo = self.castTo.type
         if castTo == 'map':
@@ -582,9 +592,17 @@ class Assign(Obj):
         return self.target.index
 
 class Args():
-    def __init__(self, args, mode=None):
-        self.args = args
-        self.mode = mode
+    def __init__(self, args, mode='expr'):
+        if isinstance(args, Args):
+            self.args = args.args
+            self.mode = args.mode
+        else:
+            self.args = args
+            self.mode = mode
+
+    def prepare(self):
+        for arg in self.args:
+            arg.mode = self.mode
     
     def __bool__(self):
         return True if repr(self) else False
@@ -593,25 +611,27 @@ class Args():
         return self.args[index]
 
     def __repr__(self):
-        if self.mode is not None:
-            # override mode
-            for arg in self.args:
-                arg.mode = self.mode
+        self.prepare()
         return ', '.join([repr(arg) for arg in self.args])
 
 class Kwargs():
     def __init__(self, kwargs, mode='expr'):
-        self.kwargs = kwargs
-        self.mode = mode
+        if isinstance(kwargs, Kwargs):
+            self.kwargs = kwargs.kwargs
+            self.mode = kwargs.mode
+        else:
+            self.kwargs = kwargs
+            self.mode = mode
 
     def prepare(self):
-        for kwarg in kwargs:
+        for kwarg in self.kwargs:
             kwarg.mode = self.mode
     
     def __bool__(self):
         return True if repr(self) else False
 
     def __repr__(self):
+        self.prepare()
         return ', '.join([repr(kwarg) for kwarg in self.kwargs])
 
 class Call(Obj):
@@ -621,6 +641,8 @@ class Call(Obj):
         self.type = self.name.type
         self.args = Args(args)
         self.kwargs = Kwargs(kwargs)
+        if self.name.name == 'printf':
+            input(self.args.mode)
 
     def __repr__(self):
         separator = ', ' if self.args and self.kwargs else ''

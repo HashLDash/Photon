@@ -558,8 +558,9 @@ class BaseTranspiler():
             types.append(argType)
         template = String(value='"'+" ".join([formats[t.type] for t in types])+'\\n"')
         args.insert(0, template)
-        for arg in args:
-            arg.mode = 'format'
+        args = Args(args, mode='format')
+        input(f'outside {args.mode}')
+        print(args)
         return Call(
             name = Var('printf', 'unknown', namespace=''),
             args = args,
