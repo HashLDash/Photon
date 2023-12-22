@@ -436,6 +436,7 @@ class Map():
     def __init__(self, *keyVals, type=None):
         self.keyVals = keyVals
         self.type = type
+        self.namespace = ''
         self.prepare()
     
     def prepare(self):
