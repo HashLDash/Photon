@@ -175,7 +175,6 @@ class Obj():
         return 'Obj-expr'
 
     def __repr__(self):
-        print(f'in obj with mode {self.mode}')
         self.prepare()
         if self.mode == 'expr':
             return self.expression()
