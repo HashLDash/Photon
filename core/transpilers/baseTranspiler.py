@@ -96,6 +96,7 @@ class BaseTranspiler():
             'return': self.processReturn,
             'bool': self.processBool,
             'group': self.processGroup,
+            'delete': self.processDelete,
         }
 
         self.sequence = Sequence()
@@ -160,6 +161,10 @@ class BaseTranspiler():
         if not var.type.known:
             var.type = self.typeOf(var)
         return var
+
+    def processDelete(self, token):
+        input(token)
+        return Delete(expr=self.preprocess(token['expr']))
 
     def processArray(self, token):
         def inferType():

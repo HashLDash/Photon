@@ -174,6 +174,9 @@ class Obj():
     def format(self):
         return 'Obj-expr'
 
+    def method(self):
+        return 'Obj-method'
+
     def __repr__(self):
         self.prepare()
         if self.mode == 'expr':
@@ -182,6 +185,8 @@ class Obj():
             return self.declaration()
         elif self.mode == 'format':
             return self.format()
+        elif self.mode == 'method':
+            return self.method()
         elif self.mode == 'types':
             return self.types()
         else:
@@ -239,7 +244,6 @@ class Var(Obj):
         super().__init__(*args, **kwargs)
         self.indexAccess = indexAccess
         self.prepare()
-        #TODO Type may be dict, but with indexAccess type should be valType
 
     def prepare(self):
         if self.namespace:
@@ -259,10 +263,13 @@ class Var(Obj):
             return f'{call}_str({self.name})'
         return self.name
 
+    def method(self):
+        return f'{self.name}'
+
     def expression(self):
         if self.indexAccess:
             if self.type.type == 'array':
-                return f'list_{self.elementType.type}_get({self.name}, {indexAccess})'
+                return f'list_{self.type.elementType.type}_get({self.name}, {self.indexAccess})'
             if self.type.type == 'map':
                 return f'dict_{self.type.keyType.type}_{self.type.valType.type}_get({self.name}, {self.indexAccess})'
             else:
@@ -349,19 +356,43 @@ class Expr(Obj):
             return self.elements[0].index
         return super().index
 
+class Delete():
+    def __init__(self, expr):
+        self.expr = expr
+
+    def __repr__(self):
+        self.expr.mode = 'method'
+        if self.expr.type.type == 'array':
+            print(type(self.expr.value))
+            if isinstance(self.expr.value, Var):
+                return f'list_{self.expr.type.elementType.type}_del({self.expr}, {self.expr.value.indexAccess})'
+            elif isinstance(self.expr.value, DotAccess):
+                return f'list_{self.expr.type.elementType.type}_del({self.expr}, {self.expr.value.indexAccess})'
+
+    @property
+    def index(self):
+        return None
+
 class DotAccess():
     imports = []
-    def __init__(self, chain=None, namespace=''):
+    def __init__(self, chain=None, namespace='', mode='expr'):
         self.chain = chain
         self.namespace = namespace
         self.chain[0].namespace = namespace
         self.type = chain[-1].type
-        self.indexAccess = None
+        self.indexAccess = chain[-1].indexAccess
+        self.mode = mode
 
     def prepare(self):
         pass
 
-    def __repr__(self):
+    def format(self):
+        if self.type.type not in ['str','int','float']:
+            call = repr(self.type).replace("*","")
+            return f'{call}_str({self.value})'
+        return self.value
+
+    def expression(self):
         chain = [repr(self.chain[0])]
         currentType = self.chain[0].type
         for n, c in enumerate(self.chain[1:]):
@@ -376,7 +407,18 @@ class DotAccess():
                 chain.append('->')
                 chain.append(repr(c))
             currentType = c.type
+        if self.mode == 'method':
+            input(chain[-1])
+            self.chain[-1].mode = 'method'
+            chain[-1] = repr(self.chain[-1])
+            self.chain[-1].mode = 'expr'
         return ''.join(chain)
+
+    def __repr__(self):
+        self.value = self.expression()
+        if self.mode == 'format':
+            self.value = self.format()
+        return self.value
 
     @property
     def index(self):
@@ -641,8 +683,6 @@ class Call(Obj):
         self.type = self.name.type
         self.args = Args(args)
         self.kwargs = Kwargs(kwargs)
-        if self.name.name == 'printf':
-            input(self.args.mode)
 
     def __repr__(self):
         separator = ', ' if self.args and self.kwargs else ''
