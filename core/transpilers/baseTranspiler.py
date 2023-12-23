@@ -40,16 +40,14 @@ class CurrentScope():
         for scope in self.localScope:
             if index in scope:
                 return scope[index]
-        if index in self.currentScope:
-            return self.currentScope[index]
+        return self.currentScope[index]
 
     def inMemory(self, obj):
         print(f'Checking memory for {obj}')
-        a = self.get(obj.index)
-        print(f'Yep, in memory: {a}')
-        if a is not None:
+        try:
+            self.get(obj.index)
             return True
-        else:
+        except KeyError:
             return False
         
     def typeOf(self, obj):
