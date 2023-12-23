@@ -245,10 +245,10 @@ class BaseTranspiler():
         if inMemory:
             target.type = self.typeOf(target)
 
+        cast = None
         if target.type.known and value.type.known:
-            cast = target.type
-        else:
-            cast = None
+            if target.type.type != value.type.type:
+                cast = target.type
         if not target.type.known:
             print(f'Infering type from expr {target} {target.type} {self.typeOf(target)}')
             target.type = value.type
