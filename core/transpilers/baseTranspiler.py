@@ -7,29 +7,28 @@ from .tokens import *
 class CurrentScope():
     def __init__(self):
         self.currentScope = {}
-        self.localScope = {}
+        self.localScope = [{}]
         self.local = False
 
     def startLocalScope(self):
         self.local = True
-        self.localScope = {}
+        self.localScope.append({})
 
     def endLocalScope(self):
         self.local = False
-        self.localScope = {}
+        del self.localScope[-1]
 
     def add(self, token):
-        print(f'Called for token {token}')
         if not isinstance(token, Var) and token.index is not None:
             print(f'adding {token.index} with type {token.type.type}')
             if self.local:
-                self.localScope[token.index] = token
+                self.localScope[-1][token.index] = token
             else:
                 self.currentScope[token.index] = token
 
     def update(self, scope):
         self.currentScope.update(scope.currentScope)
-        self.localScope.update(scope.localScope)
+        self.localScope[-1].update(scope.localScope)
 
     def __repr__(self):
         s = 'SCOPE DUMP\n'
@@ -38,15 +37,19 @@ class CurrentScope():
         return s
 
     def get(self, index):
-        return {**self.currentScope, **self.localScope}[index]
+        for scope in self.localScope:
+            if index in scope:
+                return scope[index]
+        if index in self.currentScope:
+            return self.currentScope[index]
 
     def inMemory(self, obj):
-        try:
-            print('Checking memory')
-            a = self.get(obj.index)
-            print(f'Yep, in memory: {a}')
+        print(f'Checking memory for {obj}')
+        a = self.get(obj.index)
+        print(f'Yep, in memory: {a}')
+        if a is not None:
             return True
-        except KeyError:
+        else:
             return False
         
     def typeOf(self, obj):
@@ -569,6 +572,8 @@ class BaseTranspiler():
                 argType = argType.returnType
                 argType.funcName = arg.value
             types.append(argType)
+        print(args)
+        print(types)
         template = String(value='"'+" ".join([formats[t.type] for t in types])+'\\n"')
         args.insert(0, template)
         args = Args(args, mode='format')

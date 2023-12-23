@@ -327,6 +327,7 @@ class Expr(Obj):
         self.value = elements[0]
         self.namespace = elements[0].namespace
         self.type = elements[0].type
+        self.indexAccess = getattr(elements[0], 'indexAccess', None)
 
     def operations(self, op, arg1, arg2):
         t = None
