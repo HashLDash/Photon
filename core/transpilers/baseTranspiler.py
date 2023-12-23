@@ -360,7 +360,7 @@ class BaseTranspiler():
         signature = []
         if call.type.isClass:
             call = self.currentScope.get(call.index).new
-        if call.args or call.kwargs:
+        if getattr(call, 'args', None) is not None and (call.args or call.kwargs):
             for arg in call.args.args:
                 arg.namespace = ''
                 signature.append(arg)
