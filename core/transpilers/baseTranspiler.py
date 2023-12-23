@@ -163,7 +163,6 @@ class BaseTranspiler():
         return var
 
     def processDelete(self, token):
-        input(token)
         return Delete(expr=self.preprocess(token['expr']))
 
     def processArray(self, token):
@@ -356,14 +355,25 @@ class BaseTranspiler():
         return Sequence(block)
 
     def processCall(self, token, className=None):
-        callType = self.preprocess(token['name']).type
-        if callType.isClass:
+        name = self.preprocess(token['name'])
+        call = self.currentScope.get(name.index)
+        input(f'Calltyupe: {call.__dict__}')
+        signature = []
+        if call.type.isClass:
             scope = self.currentScope.get(callType.type).parameters
             #args = [f for f in scope]
+        elif call.args or call.kwargs:
+            for arg in call.args.args:
+                arg.namespace = ''
+                signature.append(arg)
+            for kwarg in call.kwargs.kwargs:
+                kwarg.target.namespace = ''
+                signature.append(kwarg)
         return Call(
             name=self.processVar(token['name']),
             args=self.processTokens(token['args']),
             kwargs=self.processTokens(token['kwargs']),
+            signature=signature,
         )
 
     def processDotAccess(self, token):

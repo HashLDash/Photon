@@ -664,30 +664,52 @@ class Kwargs():
             self.mode = mode
 
     def prepare(self):
+        mode = self.mode
+        if mode == 'value':
+            # value mode is exclusive for kwarg
+            mode = 'expr'
         for kwarg in self.kwargs:
-            kwarg.mode = self.mode
-    
+            kwarg.mode = mode
+
     def __bool__(self):
         return True if repr(self) else False
 
     def __repr__(self):
         self.prepare()
+        if self.mode == 'value':
+            return ', '.join([repr(kwarg.value) for kwarg in self.kwargs])
         return ', '.join([repr(kwarg) for kwarg in self.kwargs])
 
 class Call(Obj):
-    def __init__(self, name='', args='', kwargs='', **defaults):
+    def __init__(self, name='', args='', kwargs='', signature='', **defaults):
         super().__init__(**defaults)
         self.name = name
         self.type = self.name.type
         self.args = Args(args)
         self.kwargs = Kwargs(kwargs)
+        self.signature = signature
 
     def __repr__(self):
+        if self.signature:
+            kwargs = []
+            # allocate args then sort kwargs
+            for s in self.signature[len(self.args.args):]:
+                for kwarg in self.kwargs.kwargs:
+                    if isinstance(s, Assign):
+                        kwarg.target.namespace = ''
+                        if s.target.index == kwarg.target.index:
+                            kwargs.append(kwarg)
+                            break
+                else:
+                    kwargs.append(s)
+            kwargs = Kwargs(kwargs, mode='value')
+        else:
+            kwargs = self.kwargs
         separator = ', ' if self.args and self.kwargs else ''
         if self.type.isClass:
-            return f'{self.name}_new({self.args}{separator}{self.kwargs})'
+            return f'{self.name}_new({self.args}{separator}{kwargs})'
         else:
-            return f'{self.name}({self.args}{separator}{self.kwargs})'
+            return f'{self.name}({self.args}{separator}{kwargs})'
 
 class Function(Obj):
     def __init__(self, name='', args='', kwargs='', code='', **defaults):
