@@ -357,12 +357,10 @@ class BaseTranspiler():
     def processCall(self, token, className=None):
         name = self.preprocess(token['name'])
         call = self.currentScope.get(name.index)
-        input(f'Calltyupe: {call.__dict__}')
         signature = []
         if call.type.isClass:
-            scope = self.currentScope.get(callType.type).parameters
-            #args = [f for f in scope]
-        elif call.args or call.kwargs:
+            call = self.currentScope.get(call.index).new
+        if call.args or call.kwargs:
             for arg in call.args.args:
                 arg.namespace = ''
                 signature.append(arg)
