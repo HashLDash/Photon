@@ -87,7 +87,7 @@ class Type():
         elif self.type in self.nativeTypes:
             return self.nativeTypes[self.type] 
         elif self.isClass:
-            return f'{self.type}*'
+            return f'struct {self.type}*'
         else:
             return f'{self.type}'
 
@@ -240,9 +240,10 @@ class String(Obj):
 
 class Var(Obj):
     imports = []
-    def __init__(self, *args, indexAccess=None, **kwargs):
+    def __init__(self, *args, indexAccess=None, attribute=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.indexAccess = indexAccess
+        self.attribute = attribute
         self.prepare()
 
     def prepare(self):
@@ -396,8 +397,10 @@ class DotAccess():
         currentType = self.chain[0].type
         for n, c in enumerate(self.chain[1:]):
             if currentType.isClass and isinstance(c, Call):
+                instanceName = chain[n-1]
                 chain[n-1] = currentType.type
                 chain.append('_')
+                c.args.args.insert(0, Var(instanceName, currentType))
                 chain.append(repr(c))
             elif currentType.isModule:
                 chain[n-1] = ''
@@ -739,12 +742,12 @@ class Function(Obj):
         return self.name.index
 
 class Class():
-    def __init__(self, name='', args='', code=''):
+    def __init__(self, name='', args='', code='', parameters=None):
         self.name = name
         self.args = Args(args)
         self.code = Scope(code)
         self.type = Type(repr(self.name))
-        self.parameters = {}
+        self.parameters = parameters if parameters is not None else {}
         self.methods = {}
         self.new = None
         for instruction in self.code:
@@ -754,6 +757,8 @@ class Class():
             elif isinstance(instruction, Function):
                 if instruction.name.value == 'new':
                     self.new = instruction
+                else:
+                    instruction.args.args.insert(0, Var('self', self.type))
                 instruction.name.value = f'{self.name.value}_{instruction.name.value}'
                 self.methods[instruction.index] = instruction
         if self.new is None:

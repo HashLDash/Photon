@@ -33,8 +33,11 @@ class CurrentScope():
 
     def __repr__(self):
         s = 'SCOPE DUMP\n'
-        for i, t in {**self.currentScope, **self.localScope}.items():
+        for i, t in self.currentScope.items():
             s += f'"{i}" {t.type}\n'
+        for scope in self.localScope:
+            for i, t in scope.items():
+                s += f'"{i}" {t.type}\n'
         return s
 
     def get(self, index):
@@ -159,6 +162,7 @@ class BaseTranspiler():
             type=Type(**token),
             namespace=self.currentNamespace,
             indexAccess=indexAccess,
+            attribute=token.get('attribute', None)
         )
         if not var.type.known:
             var.type = self.typeOf(var)
@@ -388,9 +392,11 @@ class BaseTranspiler():
         chain[0].type = initialType
         currentType = initialType
         for c in chain[1:]:
-            input(f'Chaining {c}')
+            input(f'Chaining {c} {currentType}')
             if currentType.isClass:
+                input('IS CLASS')
                 scope = self.currentScope.get(currentType.type).__dict__
+                input(scope)
                 if c.index in scope['parameters']:
                     print('parameter')
                     c.type = scope['parameters'][c.index].type
@@ -399,6 +405,8 @@ class BaseTranspiler():
                     if methodIndex in scope['methods']:
                         c.type = scope['methods'][methodIndex].type
                         print(f'ITS A METHODDDDDDDDDDDDDDDDDDDdd with type {c.type}')
+                else:
+                    print('WTF')
             elif currentType.type == 'map': #TODO: Make this part of the token class
                 if f'{c}' == 'len':
                     c.type = Type('int')
@@ -427,11 +435,44 @@ class BaseTranspiler():
         )
 
     def processClass(self, token):
-        return Class(
+        self.currentScope.startLocalScope()
+        self.currentScope.add(
+            Assign(
+                target=Var('self', token['name']),
+                value=Call(Var(token['name']))))
+        parameters = {}
+        input('Parsing params')
+        for t in token['block']:
+            try:
+                t = self.preprocess(t)
+            except KeyError:
+                continue
+            if isinstance(t, Function) and t.name.value == 'new':
+                for kw in t.kwargs.kwargs:
+                    if kw.target.attribute:
+                        parameters[kw.index] = kw
+            elif isinstance(t, Assign):
+                t.target.namespace = ''
+                parameters[t.index] = t
+        print(parameters)
+        input('Parameters')
+        self.currentScope.add(
+            Class(name=Var(token['name'], namespace=self.currentNamespace),
+            args=self.processTokens(token['args']),
+            parameters = parameters,
+            code=[])
+        )
+        print(self.currentScope)
+        input('Scope')
+        code = self.processTokens(token['block'])
+        input('Ended Processing tokens')
+        classToken = Class(
             name=Var(token['name'], namespace=self.currentNamespace),
             args=self.processTokens(token['args']),
-            code=self.processTokens(token['block'])
+            code=code,
         )
+        self.currentScope.endLocalScope()
+        return classToken
 
     def processFunc(self, token):
         self.currentScope.startLocalScope()
