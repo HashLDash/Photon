@@ -295,6 +295,10 @@ class Expr(Obj):
         '**','*','%','/','-','+','==','!=','>','<','>=','<=',
         'is','in','andnot','and','or','&', '<<', '>>'
     ]
+    opConversions = {
+        'and': '&&',
+        'or': '||',
+    }
     #TODO: not is not implemented
     def __init__(self, *elements, ops=None, **kwargs):
         super().__init__(**kwargs)
@@ -346,6 +350,8 @@ class Expr(Obj):
             t = Type('int')
         elif op in ['==','!=','>','<','>=','<=','in','and','or']:
             t = Type('bool')
+        if op in self.opConversions:
+            op = self.opConversions[op]
         return Expr(value=f'{arg1} {op} {arg2}', type=t)
 
     def __repr__(self):
