@@ -760,8 +760,9 @@ class Class():
             self.new = Function(name=Var(f'{self.name.value}_new',namespace=self.name.namespace))
             self.methods[self.new.index] = self.new
         self.new.name.type = f'struct {self.name}*'
-        #TODO Include new args here
-        #instruction.args = Args(list(self.parameters.values()), mode='declaration')
+        for kwarg in self.new.kwargs.kwargs:
+            self.parameters[kwarg.target.index] = kwarg
+            self.code.sequence.add(kwarg)
         self.new.code = Scope([
             NativeCode(f'{self.type} self = malloc(sizeof({self.name}))'),
             *[NativeCode(f'self->{a.target} = {a.value}') for a in self.parameters.values()],
