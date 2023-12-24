@@ -8,27 +8,28 @@ class CurrentScope():
     def __init__(self):
         self.currentScope = {}
         self.localScope = [{}]
-        self.local = False
+        self.local = [False]
 
     def startLocalScope(self):
-        self.local = True
+        self.local.append(True)
         self.localScope.append({})
 
     def endLocalScope(self):
-        self.local = False
+        del self.local[-1]
         del self.localScope[-1]
 
     def add(self, token):
         if not isinstance(token, Var) and token.index is not None:
             print(f'adding {token.index} with type {token.type.type}')
-            if self.local:
+            if self.local[-1]:
                 self.localScope[-1][token.index] = token
             else:
                 self.currentScope[token.index] = token
 
     def update(self, scope):
         self.currentScope.update(scope.currentScope)
-        self.localScope[-1].update(scope.localScope)
+        for localScope in scope.localScope:
+            self.localScope[-1].update(localScope)
 
     def __repr__(self):
         s = 'SCOPE DUMP\n'
