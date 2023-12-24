@@ -379,7 +379,7 @@ class DotAccess():
         self.namespace = namespace
         self.chain[0].namespace = namespace
         self.type = chain[-1].type
-        self.indexAccess = chain[-1].indexAccess
+        self.indexAccess = getattr(chain[-1], 'indexAccess', None)
         self.mode = mode
 
     def prepare(self):

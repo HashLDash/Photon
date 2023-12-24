@@ -357,17 +357,21 @@ class BaseTranspiler():
 
     def processCall(self, token, className=None):
         name = self.preprocess(token['name'])
-        call = self.currentScope.get(name.index)
+        try:
+            call = self.currentScope.get(name.index)
+        except KeyError:
+            call = None
         signature = []
-        if call.type.isClass:
-            call = self.currentScope.get(call.index).new
-        if getattr(call, 'args', None) is not None and (call.args or call.kwargs):
-            for arg in call.args.args:
-                arg.namespace = ''
-                signature.append(arg)
-            for kwarg in call.kwargs.kwargs:
-                kwarg.target.namespace = ''
-                signature.append(kwarg)
+        if call:
+            if call.type.isClass:
+                call = self.currentScope.get(call.index).new
+            if getattr(call, 'args', None) is not None and (call.args or call.kwargs):
+                for arg in call.args.args:
+                    arg.namespace = ''
+                    signature.append(arg)
+                for kwarg in call.kwargs.kwargs:
+                    kwarg.target.namespace = ''
+                    signature.append(kwarg)
         return Call(
             name=self.processVar(token['name']),
             args=self.processTokens(token['args']),
