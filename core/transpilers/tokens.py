@@ -128,10 +128,13 @@ class Scope():
     beginSymbol = '{'
     endSymbol = '}'
     def __init__(self, obj, indent=4):
-        if not isinstance(obj, Sequence):
-            self.sequence = Sequence(obj)
-        else: 
-            self.sequence = obj
+        if isinstance(obj, Scope):
+            self.sequence = obj.sequence
+        else:
+            if not isinstance(obj, Sequence):
+                self.sequence = Sequence(obj)
+            else: 
+                self.sequence = obj
         self.indent = ' '*indent
 
     def __repr__(self):
@@ -139,6 +142,9 @@ class Scope():
             [self.indent + r 
                 for r in repr(self.sequence).split('\n')]
         ) + f'\n{self.endSymbol}'
+
+    def extend(self, scope):
+        self.sequence = self.sequence + scope.sequence
 
     def __iter__(self):
         return iter(self.sequence)
@@ -189,6 +195,8 @@ class Obj():
             return self.method()
         elif self.mode == 'types':
             return self.types()
+        elif self.mode == 'empty':
+            return ''
         else:
             raise ValueError(f'Mode {self.mode} not implemented.')
 
@@ -541,6 +549,9 @@ class Sequence():
 
     def __add__(self, sequence):
         if isinstance(sequence, Sequence):
+            print(sequence)
+            print(type(self.sequence), type(sequence))
+            print(type(self.sequence), type(sequence.sequence))
             return Sequence(self.sequence + sequence.sequence)
         raise ValueError(f'Object of type {type(sequence)} cannot be added to Sequence.')
 
@@ -748,42 +759,21 @@ class Function(Obj):
         return self.name.index
 
 class Class():
-    def __init__(self, name='', args='', code='', parameters=None):
+    def __init__(self, name='', args='', code='', parameters=None, methods=None, new=None):
         self.name = name
         self.args = Args(args)
         self.code = Scope(code)
         self.type = Type(repr(self.name))
-        self.parameters = parameters if parameters is not None else {}
-        self.methods = {}
-        self.new = None
-        for instruction in self.code:
-            if isinstance(instruction, Assign):
-                instruction.target.namespace = ''
-                self.parameters[instruction.index] = instruction
-            elif isinstance(instruction, Function):
-                if instruction.name.value == 'new':
-                    self.new = instruction
-                else:
-                    instruction.args.args.insert(0, Var('self', self.type))
-                instruction.name.value = f'{self.name.value}_{instruction.name.value}'
-                self.methods[instruction.index] = instruction
-        if self.new is None:
-            self.new = Function(name=Var(f'{self.name.value}_new',namespace=self.name.namespace))
-            self.methods[self.new.index] = self.new
-        self.new.name.type = f'struct {self.name}*'
-        for kwarg in self.new.kwargs.kwargs:
-            self.parameters[kwarg.target.index] = kwarg
-            self.code.sequence.add(kwarg)
-        self.new.code = Scope([
-            NativeCode(f'{self.type} self = malloc(sizeof({self.name}))'),
-            *[NativeCode(f'self->{a.target} = {a.value}') for a in self.parameters.values()],
-            *self.new.code,
-            NativeCode(f'return self')
-        ])
+        self.parameters = parameters
+        self.methods = methods
+        self.new = new
 
     def declarationMode(self):
         for t in self.code:
-            t.mode = 'declaration'
+            if isinstance(t, Function):
+                t.mode = 'empty'
+            else:
+                t.mode = 'declaration'
     
     def writeMode(self):
         for t in self.code:

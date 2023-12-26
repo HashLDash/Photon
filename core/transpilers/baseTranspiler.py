@@ -120,8 +120,8 @@ class BaseTranspiler():
             return Type('unknown')
 
     def process(self, token):
-        print('Processing:')
-        pprint(token)
+        #print('Processing:')
+        #pprint(token)
         if token is not None:
             processedToken = self.instructions[token['opcode']](token)
             if processedToken is not None:
@@ -228,7 +228,6 @@ class BaseTranspiler():
             self.imports.add(i)
         if obj.type.known:
             self.dictTypes.add((obj.type.keyType.type, obj.type.valType.type))
-        input(f'{self.dictTypes} {obj.type} {mapType}')
         return obj
 
     def processKeyVal(self, token):
@@ -392,21 +391,14 @@ class BaseTranspiler():
         chain[0].type = initialType
         currentType = initialType
         for c in chain[1:]:
-            input(f'Chaining {c} {currentType}')
             if currentType.isClass:
-                input('IS CLASS')
                 scope = self.currentScope.get(currentType.type).__dict__
-                input(scope)
                 if c.index in scope['parameters']:
-                    print('parameter')
                     c.type = scope['parameters'][c.index].type
                 elif isinstance(c, Call):
                     methodIndex = f'{currentType.type}_{c.name}'
                     if methodIndex in scope['methods']:
                         c.type = scope['methods'][methodIndex].type
-                        print(f'ITS A METHODDDDDDDDDDDDDDDDDDDdd with type {c.type}')
-                else:
-                    print('WTF')
             elif currentType.type == 'map': #TODO: Make this part of the token class
                 if f'{c}' == 'len':
                     c.type = Type('int')
@@ -415,19 +407,13 @@ class BaseTranspiler():
                     c.type = Type('int')
             elif currentType.type == 'module':
                 if isinstance(c, Call):
-                    print(self.currentScope)
                     c.name.namespace = currentType.name
                     c.type = self.currentScope.get(c.name).type
                 elif isinstance(c, Var):
                     c.namespace = currentType.name
-                    print(self.currentScope)
-                    input(c.index)
                     c.type = self.currentScope.get(c.index).type
 
             currentType = c.type
-        for c in chain:
-            print(c.type)
-        input('Correct?')
         self.currentNamespace = oldNamespace
         return DotAccess(
             chain,
@@ -436,40 +422,74 @@ class BaseTranspiler():
 
     def processClass(self, token):
         self.currentScope.startLocalScope()
+        className = Var(token['name'], namespace=self.currentNamespace)
         self.currentScope.add(
             Assign(
-                target=Var('self', token['name']),
-                value=Call(Var(token['name']))))
+                target=Var('self', className.name),
+                value=Call(Var(className.name))))
         parameters = {}
-        input('Parsing params')
+        methods = {}
+        code = Scope([])
+        new = None
+        args = self.processTokens(token['args'])
+        parentMethods = {}
+        for arg in args:
+            parentClass = self.currentScope.get(arg.index)
+            parameters.update(parentClass.parameters)
+            #TODO is inherited methods needed?
+            #parentMethods.update(deepcopy(parentClass.methods))
+            #del parentMethods[parentClass.new.index]
+            code.extend(parentClass.code)
         for t in token['block']:
             try:
                 t = self.preprocess(t)
             except KeyError:
                 continue
-            if isinstance(t, Function) and t.name.value == 'new':
-                for kw in t.kwargs.kwargs:
-                    if kw.target.attribute:
-                        parameters[kw.index] = kw
+            if isinstance(t, Function):
+                if t.name.value == 'new':
+                    for kw in t.kwargs.kwargs:
+                        if kw.target.attribute:
+                            parameters[kw.index] = kw
+                t.name.value = f'{className.value}_{t.name.value}'
+                methods[t.index] = t
             elif isinstance(t, Assign):
                 t.target.namespace = ''
                 parameters[t.index] = t
-        print(parameters)
-        input('Parameters')
+        if new is None:
+            new = Function(name=Var(f'{className.value}_new',namespace=self.currentNamespace))
+            methods[new.index] = new
+        new.name.type = f'struct {className}*'
         self.currentScope.add(
             Class(name=Var(token['name'], namespace=self.currentNamespace),
             args=self.processTokens(token['args']),
             parameters = parameters,
-            code=[])
+            new = new,
+            code=Scope([]))
         )
-        print(self.currentScope)
-        input('Scope')
-        code = self.processTokens(token['block'])
-        input('Ended Processing tokens')
+        thisClassCode = Scope(self.processTokens(token['block']))
+        for t in thisClassCode.sequence:
+            if isinstance(t, Function):
+                t.name.value = f'{className.value}_{t.name.value}'
+                methods[t.index] = t
+            elif isinstance(t, Assign):
+                t.target.namespace = ''
+                parameters[t.index] = t
+        code.extend(thisClassCode)
+        for kwarg in new.kwargs.kwargs:
+            code.sequence.add(kwarg)
+        new.code = Scope([
+            NativeCode(f'{new.name.type} self = malloc(sizeof({className}))'),
+            *[NativeCode(f'self->{a.target} = {a.value}') for a in parameters.values()],
+            *new.code,
+            NativeCode(f'return self')
+        ])
         classToken = Class(
             name=Var(token['name'], namespace=self.currentNamespace),
             args=self.processTokens(token['args']),
+            parameters=parameters,
+            methods=methods,
             code=code,
+            new=new,
         )
         self.currentScope.endLocalScope()
         return classToken
@@ -616,13 +636,9 @@ class BaseTranspiler():
                 argType = argType.returnType
                 argType.funcName = arg.value
             types.append(argType)
-        print(args)
-        print(types)
         template = String(value='"'+" ".join([formats[t.type] for t in types])+'\\n"')
         args.insert(0, template)
         args = Args(args, mode='format')
-        input(f'outside {args.mode}')
-        print(args)
         return Call(
             name = Var('printf', 'unknown', namespace=''),
             args = args,
