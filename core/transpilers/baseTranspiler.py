@@ -429,13 +429,16 @@ class BaseTranspiler():
                 value=Call(Var(className.name))))
         parameters = {}
         methods = {}
-        #code = Scope([])
         new = None
+        newArgs = []
+        newKwargs = []
         args = self.processTokens(token['args'])
         parentMethods = {}
         for arg in args:
             parentClass = self.currentScope.get(arg.index)
             parameters.update(parentClass.parameters)
+            newArgs = newArgs + parentClass.new.args.args
+            newKwargs = newKwargs + parentClass.new.kwargs.kwargs
             #TODO is inherited methods needed?
             #parentMethods.update(deepcopy(parentClass.methods))
             #del parentMethods[parentClass.new.index]
@@ -447,7 +450,9 @@ class BaseTranspiler():
                 continue
             if isinstance(t, Function):
                 if t.name.value == 'new':
-                    for kw in t.kwargs.kwargs:
+                    new = t
+                    new.kwargs.kwargs = newKwargs + new.kwargs.kwargs
+                    for kw in new.kwargs.kwargs:
                         if kw.target.attribute:
                             parameters[kw.index] = kw
                 t.name.value = f'{className.value}_{t.name.value}'
@@ -469,23 +474,25 @@ class BaseTranspiler():
         for t in thisClassCode.sequence:
             if isinstance(t, Function):
                 if t.name.value == 'new':
+                    new = t
+                    new.args.args = newArgs + new.args.args
+                    new.kwargs.kwargs = newKwargs + new.kwargs.kwargs
                     for kw in t.kwargs.kwargs:
                         if kw.target.attribute:
                             parameters[kw.index] = kw
                 else:
                     t.args.args.insert(0, Var('self', repr(className)))
-                    #TODO move args here, instead of using NativeCode token
                 t.name.value = f'{className.value}_{t.name.value}'
                 methods[t.index] = t
             elif isinstance(t, Assign):
                 t.target.namespace = ''
                 parameters[t.index] = t
-        #code.extend(thisClassCode)
-        #for kwarg in new.kwargs.kwargs:
-            #code.sequence.add(kwarg)
+        new.name.type = f'struct {className}*'
+        #TODO transform Native code in tokens to make it language agnostic
         new.code = Scope([
             NativeCode(f'{new.name.type} self = malloc(sizeof({className}))'),
-            *[NativeCode(f'self->{a.target} = {a.value}') for a in parameters.values()],
+            *[NativeCode(
+                f'self->{a.target} = {a.value}') if not a.target.attribute else NativeCode(f'self->{a.target} = {a.target}') for a in parameters.values()],
             *new.code,
             NativeCode(f'return self')
         ])
