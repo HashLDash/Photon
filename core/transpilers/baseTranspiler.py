@@ -425,11 +425,11 @@ class BaseTranspiler():
         className = Var(token['name'], namespace=self.currentNamespace)
         self.currentScope.add(
             Assign(
-                target=Var('self', className.name),
+                target=Var('self', repr(className)),
                 value=Call(Var(className.name))))
         parameters = {}
         methods = {}
-        code = Scope([])
+        #code = Scope([])
         new = None
         args = self.processTokens(token['args'])
         parentMethods = {}
@@ -439,7 +439,7 @@ class BaseTranspiler():
             #TODO is inherited methods needed?
             #parentMethods.update(deepcopy(parentClass.methods))
             #del parentMethods[parentClass.new.index]
-            code.extend(parentClass.code)
+            #code.extend(parentClass.code)
         for t in token['block']:
             try:
                 t = self.preprocess(t)
@@ -464,31 +464,37 @@ class BaseTranspiler():
             args=self.processTokens(token['args']),
             parameters = parameters,
             new = new,
-            code=Scope([]))
-        )
+        ))
         thisClassCode = Scope(self.processTokens(token['block']))
         for t in thisClassCode.sequence:
             if isinstance(t, Function):
+                if t.name.value == 'new':
+                    for kw in t.kwargs.kwargs:
+                        if kw.target.attribute:
+                            parameters[kw.index] = kw
+                else:
+                    t.args.args.insert(0, Var('self', repr(className)))
+                    #TODO move args here, instead of using NativeCode token
                 t.name.value = f'{className.value}_{t.name.value}'
                 methods[t.index] = t
             elif isinstance(t, Assign):
                 t.target.namespace = ''
                 parameters[t.index] = t
-        code.extend(thisClassCode)
-        for kwarg in new.kwargs.kwargs:
-            code.sequence.add(kwarg)
+        #code.extend(thisClassCode)
+        #for kwarg in new.kwargs.kwargs:
+            #code.sequence.add(kwarg)
         new.code = Scope([
             NativeCode(f'{new.name.type} self = malloc(sizeof({className}))'),
             *[NativeCode(f'self->{a.target} = {a.value}') for a in parameters.values()],
             *new.code,
             NativeCode(f'return self')
         ])
+        methods[new.index] = new
         classToken = Class(
             name=Var(token['name'], namespace=self.currentNamespace),
             args=self.processTokens(token['args']),
             parameters=parameters,
             methods=methods,
-            code=code,
             new=new,
         )
         self.currentScope.endLocalScope()

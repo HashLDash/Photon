@@ -769,19 +769,17 @@ class Class():
         self.new = new
 
     def declarationMode(self):
-        for t in self.code:
-            if isinstance(t, Function):
-                t.mode = 'empty'
-            else:
-                t.mode = 'declaration'
+        for _, t in self.parameters.items():
+            t.mode = 'declaration'
     
     def writeMode(self):
-        for t in self.code:
+        for _, t in self.methods.items():
             t.mode = 'expr'
 
     def __repr__(self):
         self.declarationMode()
-        value = f'typedef struct {self.name} {self.code} {self.name};\n'
+        parameters = Scope(list(self.parameters.values()))
+        value = f'typedef struct {self.name} {parameters} {self.name};\n'
         self.writeMode()
         for method in self.methods.values():
             value += f'{method}\n'
