@@ -23,8 +23,9 @@ def comment(i, t):
     ''' Remove comment from token list '''
     for n, token in enumerate(t):
         if token['token'] in {'singleQuote', 'doubleQuote'}:
-            # It is part of a string
-            return 'continue'
+            if n < i:
+                # It is part of a string
+                return 'continue'
         if token['token'] == 'hashtag':
             # remove all tokens after the hashtag
             if n == 1:

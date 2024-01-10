@@ -561,7 +561,7 @@ class BaseTranspiler():
         return Break()
 
     def processComment(self, token):
-        pass
+        return Comment()
 
     def processImport(self, token):
         #TODO: relative path and package imports

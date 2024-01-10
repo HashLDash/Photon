@@ -97,6 +97,14 @@ class Type():
     def __eq__(self, obj):
         return hash(obj) == self.__hash__()
 
+class Comment():
+    def __repr__(self):
+        return ''
+
+    @property
+    def index(self):
+        return None
+
 class Module():
     def __init__(self, expr, name):
         self.expr = expr
