@@ -102,6 +102,7 @@ class BaseTranspiler():
             'bool': self.processBool,
             'group': self.processGroup,
             'delete': self.processDelete,
+            'null': self.processNull,
         }
 
         self.sequence = Sequence()
@@ -131,6 +132,9 @@ class BaseTranspiler():
     def preprocess(self, token):
         processedToken = self.instructions[token['token']](token)
         return processedToken
+
+    def processNull(self, token):
+        return Null()
 
     def processNum(self, token):
         return Num(value=token['value'], type=token['type'])
@@ -406,12 +410,15 @@ class BaseTranspiler():
                 if f'{c}' == 'len':
                     c.type = Type('int')
             elif currentType.type == 'module':
+                module = self.currentScope.get(f'{oldNamespace}__{currentType.name}')
+                #TODO: GET MODULE FUNCTIONS AND VARIABLE TYPES
                 if isinstance(c, Call):
-                    c.name.namespace = currentType.name
-                    c.type = self.currentScope.get(c.name).type
+                    c.name.namespace = module.namespace
+                    c.type = Type('int')#self.currentScope.get(c.name).type
                 elif isinstance(c, Var):
-                    c.namespace = currentType.name
-                    c.type = self.currentScope.get(c.index).type
+                    c.namespace = module.namespace
+                    c.type = Type('int')#self.currentScope.get(c.index).type
+                input(f'{module} -> {c.type}')
 
             currentType = c.type
         self.currentNamespace = oldNamespace
@@ -610,6 +617,7 @@ class BaseTranspiler():
             self.source += interpreter.engine.source
             self.header += interpreter.engine.header
             self.sequence = self.sequence + interpreter.engine.sequence
+            namespace = name
         elif f"{name}.{self.libExtension}" in os.listdir(self.standardLibs + f'/native/{self.lang}/'):
             # Native Photon lib module import
             raise SyntaxError('Native Photon lib module import not implemented yet.')
@@ -618,9 +626,12 @@ class BaseTranspiler():
             raise SyntaxError('Native Photon local module import not implemented yet.')
         else:
             # System library import
+            # TODO: different syntax? native import module
+            input('system library import')
+            namespace = ''
             pass
             #raise SyntaxError('System library import not implemented yet.')
-        return Module(moduleExpr, name)
+        return Module(moduleExpr, name, namespace)
 
     def processTokens(self, tokens, addToScope=False):
         if addToScope:

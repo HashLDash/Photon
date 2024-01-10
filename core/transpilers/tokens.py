@@ -105,14 +105,33 @@ class Comment():
     def index(self):
         return None
 
+class Null():
+    imports = []
+    def __init__(self):
+        self.namespace = ''
+        self.type = Type('void')
+    
+    def prepare(self):
+        pass
+
+    def __repr__(self):
+        return 'NULL'
+
+    @property
+    def index(self):
+        return None
+
 class Module():
-    def __init__(self, expr, name):
+    def __init__(self, expr, name, namespace):
         self.expr = expr
         self.name = name
+        self.namespace = namespace
         self.type = Type('module', name=name)
         self.imports = [f'#include "{self.name}.h"']
 
     def __repr__(self):
+        if not self.namespace:
+            return f'#include <{self.name}.h>\n'
         return f'//module {self.name}'
 
     @property
