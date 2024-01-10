@@ -521,10 +521,11 @@ class Map():
         return f'dict_{self.type.keyType.type}_{self.type.valType.type}_constructor({len(self.keyVals)},{size})'
 
 class Input():
-    def __init__(self, expr=None):
+    def __init__(self, expr=None, namespace=''):
         self.expr = expr
         self.imports = ['#include "photonInput.h"']
         self.type = Type('str')
+        self.namespace = namespace
 
     def prepare(self):
         pass
