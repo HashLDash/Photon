@@ -417,7 +417,7 @@ class BaseTranspiler():
         self.currentNamespace = oldNamespace
         return DotAccess(
             chain,
-            namespace=oldNamespace,
+            namespace=self.currentNamespace,
         )
 
     def processClass(self, token):
@@ -445,8 +445,12 @@ class BaseTranspiler():
             #code.extend(parentClass.code)
         for t in token['block']:
             try:
+                oldNamespace = self.currentNamespace
                 t = self.preprocess(t)
-            except KeyError:
+            except KeyError as e:
+                # we must recover the namespace when
+                # it breaks in the middle of execution
+                self.currentNamespace = oldNamespace
                 continue
             if isinstance(t, Function):
                 if t.name.value == 'new':
@@ -465,10 +469,11 @@ class BaseTranspiler():
             methods[new.index] = new
         new.name.type = f'struct {className}*'
         self.currentScope.add(
-            Class(name=Var(token['name'], namespace=self.currentNamespace),
-            args=self.processTokens(token['args']),
-            parameters = parameters,
-            new = new,
+            Class(
+                name=className,
+                args=self.processTokens(token['args']),
+                parameters = parameters,
+                new = new,
         ))
         thisClassCode = Scope(self.processTokens(token['block']))
         for t in thisClassCode.sequence:
@@ -498,7 +503,7 @@ class BaseTranspiler():
         ])
         methods[new.index] = new
         classToken = Class(
-            name=Var(token['name'], namespace=self.currentNamespace),
+            name=className,
             args=self.processTokens(token['args']),
             parameters=parameters,
             methods=methods,
