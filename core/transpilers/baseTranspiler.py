@@ -411,13 +411,13 @@ class BaseTranspiler():
                     c.type = Type('int')
             elif currentType.type == 'module':
                 module = self.currentScope.get(f'{oldNamespace}__{currentType.name}')
-                #TODO: GET MODULE FUNCTIONS AND VARIABLE TYPES
+                #TODO: GET MODULE FUNCTIONS AND VARIABLE TYPES?
                 if isinstance(c, Call):
                     c.name.namespace = module.namespace
-                    c.type = Type('int')#self.currentScope.get(c.name).type
+                    c.type = Type('unknown')#self.currentScope.get(c.name).type
                 elif isinstance(c, Var):
                     c.namespace = module.namespace
-                    c.type = Type('int')#self.currentScope.get(c.index).type
+                    c.type = Type('unknown')#self.currentScope.get(c.index).type
                 input(f'{module} -> {c.type}')
 
             currentType = c.type

@@ -617,7 +617,7 @@ class Cast():
         'str':{
             'int': '__photon_format_str("%ld", {self.expr})',
             'float': '__photon_format_str("%lf", {self.expr})',
-        }
+        },
     }
 
     def __init__(self, expr, castTo):
