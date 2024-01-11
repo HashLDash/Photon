@@ -365,12 +365,14 @@ class BaseTranspiler():
 
     def processCall(self, token, className=None):
         name = self.preprocess(token['name'])
+        input(name)
         try:
             call = self.currentScope.get(name.index)
         except KeyError:
             call = None
         signature = []
         if call:
+            print('Call is ', call.new)
             if call.type.isClass:
                 call = self.currentScope.get(call.index).new
             if getattr(call, 'args', None) is not None and (call.args or call.kwargs):
@@ -474,7 +476,7 @@ class BaseTranspiler():
         if new is None:
             new = Function(name=Var(f'{className.value}_new',namespace=self.currentNamespace))
             methods[new.index] = new
-        new.name.type = f'struct {className}*'
+        new.name.type = Type(repr(className))
         self.currentScope.add(
             Class(
                 name=className,
@@ -482,6 +484,7 @@ class BaseTranspiler():
                 parameters = parameters,
                 new = new,
         ))
+        new = None
         thisClassCode = Scope(self.processTokens(token['block']))
         for t in thisClassCode.sequence:
             if isinstance(t, Function):
@@ -489,6 +492,7 @@ class BaseTranspiler():
                     new = t
                     new.args.args = newArgs + new.args.args
                     new.kwargs.kwargs = newKwargs + new.kwargs.kwargs
+                    print(new.kwargs.kwargs)
                     for kw in t.kwargs.kwargs:
                         if kw.target.attribute:
                             parameters[kw.index] = kw
@@ -499,7 +503,12 @@ class BaseTranspiler():
             elif isinstance(t, Assign):
                 t.target.namespace = ''
                 parameters[t.index] = t
-        new.name.type = f'struct {className}*'
+        if new is None:
+            new = Function(
+                name=Var(f'{className.value}_new',namespace=self.currentNamespace),
+                args=newArgs,
+                kwargs=newKwargs)
+        new.name.type = Type(repr(className))
         #TODO transform Native code in tokens to make it language agnostic
         new.code = Scope([
             NativeCode(f'{new.name.type} self = malloc(sizeof({className}))'),
@@ -508,6 +517,7 @@ class BaseTranspiler():
             *new.code,
             NativeCode(f'return self')
         ])
+        print('here')
         methods[new.index] = new
         classToken = Class(
             name=className,
@@ -516,6 +526,7 @@ class BaseTranspiler():
             methods=methods,
             new=new,
         )
+        input(f'{new.kwargs.kwargs} {className}')
         self.currentScope.endLocalScope()
         return classToken
 
