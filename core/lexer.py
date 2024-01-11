@@ -334,7 +334,7 @@ def expr(i, t):
             pass
         # Modifier operator
         t2 = t[i+1].copy()
-        t2['args'][0]['modifier'] = t[i]['operator']
+        t2['ops'].append(t[i]['operator'])
         t[i] = t2
         del t[i+1] # var or num
     elif t[i]['token'] == 'group':

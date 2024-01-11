@@ -130,8 +130,6 @@ class Module():
         self.imports = [f'#include "{self.name}.h"']
 
     def __repr__(self):
-        if not self.namespace:
-            return f'#include <{self.name}.h>\n'
         return f'//module {self.name}'
 
     @property
@@ -327,12 +325,13 @@ class Var(Obj):
 
 class Expr(Obj):
     operatorOrder = [
-        '**','*','%','/','-','+','==','!=','>','<','>=','<=',
+        'not','**','*','%','/','-','+','==','!=','>','<','>=','<=',
         'is','in','andnot','and','or','&', '<<', '>>'
     ]
     opConversions = {
         'and': '&&',
         'or': '||',
+        'not': '!',
     }
     #TODO: not is not implemented
     def __init__(self, *elements, ops=None, **kwargs):
@@ -355,15 +354,20 @@ class Expr(Obj):
     def process(self):
         ops = self.ops.copy()
         elements = deepcopy(self.elements)
-        self.type = 'unknown'
-        for op in self.operatorOrder:
-            while op in ops:
-                index = ops.index(op)
-                arg1 = elements[index]
-                arg2 = elements[index+1]
-                elements[index] = self.operations(op, arg1, arg2)
-                del ops[index]
-                del elements[index+1]
+        if len(elements) == 1 and len(self.ops) == 1:
+            if self.ops[0] == 'not':
+                elements[0] = Expr(value=f'!{elements[0]}', type=Type('bool'))
+                self.ops = []
+        else:
+            self.type = 'unknown'
+            for op in self.operatorOrder:
+                while op in ops:
+                    index = ops.index(op)
+                    arg1 = elements[index]
+                    arg2 = elements[index+1]
+                    elements[index] = self.operations(op, arg1, arg2)
+                    del ops[index]
+                    del elements[index+1]
         self.value = elements[0]
         self.namespace = elements[0].namespace
         self.type = elements[0].type
@@ -383,7 +387,7 @@ class Expr(Obj):
             t = Type('float')
         elif op == '%':
             t = Type('int')
-        elif op in ['==','!=','>','<','>=','<=','in','and','or']:
+        elif op in ['not','==','!=','>','<','>=','<=','in','and','or']:
             t = Type('bool')
         if op in self.opConversions:
             op = self.opConversions[op]
@@ -739,11 +743,10 @@ class Call(Obj):
         self.signature = signature
         self.namespace = namespace
 
-    def preprocess(self):
+    def prepare(self):
         self.name.namespace = self.namespace
 
     def __repr__(self):
-        self.preprocess()
         if self.signature:
             kwargs = []
             # allocate args then sort kwargs

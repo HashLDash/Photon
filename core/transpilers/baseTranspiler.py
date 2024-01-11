@@ -396,7 +396,7 @@ class BaseTranspiler():
         currentType = initialType
         for c in chain[1:]:
             c.namespace = ''
-            c.preprocess()
+            c.prepare()
             if currentType.isClass:
                 scope = self.currentScope.get(currentType.type).__dict__
                 if c.index in scope['parameters']:
@@ -420,7 +420,6 @@ class BaseTranspiler():
                 elif isinstance(c, Var):
                     c.namespace = module.namespace
                     c.type = Type('unknown')#self.currentScope.get(c.index).type
-                input(f'{module} -> {c.type}')
 
             currentType = c.type
         return DotAccess(
@@ -632,7 +631,11 @@ class BaseTranspiler():
         else:
             raise RuntimeError('Cannot import {name}.')
             #raise SyntaxError('System library import not implemented yet.')
-        return Module(moduleExpr, name, namespace)
+        module = Module(moduleExpr, name, namespace)
+        for i in module.imports:
+            self.imports.add(i)
+            self.links.add(f"-l{name}")
+        return module
 
     def processTokens(self, tokens, addToScope=False):
         if addToScope:
