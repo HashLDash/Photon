@@ -65,6 +65,7 @@ patterns = {
   ('lbrace', 'keyVals', 'rbrace'): hashmap,
   ('returnStatement',): funcReturn,
   ('returnStatement', 'expr'): funcReturn,
+  ('nativeStatement', 'importStatement', 'expr'): imports,
   ('importStatement', 'expr'): imports,
   ('expr', 'dot', 'dot', 'expr'): rangeExpr,
   ('expr', 'dot', 'dot', 'expr', 'dot', 'dot', 'expr'): rangeExpr,

@@ -385,16 +385,18 @@ class BaseTranspiler():
             args=self.processTokens(token['args']),
             kwargs=self.processTokens(token['kwargs']),
             signature=signature,
+            namespace=self.currentNamespace,
         )
 
     def processDotAccess(self, token):
         initialType = self.preprocess(token['dotAccess'][0]).type
         oldNamespace = self.currentNamespace
-        self.currentNamespace = ''
         chain = self.processTokens(token['dotAccess'])
         chain[0].type = initialType
         currentType = initialType
         for c in chain[1:]:
+            c.namespace = ''
+            c.preprocess()
             if currentType.isClass:
                 scope = self.currentScope.get(currentType.type).__dict__
                 if c.index in scope['parameters']:
@@ -421,7 +423,6 @@ class BaseTranspiler():
                 input(f'{module} -> {c.type}')
 
             currentType = c.type
-        self.currentNamespace = oldNamespace
         return DotAccess(
             chain,
             namespace=self.currentNamespace,
@@ -578,6 +579,7 @@ class BaseTranspiler():
     def processImport(self, token):
         #TODO: relative path and package imports
         folder = None
+        native = token['native']
         #self.oldNamespace = self.currentNamespace
         #self.currentNamespace = ''
         moduleExpr = self.preprocess(token['expr'])
@@ -588,7 +590,10 @@ class BaseTranspiler():
         name = f'{moduleExpr}'
         moduleExpr.namespace = self.currentNamespace
         print(f'Importing {name}')
-        if f"{name}.w" in os.listdir(folder) + os.listdir(self.standardLibs):
+        if native:
+            # System library import
+            namespace = ''
+        elif f"{name}.w" in os.listdir(folder) + os.listdir(self.standardLibs):
             if f"{name}.w" in os.listdir(self.standardLibs):
                 filename = f'{self.standardLibs}/{name}.w'
                 # Photon module import
@@ -625,11 +630,7 @@ class BaseTranspiler():
             # Native Photon local module import
             raise SyntaxError('Native Photon local module import not implemented yet.')
         else:
-            # System library import
-            # TODO: different syntax? native import module
-            input('system library import')
-            namespace = ''
-            pass
+            raise RuntimeError('Cannot import {name}.')
             #raise SyntaxError('System library import not implemented yet.')
         return Module(moduleExpr, name, namespace)
 

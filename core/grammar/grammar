@@ -53,7 +53,8 @@ hashmap = lbrace rbrace
 funcReturn = returnStatement
            | returnStatement expr
 
-imports = importStatement expr
+imports = nativeStatement importStatement expr
+        | importStatement expr
 
 rangeExpr = expr dot dot expr
           | expr dot dot expr dot dot expr

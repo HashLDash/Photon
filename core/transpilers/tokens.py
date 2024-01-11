@@ -730,15 +730,20 @@ class Kwargs():
         return ', '.join([repr(kwarg) for kwarg in self.kwargs])
 
 class Call(Obj):
-    def __init__(self, name='', args='', kwargs='', signature='', **defaults):
+    def __init__(self, name='', args='', kwargs='', signature='', namespace='', **defaults):
         super().__init__(**defaults)
         self.name = name
         self.type = self.name.type
         self.args = Args(args)
         self.kwargs = Kwargs(kwargs)
         self.signature = signature
+        self.namespace = namespace
+
+    def preprocess(self):
+        self.name.namespace = self.namespace
 
     def __repr__(self):
+        self.preprocess()
         if self.signature:
             kwargs = []
             # allocate args then sort kwargs

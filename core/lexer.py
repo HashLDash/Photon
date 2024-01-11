@@ -665,7 +665,13 @@ def funcReturn(i, t):
 
 def imports(i, t):
     ''' Return an import token if valid '''
-
+    input(t)
+    if t[i]['token'] == 'nativeStatement':
+        native = True
+        del t[i]
+    else:
+        native = False
+    t[i]['native'] = native
     t[i]['token'] = 'import'
     t[i]['expr'] = t[i+1]
     del t[i+1] # expr

@@ -1,7 +1,8 @@
 for C:
     import time
+    native import random
 
-    srand(time(NULL))
+    time.srand(time.time(null))
 
     def random():
         float a = rand() / RAND_MAX
