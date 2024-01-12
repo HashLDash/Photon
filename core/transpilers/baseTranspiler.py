@@ -25,6 +25,8 @@ class CurrentScope():
                 self.localScope[-1][token.index] = token
             else:
                 self.currentScope[token.index] = token
+                if isinstance(token, Module):
+                    self.currentScope[token.name] = token
 
     def update(self, scope):
         self.currentScope.update(scope.currentScope)
@@ -413,8 +415,9 @@ class BaseTranspiler():
                 if f'{c}' == 'len':
                     c.type = Type('int')
             elif currentType.type == 'module':
-                module = self.currentScope.get(f'{oldNamespace}__{currentType.name}')
+                module = self.currentScope.get(currentType.name)
                 #TODO: GET MODULE FUNCTIONS AND VARIABLE TYPES?
+                print(module)
                 if isinstance(c, Call):
                     c.name.namespace = module.namespace
                     c.type = Type('unknown')#self.currentScope.get(c.name).type
