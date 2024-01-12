@@ -131,7 +131,7 @@ class Module():
         self.type = Type('module', name=name)
         self.imports = [f'#include "{self.name}.h"']
         if self.name not in ['time']:
-            self.links [f'-l{self.name}']
+            self.links = [f'-l{self.name}']
         else:
             self.links = []
 
