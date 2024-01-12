@@ -12,8 +12,9 @@ class Type():
         '':'void',
         'obj':'obj',
     }
-    def __init__(self, type, elementType=None, keyType=None, valType=None, returnType=None, funcName=None, argsTypes=None, name=None, namespace='', **kwargs):
+    def __init__(self, type, elementType=None, keyType=None, valType=None, returnType=None, funcName=None, argsTypes=None, name=None, namespace='', native=False, **kwargs):
         if isinstance(type, Type):
+            self.native = type.native
             self.namespace = type.namespace
             self.type = type.type
             self.elementType = type.elementType
@@ -30,6 +31,7 @@ class Type():
                 else:
                     type = 'func'
                     returnType = ''
+            self.native = native
             self.namespace = namespace
             self.type = type if type is not None else 'unknown'
             self.elementType = Type(elementType) if self.isKnown(self.type) else 'unknown'
@@ -64,7 +66,7 @@ class Type():
     def isClass(self):
         if self.known and self.type in self.nativeTypes:
             return False
-        elif self.known and not self.type in self.nativeTypes and self.type not in ['array', 'map', 'module'] and not 'func' in self.type.split(' '):
+        elif self.known and not self.native and not self.type in self.nativeTypes and self.type not in ['array', 'map', 'module'] and not 'func' in self.type.split(' '):
             return True
         else:
             return False
@@ -80,7 +82,9 @@ class Type():
         return repr(self)
 
     def __repr__(self):
-        if self.type == 'array':
+        if self.native:
+            return self.type
+        elif self.type == 'array':
             return f'list_{self.elementType.type}*'
         elif self.type == 'map':
             return f'dict_{self.keyType.type}_{self.valType.type}*'

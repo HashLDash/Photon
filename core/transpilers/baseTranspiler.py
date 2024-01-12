@@ -163,9 +163,15 @@ class BaseTranspiler():
 
     def processVar(self, token):
         indexAccess = self.preprocess(token['indexAccess']) if 'indexAccess' in token else None
+        varType = Var(token['type'], namespace=self.moduleName)
+        try:
+            varType = self.currentScope.get(varType.index)
+            native = False
+        except KeyError:
+            native = True
         var = Var(
             value=token['name'],
-            type=Type(**token),
+            type=Type(**token, native=native),
             namespace=self.currentNamespace,
             indexAccess=indexAccess,
             attribute=token.get('attribute', None)
