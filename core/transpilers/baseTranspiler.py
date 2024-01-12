@@ -653,7 +653,7 @@ class BaseTranspiler():
         for i in module.imports:
             self.imports.add(i)
         for i in module.links:
-            self.links.add(module.links)
+            self.links.add(i)
         return module
 
     def processTokens(self, tokens, addToScope=False):
