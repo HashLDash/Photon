@@ -128,16 +128,18 @@ class Null():
         return None
 
 class Module():
-    def __init__(self, expr, name, namespace):
+    def __init__(self, expr, name, namespace, native=False):
         self.expr = expr
         self.name = name
         self.namespace = namespace
         self.type = Type('module', name=name)
-        self.imports = [f'#include "{self.name}.h"']
-        if self.name not in ['time']:
-            self.links = [f'-l{self.name}']
-        else:
-            self.links = []
+        self.native = native
+        self.links = []
+        self.imports = []
+        if self.native:
+            self.imports = [f'#include "{self.name}.h"']
+            if self.name not in ['time']:
+                self.links = [f'-l{self.name}']
 
     def __repr__(self):
         return f'//module {self.name}'
@@ -442,7 +444,7 @@ class DotAccess():
         pass
 
     def format(self):
-        if self.type.type not in ['str','int','float']:
+        if self.type.isClass:
             call = repr(self.type).replace("*","")
             return f'{call}_str({self.value})'
         return self.value
@@ -451,7 +453,13 @@ class DotAccess():
         chain = [repr(self.chain[0])]
         currentType = self.chain[0].type
         for n, c in enumerate(self.chain[1:]):
-            if currentType.isClass and isinstance(c, Call):
+            if currentType.native:
+                print(c)
+                print(currentType)
+                input('here')
+                chain.append('.')
+                chain.append(repr(c))
+            elif currentType.isClass and isinstance(c, Call):
                 instanceName = chain[n-1]
                 chain[n-1] = currentType.type
                 chain.append('_')

@@ -163,15 +163,18 @@ class BaseTranspiler():
 
     def processVar(self, token):
         indexAccess = self.preprocess(token['indexAccess']) if 'indexAccess' in token else None
-        varType = Var(token['type'], namespace=self.moduleName)
-        try:
-            varType = self.currentScope.get(varType.index)
-            native = False
-        except KeyError:
-            native = True
+        varType = Type(**token)
+        if varType.isClass:
+            try:
+                typeName = Var(token['type'], namespace=self.moduleName)
+                # if this doesn't fail is because the type is a class
+                c = self.currentScope.get(typeName.index)
+                varType = Type(typeName.index)
+            except KeyError:
+                varType.native = True
         var = Var(
             value=token['name'],
-            type=Type(**token, native=native),
+            type=varType,
             namespace=self.currentNamespace,
             indexAccess=indexAccess,
             attribute=token.get('attribute', None)
@@ -366,7 +369,7 @@ class BaseTranspiler():
     def processForTarget(self, token):
         target = token['target'].lower()
         if target in [self.lang, self.target]:
-            block = self.processTokens(token['block'])
+            block = self.processTokens(token['block'], addToScope=True)
         else:
             block = []
         return Sequence(block)
@@ -426,10 +429,10 @@ class BaseTranspiler():
                 print(module)
                 if isinstance(c, Call):
                     c.name.namespace = module.namespace
-                    c.type = Type('unknown')#self.currentScope.get(c.name).type
+                    c.type = Type('unknown', native=True)#self.currentScope.get(c.name).type
                 elif isinstance(c, Var):
                     c.namespace = module.namespace
-                    c.type = Type('unknown')#self.currentScope.get(c.index).type
+                    c.type = Type('unknown', native=True)#self.currentScope.get(c.index).type
 
             currentType = c.type
         return DotAccess(
@@ -654,7 +657,7 @@ class BaseTranspiler():
         else:
             raise RuntimeError('Cannot import {name}.')
             #raise SyntaxError('System library import not implemented yet.')
-        module = Module(moduleExpr, name, namespace)
+        module = Module(moduleExpr, name, namespace, native=native)
         for i in module.imports:
             self.imports.add(i)
         for i in module.links:
