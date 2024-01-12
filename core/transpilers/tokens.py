@@ -461,7 +461,6 @@ class DotAccess():
                 chain.append(repr(c))
             currentType = c.type
         if self.mode == 'method':
-            input(chain[-1])
             self.chain[-1].mode = 'method'
             chain[-1] = repr(self.chain[-1])
             self.chain[-1].mode = 'expr'
@@ -596,6 +595,8 @@ class Sequence():
     def __repr__(self):
         representation = ''
         for obj in self.sequence:
+            if isinstance(obj, Expr):
+                obj.mode = 'declaration'
             if self.apply:
                 obj = self.apply(obj)
             representation += f'{obj}{self.terminator}\n'

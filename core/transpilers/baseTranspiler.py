@@ -121,12 +121,12 @@ class BaseTranspiler():
             return Type('unknown')
 
     def process(self, token):
-        #print('Processing:')
-        #pprint(token)
         if token is not None:
             processedToken = self.instructions[token['opcode']](token)
             if processedToken is not None:
                 self.currentScope.add(processedToken)
+                if token['opcode'] == 'expr':
+                    processedToken.mode = 'declaration'
                 self.sequence.add(processedToken)
 
     def preprocess(self, token):
@@ -516,7 +516,6 @@ class BaseTranspiler():
             *new.code,
             NativeCode(f'return self')
         ])
-        print('here')
         methods[new.index] = new
         classToken = Class(
             name=className,
@@ -525,7 +524,6 @@ class BaseTranspiler():
             methods=methods,
             new=new,
         )
-        input(f'{new.kwargs.kwargs} {className}')
         self.currentScope.endLocalScope()
         return classToken
 
@@ -600,8 +598,6 @@ class BaseTranspiler():
         #self.oldNamespace = self.currentNamespace
         #self.currentNamespace = ''
         moduleExpr = self.preprocess(token['expr'])
-        input(moduleExpr.namespace)
-        input(token['expr'])
         #self.currentNamespace = self.oldNamespace
         moduleExpr.namespace = ''
         name = f'{moduleExpr}'
@@ -611,16 +607,16 @@ class BaseTranspiler():
             # System library import
             namespace = ''
         elif f"{name}.w" in os.listdir(folder) + os.listdir(self.standardLibs):
-            if f"{name}.w" in os.listdir(self.standardLibs):
-                filename = f'{self.standardLibs}/{name}.w'
-                # Photon module import
-                # Inject assets folder
-                #raise SyntaxError('Standard lib import not implemented yet.')
-            else:
+            if f"{name}.w" in os.listdir(folder):
                 # Local module import
                 moduleExpr.namespace = ''
                 filename = f'{name}.w'
                 moduleExpr.namespace = self.currentNamespace
+            else:
+                filename = f'{self.standardLibs}/{name}.w'
+                # Photon module import
+                # Inject assets folder
+                #raise SyntaxError('Standard lib import not implemented yet.')
             interpreter = Interpreter(
                     filename=filename,
                     lang=self.lang,
