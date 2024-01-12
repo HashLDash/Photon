@@ -12,8 +12,9 @@ class Type():
         '':'void',
         'obj':'obj',
     }
-    def __init__(self, type, elementType=None, keyType=None, valType=None, returnType=None, funcName=None, argsTypes=None, name=None, **kwargs):
+    def __init__(self, type, elementType=None, keyType=None, valType=None, returnType=None, funcName=None, argsTypes=None, name=None, namespace='', **kwargs):
         if isinstance(type, Type):
+            self.namespace = type.namespace
             self.type = type.type
             self.elementType = type.elementType
             self.keyType = type.keyType
@@ -29,6 +30,7 @@ class Type():
                 else:
                     type = 'func'
                     returnType = ''
+            self.namespace = namespace
             self.type = type if type is not None else 'unknown'
             self.elementType = Type(elementType) if self.isKnown(self.type) else 'unknown'
             self.keyType = Type(keyType) if self.isKnown(self.type) else 'unknown'
@@ -128,6 +130,10 @@ class Module():
         self.namespace = namespace
         self.type = Type('module', name=name)
         self.imports = [f'#include "{self.name}.h"']
+        if self.name not in ['time']:
+            self.links [f'-l{self.name}']
+        else:
+            self.links = []
 
     def __repr__(self):
         return f'//module {self.name}'
@@ -644,7 +650,9 @@ class Cast():
         elif castFrom == 'array' and self.expr.indexAccess is not None:
             castFrom = self.expr.type.elementType
         try:
-            if castTo != castFrom:
+            if self.castTo.isClass:
+                return f'({self.castTo}) {self.expr}'
+            elif castTo != castFrom:
                 return self.conversion[castTo][castFrom].format(self=self)
             return repr(self.expr)
         except KeyError as e:
@@ -749,6 +757,7 @@ class Call(Obj):
     def __repr__(self):
         if self.signature:
             kwargs = []
+            args = [self.args[0]] if len(self.args.args) > 0 else []
             # allocate args then sort kwargs
             for s in self.signature[len(self.args.args):]:
                 for kwarg in self.kwargs.kwargs:
@@ -760,22 +769,31 @@ class Call(Obj):
                 else:
                     kwargs.append(s)
             kwargs = Kwargs(kwargs, mode='value')
+            for arg, sig in zip(self.args[1:], self.signature):
+                if arg.type != sig.type:
+                    target = Var(repr(arg.value), arg.type)
+                    args.append(Cast(target, sig.type))
+                else:
+                    args.append(arg)
+            args = Args(args, mode='expr')
         else:
             kwargs = self.kwargs
+            args = self.args
         separator = ', ' if self.args and self.kwargs else ''
         if self.type.isClass:
-            return f'{self.name}_new({self.args}{separator}{kwargs})'
+            return f'{self.name}_new({args}{separator}{kwargs})'
         else:
-            return f'{self.name}({self.args}{separator}{kwargs})'
+            return f'{self.name}({args}{separator}{kwargs})'
 
 class Function(Obj):
-    def __init__(self, name='', args='', kwargs='', code='', **defaults):
+    def __init__(self, name='', args='', kwargs='', code='', signature=None, **defaults):
         super().__init__(**defaults)
         self.name = name
         self.type = name.type
         self.args = Args(args, mode='declaration')
         self.kwargs = Kwargs(kwargs, mode='declaration')
         self.code = Scope(code)
+        self.signature = signature if signature is not None else []
 
     def prepare(self):
         self.separator = ', ' if self.args and self.kwargs else ''

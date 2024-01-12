@@ -365,14 +365,12 @@ class BaseTranspiler():
 
     def processCall(self, token, className=None):
         name = self.preprocess(token['name'])
-        input(name)
         try:
             call = self.currentScope.get(name.index)
         except KeyError:
             call = None
         signature = []
         if call:
-            print('Call is ', call.new)
             if call.type.isClass:
                 call = self.currentScope.get(call.index).new
             if getattr(call, 'args', None) is not None and (call.args or call.kwargs):
@@ -407,6 +405,7 @@ class BaseTranspiler():
                     methodIndex = f'{currentType.type}_{c.name}'
                     if methodIndex in scope['methods']:
                         c.type = scope['methods'][methodIndex].type
+                        c.signature = scope['methods'][methodIndex].signature
             elif currentType.type == 'map': #TODO: Make this part of the token class
                 if f'{c}' == 'len':
                     c.type = Type('int')
@@ -557,6 +556,13 @@ class BaseTranspiler():
             elif len(set(types)) == 2 and 'int' in types and 'float' in types:
                 returnType = Type('float')
         print(f'Return type is {returnType}') 
+        signature = []
+        for arg in deepcopy(args):
+            arg.namespace = ''
+            signature.append(arg)
+        for kwarg in deepcopy(kwargs):
+            kwarg.target.namespace = ''
+            signature.append(kwarg)
         return Function(
             name=Var(
                 token['name'],
@@ -566,6 +572,7 @@ class BaseTranspiler():
             args=args,
             kwargs=kwargs,
             code=code,
+            signature=signature,
         )
 
     def processRange(self, token):
@@ -645,7 +652,8 @@ class BaseTranspiler():
         module = Module(moduleExpr, name, namespace)
         for i in module.imports:
             self.imports.add(i)
-            self.links.add(f"-l{name}")
+        for i in module.links:
+            self.links.add(module.links)
         return module
 
     def processTokens(self, tokens, addToScope=False):
