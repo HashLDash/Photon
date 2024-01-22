@@ -413,7 +413,7 @@ class BaseTranspiler():
                 if c.index in scope['parameters']:
                     c.type = scope['parameters'][c.index].type
                 elif isinstance(c, Call):
-                    methodIndex = f'{currentType.type}_{c.name}'
+                    methodIndex = f'{c.name}'
                     if methodIndex in scope['methods']:
                         c.type = scope['methods'][methodIndex].type
                         c.signature = scope['methods'][methodIndex].signature
@@ -479,14 +479,19 @@ class BaseTranspiler():
                     for kw in new.kwargs.kwargs:
                         if kw.target.attribute:
                             parameters[kw.index] = kw
-                t.name.value = f'{className.value}_{t.name.value}'
-                methods[t.index] = t
+                else:
+                    t.args.args.insert(0, Var('self', repr(className)))
+                #t.name.value = f'{className.value}_{t.name.value}'
+                t.name.namespace = className
+                #methods[t.index] = t
+                methods[t.name.value] = t
             elif isinstance(t, Assign):
                 t.target.namespace = ''
                 parameters[t.index] = t
         if new is None:
-            new = Function(name=Var(f'{className.value}_new',namespace=self.currentNamespace))
-            methods[new.index] = new
+            new = Function(name=Var(f'new',namespace=className))
+            #methods[new.index] = new
+            methods[new.name.value] = new
         new.name.type = Type(repr(className))
         self.currentScope.add(
             Class(
@@ -509,14 +514,16 @@ class BaseTranspiler():
                             parameters[kw.index] = kw
                 else:
                     t.args.args.insert(0, Var('self', repr(className)))
-                t.name.value = f'{className.value}_{t.name.value}'
-                methods[t.index] = t
+                #t.name.value = f'{className.value}_{t.name.value}'
+                t.name.namespace = className
+                #methods[t.index] = t
+                methods[t.name.value] = t
             elif isinstance(t, Assign):
                 t.target.namespace = ''
                 parameters[t.index] = t
         if new is None:
             new = Function(
-                name=Var(f'{className.value}_new',namespace=self.currentNamespace),
+                name=Var(f'new',namespace=className),
                 args=newArgs,
                 kwargs=newKwargs)
         new.name.type = Type(repr(className))
@@ -525,10 +532,11 @@ class BaseTranspiler():
             NativeCode(f'{new.name.type} self = malloc(sizeof({className}))'),
             *[NativeCode(
                 f'self->{a.target} = {a.value}') if not a.target.attribute else NativeCode(f'self->{a.target} = {a.target}') for a in parameters.values()],
+            *[NativeCode(f'self->{a.name.value} = {a.name}') for a in methods.values()],
             *new.code,
             NativeCode(f'return self')
         ])
-        methods[new.index] = new
+        methods[new.name.value] = new
         classToken = Class(
             name=className,
             args=self.processTokens(token['args']),

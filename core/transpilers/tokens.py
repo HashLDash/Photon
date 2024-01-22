@@ -454,15 +454,12 @@ class DotAccess():
         currentType = self.chain[0].type
         for n, c in enumerate(self.chain[1:]):
             if currentType.native:
-                print(c)
-                print(currentType)
-                input('here')
                 chain.append('.')
                 chain.append(repr(c))
             elif currentType.isClass and isinstance(c, Call):
                 instanceName = chain[n-1]
-                chain[n-1] = currentType.type
-                chain.append('_')
+                chain[n-1] = instanceName
+                chain.append('->')
                 c.args.args.insert(0, Var(instanceName, currentType))
                 chain.append(repr(c))
             elif currentType.isModule:
@@ -794,7 +791,7 @@ class Call(Obj):
             args = self.args
         separator = ', ' if self.args and self.kwargs else ''
         if self.type.isClass:
-            return f'{self.name}_new({args}{separator}{kwargs})'
+            return f'{self.name}__new({args}{separator}{kwargs})'
         else:
             return f'{self.name}({args}{separator}{kwargs})'
 
@@ -814,7 +811,7 @@ class Function(Obj):
     def declaration(self):
         oldMode = self.args.mode
         self.args.mode = 'types'
-        result = f'{self.name.type} (*{self.name})({self.args}{self.separator}{self.kwargs})'
+        result = f'{self.name.type} (*{self.name.value})({self.args}{self.separator}{self.kwargs})'
         self.args.mode = oldMode
         return result
 
@@ -838,18 +835,28 @@ class Class():
     def declarationMode(self):
         for _, t in self.parameters.items():
             t.mode = 'declaration'
+        for _, t in self.methods.items():
+            t.mode = 'declaration'
     
     def writeMode(self):
+        for _, t in self.methods.items():
+            t.mode = 'expr'
         for _, t in self.methods.items():
             t.mode = 'expr'
 
     def __repr__(self):
         self.declarationMode()
-        parameters = Scope(list(self.parameters.values()))
-        value = f'typedef struct {self.name} {parameters} {self.name};\n'
+        declarations = Scope(
+            list(self.parameters.values()) +
+            list(self.methods.values())
+        )
+        value = f'typedef struct {self.name} {declarations} {self.name};\n'
         self.writeMode()
         for method in self.methods.values():
+            if method.name.value == 'new':
+                continue
             value += f'{method}\n'
+        value += f'{self.new}\n'
         return value
 
     @property
