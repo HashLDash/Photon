@@ -20,7 +20,6 @@ class CurrentScope():
 
     def add(self, token):
         if not isinstance(token, Var) and token.index is not None:
-            print(f'adding {token.index} with type {token.type.type}')
             if self.local[-1]:
                 self.localScope[-1][token.index] = token
             else:
@@ -49,7 +48,6 @@ class CurrentScope():
         return self.currentScope[index]
 
     def inMemory(self, obj):
-        print(f'Checking memory for {obj}')
         try:
             self.get(obj.index)
             return True
@@ -269,10 +267,8 @@ class BaseTranspiler():
             if target.type.type != value.type.type:
                 cast = target.type
         if not target.type.known:
-            print(f'Infering type from expr {target} {target.type} {self.typeOf(target)}')
             target.type = value.type
         if not value.type.known:
-            print(f'Infering type from target {target} {target.type} {self.typeOf(target)}')
             value.type = target.type
         assign = Assign(
             target=target,
@@ -426,7 +422,6 @@ class BaseTranspiler():
             elif currentType.type == 'module':
                 module = self.currentScope.get(currentType.name)
                 #TODO: GET MODULE FUNCTIONS AND VARIABLE TYPES?
-                print(module)
                 if isinstance(c, Call):
                     c.name.namespace = module.namespace
                     c.type = Type('unknown', native=True)#self.currentScope.get(c.name).type
@@ -549,7 +544,6 @@ class BaseTranspiler():
         self.currentScope.endLocalScope()
         returnType = Type(token['type'])
         if not returnType.known:
-            print('infering function returnType')
             types = []
             for t in code:
                 if isinstance(t, Return):
@@ -558,7 +552,6 @@ class BaseTranspiler():
                 returnType = Type(types[0])
             elif len(set(types)) == 2 and 'int' in types and 'float' in types:
                 returnType = Type('float')
-        print(f'Return type is {returnType}') 
         signature = []
         for arg in deepcopy(args):
             arg.namespace = ''
@@ -600,14 +593,10 @@ class BaseTranspiler():
         #TODO: relative path and package imports
         folder = None
         native = token['native']
-        #self.oldNamespace = self.currentNamespace
-        #self.currentNamespace = ''
         moduleExpr = self.preprocess(token['expr'])
-        #self.currentNamespace = self.oldNamespace
         moduleExpr.namespace = ''
         name = f'{moduleExpr}'
         moduleExpr.namespace = self.currentNamespace
-        print(f'Importing {name}')
         if native:
             # System library import
             namespace = ''
@@ -632,7 +621,6 @@ class BaseTranspiler():
                     debug=self.debug)
             interpreter.run()
             self.classes.update(interpreter.engine.classes)
-            print('Added scope: {interpreter.engine.currentScope}')
             self.currentScope.update(interpreter.engine.currentScope)
             self.imports = self.imports.union(interpreter.engine.imports)
             self.links = self.links.union(interpreter.engine.links)
@@ -698,4 +686,4 @@ class BaseTranspiler():
         )
 
     def run(self):
-        print('Running')
+        raise RuntimeError('Run not implemented for this target')

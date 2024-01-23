@@ -595,9 +595,6 @@ class Sequence():
 
     def __add__(self, sequence):
         if isinstance(sequence, Sequence):
-            print(sequence)
-            print(type(self.sequence), type(sequence))
-            print(type(self.sequence), type(sequence.sequence))
             return Sequence(self.sequence + sequence.sequence)
         raise ValueError(f'Object of type {type(sequence)} cannot be added to Sequence.')
 
@@ -682,7 +679,6 @@ class Assign(Obj):
     def expression(self):
         if self.cast is not None:
             self.value = Cast(self.value, self.cast)
-            print('Cast assign', self.value)
         if self.inMemory or isinstance(self.target, DotAccess):
             if self.target.indexAccess:
                 if self.target.type.type == 'array':
