@@ -350,17 +350,26 @@ class BaseTranspiler():
                 elif len(args) == 2:
                     args[0].type = Type(iterable.type.keyType)
                     args[1].type = Type(iterable.type.valType)
+            elif iterable.type.type == 'str':
+                if len(args) == 1:
+                    args[0].type = Type('str')
+                elif len(args) == 2:
+                    args[0].type = Type('int')
+                    args[1].type = Type('str')
         else:
             raise ValueError(f'Iterable with type {type(iterable)} not supported in processFor')
         for t in args:
             self.currentScope.add(Assign(target=t, value=Num(0, t.type)))
         code=self.processTokens(token['block'])
         self.currentScope.endLocalScope()
-        return For(
+        forToken = For(
             code=code,
             args=args,
             iterable=iterable,
         )
+        for i in forToken.imports:
+            self.imports.add(i)
+        return forToken
 
     def processForTarget(self, token):
         target = token['target'].lower()
@@ -479,6 +488,9 @@ class BaseTranspiler():
             elif isinstance(t, Assign):
                 t.target.namespace = ''
                 parameters[t.index] = t
+            elif isinstance(t, Expr):
+                t.namespace = ''
+                parameters[repr(t)] = t
         if new is None:
             new = Function(name=Var(f'new',namespace=className))
             methods[new.name.value] = new
@@ -510,6 +522,9 @@ class BaseTranspiler():
             elif isinstance(t, Assign):
                 t.target.namespace = ''
                 parameters[t.index] = t
+            elif isinstance(t, Expr):
+                t.namespace = ''
+                parameters[repr(t)] = t
         if new is None:
             new = Function(
                 name=Var(f'new',namespace=className),

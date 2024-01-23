@@ -918,6 +918,9 @@ class For():
         self.args = Args(args)
         self.iterable = iterable
         self.code = Scope(code)
+        self.imports = []
+        if self.iterable.type.type == 'str':
+            self.imports.append('#include <string.h>')
 
     def __repr__(self):
         if isinstance(self.iterable, Range):
@@ -942,6 +945,33 @@ class For():
                     iterableVar = f'__iterable_{self.args[1]}'
                     iterableIndex = f'__iterable_index_{self.args[1]}'
                     return f'{{{self.iterable.type} {iterableVar} = {self.iterable};\n{self.args[0].type} {self.args[0]} = {iterableVar}->entries[0].key;\n{self.args[1].type} {self.args[1]} = {iterableVar}->entries[0].val;\nfor (long {iterableIndex}=0; {iterableIndex} < {iterableVar}->len; {iterableIndex}++, {self.args[0]} = {iterableVar}->entries[{iterableIndex}].key, {self.args[1]} = {iterableVar}->entries[{iterableIndex}].val) {self.code}}}'
+            if self.iterable.type.type == 'str':
+                if len(self.args.args) == 1:
+                    iterableVar = f'__iterable_{self.args[0]}'
+                    iterableIndex = f'__iterable_index_{self.args[0]}'
+                    return f'''{{{self.iterable.type} {iterableVar} = {self.iterable};\nlong {iterableIndex} = 0;char {self.args[0]}[] = "   ";\nwhile({iterableVar}[{iterableIndex}] != '\\0') {{
+                        int __len = mblen({iterableVar}+{iterableIndex}, 2);
+                        for (int __i = 0; __i<__len;__i++) {{
+                            {self.args[0]}[__i] = {iterableVar}[{iterableIndex}+__i];
+                        }}
+                        {self.args[0]}[__len] = '\\0';
+                        {self.code}
+                        {iterableIndex} += __len;
+                    }}}}
+                    '''
+                if len(self.args.args) == 2:
+                    iterableVar = f'__iterable_{self.args[1]}'
+                    iterableIndex = f'{self.args[0]}'
+                    return f'''{{{self.iterable.type} {iterableVar} = {self.iterable};\nlong {iterableIndex} = 0;char {self.args[1]}[] = "   ";\nwhile({iterableVar}[{iterableIndex}] != '\\0') {{
+                        int __len = mblen({iterableVar}+{iterableIndex}, 2);
+                        for (int __i = 0; __i<__len;__i++) {{
+                            {self.args[1]}[__i] = {iterableVar}[{iterableIndex}+__i];
+                        }}
+                        {self.args[1]}[__len] = '\\0';
+                        {self.code}
+                        {iterableIndex} += __len;
+                    }}}}
+                    '''
         else:
             raise ValueError(f'Iterable of type {type(self.iterable)} no supported in for.')
 
