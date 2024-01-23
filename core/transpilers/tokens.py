@@ -831,24 +831,37 @@ class Class():
         self.parameters = parameters
         self.methods = methods
         self.new = new
+        self.formatNewMethod()
+
+    def formatNewMethod(self):
+        paramsInit = [
+            NativeCode(f'{self.new.name.type} self = malloc(sizeof({self.name}))')]
+        for p in self.parameters.values():
+            if isinstance(p, Assign):
+                if not p.target.attribute:
+                    paramsInit.append(
+                        NativeCode(f'self->{p.target} = {p.value}'))
+                else:
+                    paramsInit.append(
+                        NativeCode(f'self->{p.target} = {p.target}'))
+            elif isinstance(p, Function):
+                paramsInit.append( 
+                    NativeCode(f'self->{p.name.value} = {p.name}'))
+        paramsInit.append(NativeCode(f'return self'))
+        self.new.code = Scope(paramsInit)
 
     def declarationMode(self):
         for _, t in self.parameters.items():
             t.mode = 'declaration'
-        for _, t in self.methods.items():
-            t.mode = 'declaration'
     
     def writeMode(self):
-        for _, t in self.methods.items():
-            t.mode = 'expr'
-        for _, t in self.methods.items():
+        for _, t in self.parameters.items():
             t.mode = 'expr'
 
     def __repr__(self):
         self.declarationMode()
         declarations = Scope(
-            list(self.parameters.values()) +
-            list(self.methods.values())
+            list(self.parameters.values())
         )
         value = f'typedef struct {self.name} {declarations} {self.name};\n'
         self.writeMode()

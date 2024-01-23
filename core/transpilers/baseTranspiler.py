@@ -167,7 +167,7 @@ class BaseTranspiler():
         if varType.isClass:
             try:
                 typeName = Var(token['type'], namespace=self.moduleName)
-                # if this doesn't fail is because the type is a class
+                # if this doesn't fail it's because the type is a class
                 c = self.currentScope.get(typeName.index)
                 varType = Type(typeName.index)
             except KeyError:
@@ -454,15 +454,12 @@ class BaseTranspiler():
         newKwargs = []
         args = self.processTokens(token['args'])
         parentMethods = {}
+        # First pass for type inference
         for arg in args:
             parentClass = self.currentScope.get(arg.index)
             parameters.update(parentClass.parameters)
             newArgs = newArgs + parentClass.new.args.args
             newKwargs = newKwargs + parentClass.new.kwargs.kwargs
-            #TODO is inherited methods needed?
-            #parentMethods.update(deepcopy(parentClass.methods))
-            #del parentMethods[parentClass.new.index]
-            #code.extend(parentClass.code)
         for t in token['block']:
             try:
                 oldNamespace = self.currentNamespace
@@ -481,16 +478,14 @@ class BaseTranspiler():
                             parameters[kw.index] = kw
                 else:
                     t.args.args.insert(0, Var('self', repr(className)))
-                #t.name.value = f'{className.value}_{t.name.value}'
+                parameters[t.index] = t
                 t.name.namespace = className
-                #methods[t.index] = t
                 methods[t.name.value] = t
             elif isinstance(t, Assign):
                 t.target.namespace = ''
                 parameters[t.index] = t
         if new is None:
             new = Function(name=Var(f'new',namespace=className))
-            #methods[new.index] = new
             methods[new.name.value] = new
         new.name.type = Type(repr(className))
         self.currentScope.add(
@@ -500,6 +495,7 @@ class BaseTranspiler():
                 parameters = parameters,
                 new = new,
         ))
+        # Second pass for code generation
         new = None
         thisClassCode = Scope(self.processTokens(token['block']))
         for t in thisClassCode.sequence:
@@ -508,15 +504,13 @@ class BaseTranspiler():
                     new = t
                     new.args.args = newArgs + new.args.args
                     new.kwargs.kwargs = newKwargs + new.kwargs.kwargs
-                    print(new.kwargs.kwargs)
                     for kw in t.kwargs.kwargs:
                         if kw.target.attribute:
                             parameters[kw.index] = kw
                 else:
                     t.args.args.insert(0, Var('self', repr(className)))
-                #t.name.value = f'{className.value}_{t.name.value}'
+                parameters[t.index] = t
                 t.name.namespace = className
-                #methods[t.index] = t
                 methods[t.name.value] = t
             elif isinstance(t, Assign):
                 t.target.namespace = ''
@@ -527,15 +521,6 @@ class BaseTranspiler():
                 args=newArgs,
                 kwargs=newKwargs)
         new.name.type = Type(repr(className))
-        #TODO transform Native code in tokens to make it language agnostic
-        new.code = Scope([
-            NativeCode(f'{new.name.type} self = malloc(sizeof({className}))'),
-            *[NativeCode(
-                f'self->{a.target} = {a.value}') if not a.target.attribute else NativeCode(f'self->{a.target} = {a.target}') for a in parameters.values()],
-            *[NativeCode(f'self->{a.name.value} = {a.name}') for a in methods.values()],
-            *new.code,
-            NativeCode(f'return self')
-        ])
         methods[new.name.value] = new
         classToken = Class(
             name=className,
