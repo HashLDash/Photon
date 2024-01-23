@@ -624,9 +624,6 @@ class BaseTranspiler():
             self.currentScope.update(interpreter.engine.currentScope)
             self.imports = self.imports.union(interpreter.engine.imports)
             self.links = self.links.union(interpreter.engine.links)
-            self.outOfMain += interpreter.engine.outOfMain
-            self.source += interpreter.engine.source
-            self.header += interpreter.engine.header
             self.sequence = self.sequence + interpreter.engine.sequence
             namespace = name
         elif f"{name}.{self.libExtension}" in os.listdir(self.standardLibs + f'/native/{self.lang}/'):
