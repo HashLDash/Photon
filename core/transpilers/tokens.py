@@ -403,6 +403,10 @@ class Expr(Obj):
             t = Type('bool')
         if op in self.opConversions:
             op = self.opConversions[op]
+        if arg1.type == Type('str') and op == '+':
+            if arg1.type == arg2.type:
+                return Expr(value=f'__photon_format_str("%s%s", {arg1}, {arg2})', type=t)
+            raise RuntimeError(f'Sum of str with {arg2.type.type} not supported')
         return Expr(value=f'{arg1} {op} {arg2}', type=t)
 
     def __repr__(self):
@@ -455,6 +459,12 @@ class DotAccess():
         for n, c in enumerate(self.chain[1:]):
             if currentType.native:
                 chain.append('.')
+                chain.append(repr(c))
+            elif currentType.type == 'array' and isinstance(c, Call):
+                instanceName = ''.join(chain)
+                chain = [f'list_{currentType.elementType.type}']
+                chain.append('_')
+                c.args.args.insert(0, Var(instanceName, currentType))
                 chain.append(repr(c))
             elif currentType.isClass and isinstance(c, Call):
                 instanceName = chain[n-1]
@@ -997,7 +1007,10 @@ class AugAssign():
 
     def __repr__(self):
         if self.operator in ['+','-','*','/','%','&']:
-            return f'{self.target} {self.operator}= {self.expr}'
+            return repr(Assign(
+                target=self.target,
+                value=Expr(self.target, self.expr, ops=[self.operator]),
+                inMemory=True))
         raise NotImplemented('operator not implemented')
 
     @property
