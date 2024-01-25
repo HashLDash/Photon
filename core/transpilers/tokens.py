@@ -669,7 +669,7 @@ class Cast():
         try:
             if self.castTo.isClass:
                 return f'({self.castTo}) {self.expr}'
-            elif castTo != castFrom:
+            elif castTo != castFrom and castTo in self.conversion:
                 return self.conversion[castTo][castFrom].format(self=self)
             return repr(self.expr)
         except KeyError as e:
