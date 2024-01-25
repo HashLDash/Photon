@@ -482,6 +482,7 @@ class BaseTranspiler():
                             parameters[kw.index] = kw
                 else:
                     t.args.args.insert(0, Var('self', repr(className)))
+                    t.signature.insert(0, Var('self', repr(className)))
                 parameters[t.index] = t
                 t.name.namespace = className
                 methods[t.name.value] = t
@@ -516,6 +517,7 @@ class BaseTranspiler():
                             parameters[kw.index] = kw
                 else:
                     t.args.args.insert(0, Var('self', repr(className)))
+                    t.signature.insert(0, Var('self', repr(className)))
                 parameters[t.index] = t
                 t.name.namespace = className
                 methods[t.name.value] = t

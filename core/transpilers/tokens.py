@@ -467,8 +467,8 @@ class DotAccess():
                 c.args.args.insert(0, Var(instanceName, currentType))
                 chain.append(repr(c))
             elif currentType.isClass and isinstance(c, Call):
-                instanceName = chain[n-1]
-                chain[n-1] = instanceName
+                instanceName = ''.join(chain)
+                chain = [instanceName]
                 chain.append('->')
                 c.args.args.insert(0, Var(instanceName, currentType))
                 chain.append(repr(c))
@@ -773,7 +773,7 @@ class Call(Obj):
     def __repr__(self):
         if self.signature:
             kwargs = []
-            args = [self.args[0]] if len(self.args.args) > 0 else []
+            args = []
             # allocate args then sort kwargs
             for s in self.signature[len(self.args.args):]:
                 for kwarg in self.kwargs.kwargs:
@@ -785,7 +785,7 @@ class Call(Obj):
                 else:
                     kwargs.append(s)
             kwargs = Kwargs(kwargs, mode='value')
-            for arg, sig in zip(self.args[1:], self.signature):
+            for arg, sig in zip(self.args, self.signature):
                 if arg.type != sig.type:
                     target = Var(repr(arg.value), arg.type)
                     args.append(Cast(target, sig.type))
@@ -959,7 +959,7 @@ class For():
                 if len(self.args.args) == 1:
                     iterableVar = f'__iterable_{self.args[0]}'
                     iterableIndex = f'__iterable_index_{self.args[0]}'
-                    return f'''{{{self.iterable.type} {iterableVar} = {self.iterable};\nlong {iterableIndex} = 0;char {self.args[0]}[] = "   ";\nwhile({iterableVar}[{iterableIndex}] != '\\0') {{
+                    return f'''{{{self.iterable.type} {iterableVar} = {self.iterable};\nlong {iterableIndex} = 0;char {self.args[0]}[] = " ";\nwhile({iterableVar}[{iterableIndex}] != '\\0') {{
                         int __len = mblen({iterableVar}+{iterableIndex}, 2);
                         for (int __i = 0; __i<__len;__i++) {{
                             {self.args[0]}[__i] = {iterableVar}[{iterableIndex}+__i];
@@ -972,7 +972,7 @@ class For():
                 if len(self.args.args) == 2:
                     iterableVar = f'__iterable_{self.args[1]}'
                     iterableIndex = f'{self.args[0]}'
-                    return f'''{{{self.iterable.type} {iterableVar} = {self.iterable};\nlong {iterableIndex} = 0;char {self.args[1]}[] = "   ";\nwhile({iterableVar}[{iterableIndex}] != '\\0') {{
+                    return f'''{{{self.iterable.type} {iterableVar} = {self.iterable};\nlong {iterableIndex} = 0;char {self.args[1]}[] = " ";\nwhile({iterableVar}[{iterableIndex}] != '\\0') {{
                         int __len = mblen({iterableVar}+{iterableIndex}, 2);
                         for (int __i = 0; __i<__len;__i++) {{
                             {self.args[1]}[__i] = {iterableVar}[{iterableIndex}+__i];
