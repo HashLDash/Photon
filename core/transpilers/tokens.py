@@ -448,8 +448,8 @@ class DotAccess():
         pass
 
     def format(self):
-        if self.type.isClass:
-            call = repr(self.type).replace("*","")
+        call = repr(self.type).replace("*","")
+        if self.type.isClass or self.type.type in ['array', 'map']:
             return f'{call}_str({self.value})'
         return self.value
 
