@@ -3,8 +3,8 @@ comment = hashtag
 string = singleQuote
        | doubleQuote
 
-arrayType = (type var) lbracket rbracket var
-          | (type var) lbracket num rbracket var
+arrayType = (type var) lbracket rbracket (var space)
+          | (type var) lbracket num rbracket (var space)
 
 mapType = (type var) beginBlock (type var)
 

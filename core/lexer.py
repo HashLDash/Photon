@@ -771,7 +771,16 @@ def dotAccess(i, t):
             if t[i]['token'] == 'var':
                 varType = t[i]['args'][0]['name']
             elif t[i]['token'] == 'type':
+                # type declaration for instance attribute with shorthand notation
                 varType = t[i]['type']
+                t[i+3]['args'][0]['type'] = varType
+                if varType == 'array':
+                    t[i+3]['args'][0]['elementType'] = t[i]['elementType']
+                    t[i+3]['args'][0]['size'] = t[i]['size']
+                elif varType == 'map':
+                    t[i+3]['args'][0]['keyType'] = t[i]['keyType']
+                    t[i+3]['args'][0]['valType'] = t[i]['valType']
+                    t[i+3]['args'][0]['size'] = t[i]['size']
             elif t[i]['token'] == 'expr':
                 varType = t[i]['args'][0]['name']
             else:

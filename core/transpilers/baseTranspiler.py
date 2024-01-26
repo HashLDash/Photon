@@ -547,6 +547,7 @@ class BaseTranspiler():
             new=new,
         )
         self.currentScope.endLocalScope()
+        self.classes[repr(className)] = classToken
         return classToken
 
     def processFunc(self, token):

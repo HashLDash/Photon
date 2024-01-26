@@ -838,6 +838,7 @@ class Class():
         self.methods = methods
         self.new = new
         self.formatNewMethod()
+        self.postCode = ''
 
     def formatNewMethod(self):
         paramsInit = [
@@ -877,7 +878,7 @@ class Class():
                 continue
             value += f'{method}\n'
         value += f'{self.new}\n'
-        return value
+        return value+self.postCode
 
     @property
     def index(self):

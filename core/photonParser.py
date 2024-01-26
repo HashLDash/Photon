@@ -73,7 +73,7 @@ def parse(line, filename='', no=-1, debug=False):
         elif i in types:
             tokenized.append({'token':'type','type':i})
         elif i in symbols:
-            if i == ' ' and tokens[n+1] == '.' and tokenized[-1]['token'] in {'var', 'type'}:
+            if i == ' ' and tokens[n+1] == '.' and tokenized[-1]['token'] in {'var', 'type', 'rbracket'}:
                 tokenized.append({'token':symbols[i], 'symbol':i})
                 continue
             if i == "'" or i == '"':

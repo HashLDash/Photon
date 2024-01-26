@@ -1,7 +1,8 @@
 #ifndef __list_!@valType@!_h
 #define __list_!@valType@!_h
 
-#include "main.h"
+//#include "main.h"
+typedef struct !@valType@! !@valType@!;
 
 typedef struct list_!@valType@! {
     int len;

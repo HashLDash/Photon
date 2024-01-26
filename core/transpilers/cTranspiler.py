@@ -90,14 +90,14 @@ class Transpiler(BaseTranspiler):
             for listType in self.listTypes:
                 if listType in self.classes:
                     listTypeHints.append(f'typedef struct list_{listType} list_{listType};')
-                    self.outOfMain[self.classes[listType]['endline']] += f'\n#include "list_{listType}.c"\n'
+                    self.classes[listType].postCode=f'\n#include "list_{listType}.c"\n'
             #TODO: do the same type hint for dicts
             for line in listTypeHints:
-                if '}' in line:
-                    indent -= 4
+                #if '}' in line:
+                #    indent -= 4
                 f.write(' '*indent + line+'\n')
-                if self.isBlock(line) and not ';' in line[-1]:
-                    indent += 4
+                #if self.isBlock(line) and not ';' in line[-1]:
+                #    indent += 4
             f.write('#endif')
         with open(f'Sources/c/{self.filename}', 'w') as f:
             f.write('#ifndef __main\n#define __main\n')
