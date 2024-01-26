@@ -430,13 +430,18 @@ class BaseTranspiler():
                     c.type = Type('int')
             elif currentType.type == 'module':
                 module = self.currentScope.get(currentType.name)
-                #TODO: GET MODULE FUNCTIONS AND VARIABLE TYPES?
                 if isinstance(c, Call):
                     c.name.namespace = module.namespace
-                    c.type = Type('unknown', native=True)#self.currentScope.get(c.name).type
+                    if module.native:
+                        c.type = Type('unknown', native=True)
+                    else:
+                        self.currentScope.get(c.name).type
                 elif isinstance(c, Var):
                     c.namespace = module.namespace
-                    c.type = Type('unknown', native=True)#self.currentScope.get(c.index).type
+                    if module.native:
+                        c.type = Type('unknown', native=True)
+                    else:
+                        self.currentScope.get(c.index).type
 
             currentType = c.type
         return DotAccess(
