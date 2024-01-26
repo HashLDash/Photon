@@ -853,8 +853,9 @@ class Class():
             elif isinstance(p, Function):
                 paramsInit.append( 
                     NativeCode(f'self->{p.name.value} = {p.name}'))
-        paramsInit.append(NativeCode(f'return self'))
-        self.new.code = Scope(paramsInit)
+        code = paramsInit + self.new.code.sequence.sequence
+        code.append(NativeCode(f'return self'))
+        self.new.code = Scope(code)
 
     def declarationMode(self):
         for _, t in self.parameters.items():
