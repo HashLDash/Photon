@@ -435,7 +435,7 @@ class BaseTranspiler():
                     if module.native:
                         c.type = Type('unknown', native=True)
                     else:
-                        self.currentScope.get(c.name).type
+                        self.currentScope.get(c.name.index).type
                 elif isinstance(c, Var):
                     c.namespace = module.namespace
                     if module.native:
