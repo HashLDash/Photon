@@ -958,28 +958,28 @@ class For():
             if self.iterable.type.type == 'str':
                 if len(self.args.args) == 1:
                     iterableVar = f'__iterable_{self.args[0]}'
-                    iterableIndex = f'__iterable_index_{self.args[0]}'
-                    return f'''{{{self.iterable.type} {iterableVar} = {self.iterable};\nlong {iterableIndex} = 0;char {self.args[0]}[] = " ";\nwhile({iterableVar}[{iterableIndex}] != '\\0') {{
-                        int __len = mblen({iterableVar}+{iterableIndex}, 2);
-                        for (int __i = 0; __i<__len;__i++) {{
-                            {self.args[0]}[__i] = {iterableVar}[{iterableIndex}+__i];
+                    return f'''{{{self.iterable.type} {iterableVar} = {self.iterable};\n;long __i = 0;char {self.args[0]}[] = " ";\nwhile({iterableVar}[__i] != '\\0') {{
+                        int __len = mblen({iterableVar}+__i, 2);
+                        for (int __j = 0; __j<__len;__j++) {{
+                            {self.args[0]}[__j] = {iterableVar}[__i+__j];
                         }}
                         {self.args[0]}[__len] = '\\0';
                         {self.code}
-                        {iterableIndex} += __len;
+                        __i += __len;
                     }}}}
                     '''
                 if len(self.args.args) == 2:
                     iterableVar = f'__iterable_{self.args[1]}'
                     iterableIndex = f'{self.args[0]}'
-                    return f'''{{{self.iterable.type} {iterableVar} = {self.iterable};\nlong {iterableIndex} = 0;char {self.args[1]}[] = " ";\nwhile({iterableVar}[{iterableIndex}] != '\\0') {{
-                        int __len = mblen({iterableVar}+{iterableIndex}, 2);
-                        for (int __i = 0; __i<__len;__i++) {{
-                            {self.args[1]}[__i] = {iterableVar}[{iterableIndex}+__i];
+                    return f'''{{{self.iterable.type} {iterableVar} = {self.iterable};\nlong {iterableIndex} = 0;long __i = 0; char {self.args[1]}[] = " ";\nwhile({iterableVar}[__i] != '\\0') {{
+                        int __len = mblen({iterableVar}+__i, 2);
+                        for (int __j = 0; __j<__len;__j++) {{
+                            {self.args[1]}[__j] = {iterableVar}[__i+__j];
                         }}
                         {self.args[1]}[__len] = '\\0';
                         {self.code}
-                        {iterableIndex} += __len;
+                        __i += __len;
+                        {iterableIndex} += 1;
                     }}}}
                     '''
         else:
