@@ -802,7 +802,7 @@ class Call(Obj):
             return f'{self.name}({args}{separator}{kwargs})'
 
 class Function(Obj):
-    def __init__(self, name='', args='', kwargs='', code='', signature=None, **defaults):
+    def __init__(self, name='', args='', kwargs='', code=None, signature=None, **defaults):
         super().__init__(**defaults)
         self.name = name
         self.type = name.type
@@ -829,7 +829,7 @@ class Function(Obj):
         return self.name.index
 
 class Class():
-    def __init__(self, name='', args='', code='', parameters=None, methods=None, new=None):
+    def __init__(self, name='', args=None, code=None, parameters=None, methods=None, new=None):
         self.name = name
         self.args = Args(args)
         self.code = Scope(code)
