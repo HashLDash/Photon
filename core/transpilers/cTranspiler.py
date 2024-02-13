@@ -55,11 +55,6 @@ class Transpiler(BaseTranspiler):
             listLib = listLib.replace('!@valType@!', valType)
             with open(f'Sources/c/list_{valType}.h', 'w') as lib:
                 lib.write(listLib)
-            with open(f'{self.standardLibs}/native/c/list_template.c') as template:
-                listLib = template.read()
-            listLib = listLib.replace('!@valType@!', valType)
-            with open(f'Sources/c/list_{valType}.c', 'w') as lib:
-                lib.write(listLib)
 
     def write(self):
         boilerPlateStart = [
@@ -90,7 +85,7 @@ class Transpiler(BaseTranspiler):
             for listType in self.listTypes:
                 if listType in self.classes:
                     listTypeHints.append(f'typedef struct list_{listType} list_{listType};')
-                    self.classes[listType].postCode=f'\n#include "list_{listType}.c"\n'
+                    self.classes[listType].postCode=f'\n#include "list_{listType}.h"\n'
             #TODO: do the same type hint for dicts
             for line in listTypeHints:
                 #if '}' in line:

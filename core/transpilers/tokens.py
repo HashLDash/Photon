@@ -519,9 +519,9 @@ class Array():
         self.len = len(self.elements)
         self.size = 8 if self.len < 8 else self.len
         if self.type.known:
-            self.imports = [
-                f'#include "list_{self.type.elementType.type}.h"',
-                '#include "asprintf.h"']
+            self.imports = ['#include "asprintf.h"']
+            if not self.type.elementType.isClass:
+                self.imports.append(f'#include "list_{self.type.elementType.type}.h"')
         else:
             self.imports = []
 
