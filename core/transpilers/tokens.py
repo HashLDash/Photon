@@ -305,7 +305,9 @@ class Var(Obj):
 
     def format(self):
         if self.type.type not in ['str','int','float']:
-            call = repr(self.type).replace("*","")
+            if self.type.isClass:
+                return f'"<class {self.type.type}>"'
+            call = repr(self.type).replace("*","").replace('struct ','')
             return f'{call}_str({self.name})'
         return self.name
 
