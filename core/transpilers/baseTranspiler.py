@@ -162,7 +162,18 @@ class BaseTranspiler():
     def processVar(self, token):
         indexAccess = self.preprocess(token['indexAccess']) if 'indexAccess' in token else None
         varType = Type(**token)
-        if varType.isClass:
+        #TODO: do the same for map
+        if varType.type == 'array':
+            if varType.elementType.isClass:
+                try:
+                    typeName = Var(varType.elementType.type, namespace=self.moduleName)
+                    # if this doesn't fail it's because the type is a class
+                    c = self.currentScope.get(typeName.index)
+                    varType = Type('array', elementType=typeName.index)
+                    self.listTypes.add(typeName.index)
+                except KeyError:
+                    varType.native = True
+        elif varType.isClass:
             try:
                 typeName = Var(token['type'], namespace=self.moduleName)
                 # if this doesn't fail it's because the type is a class
@@ -696,6 +707,8 @@ class BaseTranspiler():
             elif argType.type == 'func':
                 argType = argType.returnType
                 argType.funcName = arg.value
+            if argType.isClass:
+                argType = Type('str')
             types.append(argType)
         template = String(value='"'+" ".join([formats[t.type] for t in types])+'\\n"')
         args.insert(0, template)
