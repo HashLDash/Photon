@@ -42,7 +42,7 @@ class CurrentScope():
         return s
 
     def get(self, index):
-        for scope in self.localScope:
+        for scope in reversed(self.localScope):
             if index in scope:
                 return scope[index]
         return self.currentScope[index]
