@@ -62,6 +62,25 @@ void list_!@valType@!_append(list_!@valType@!* list, !@valType@!* value) {
     list->len += 1;
 }
 
+void list_!@valType@!_remove(list_!@valType@!* list, !@valType@!* value) {
+    int removedItems = 0;
+    int listLen = list->len;
+    for (int i=0; i<listLen; i++) {
+        if (list->values[i] == value) {
+            removedItems = 1;
+            for (i=i; i<listLen-removedItems; i++) {
+                list->values[i] = list->values[i+removedItems];
+            }
+            break;
+        }
+    }
+    list->len -= removedItems;
+    if (list->size >= 4*list->len) {
+        list->size = list->size / 2;
+        list->values = realloc(list->values, sizeof(!@valType@!) * list->size);
+    }
+}
+
 void list_!@valType@!_removeAll(list_!@valType@!* list, !@valType@!* value) {
     int removedItems = 0;
     int listLen = list->len;
