@@ -489,11 +489,14 @@ class BaseTranspiler():
             try:
                 oldNamespace = self.currentNamespace
                 oldScope = deepcopy(self.currentScope.localScope[-1])
+                nScopes = len(self.currentScope.localScope)
                 t = self.preprocess(t)
             except KeyError as e:
                 # we must recover the namespace when
                 # it breaks in the middle of execution
+                # and the scope (discard deeper scopes)
                 self.currentNamespace = oldNamespace
+                self.currentScope.localScope = self.currentScope.localScope[:nScopes]
                 self.currentScope.localScope[-1] = oldScope
                 continue
             if isinstance(t, Function):
