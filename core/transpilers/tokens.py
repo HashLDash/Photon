@@ -656,11 +656,17 @@ class Cast():
         self.castTo = castTo
         self.type = self.castTo
 
+    @property
+    def value(self):
+        return self
+
     def __repr__(self):
         castFrom = self.expr.type.type
         castTo = self.castTo.type
         if castTo == 'map':
             castTo = self.castTo.valType.type
+        elif castTo == 'array' and castFrom == 'array':
+            return f'({self.castTo}) {self.expr}'
         elif castTo == 'array':
             castTo = self.castTo.elementType.type
         if castFrom == 'map' and self.expr.indexAccess is not None:
@@ -784,6 +790,8 @@ class Call(Obj):
                     if isinstance(s, Assign):
                         kwarg.target.namespace = ''
                         if s.target.index == kwarg.target.index:
+                            if kwarg.type != s.type:
+                                kwarg = Cast(Expr(kwarg.value), s.type)
                             kwargs.append(kwarg)
                             break
                 else:
