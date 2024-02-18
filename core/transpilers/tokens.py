@@ -472,7 +472,6 @@ class DotAccess():
                 instanceName = ''.join(chain)
                 chain = [instanceName]
                 chain.append('->')
-                c.args.args.insert(0, Var(instanceName, currentType))
                 chain.append(repr(c))
             elif currentType.isModule:
                 chain[n-1] = ''
@@ -686,6 +685,9 @@ class Assign(Obj):
         self.cast = cast
 
     def declaration(self):
+        if self.type.type == 'func':
+            self.type.funcName = self.target.value
+            return f'{self.type}'
         return f'{self.target.type} {self.target}'
 
     def expression(self):
@@ -837,7 +839,7 @@ class Class():
         self.code = Scope(code)
         self.type = Type(repr(self.name))
         self.parameters = parameters
-        self.methods = methods
+        self.methods = methods if methods is not None else {}
         self.new = new
         self.formatNewMethod()
         self.postCode = ''

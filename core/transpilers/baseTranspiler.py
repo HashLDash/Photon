@@ -421,7 +421,8 @@ class BaseTranspiler():
         chain = self.processTokens(token['dotAccess'])
         chain[0].type = initialType
         currentType = initialType
-        for c in chain[1:]:
+        parsedChain = [chain[0]]
+        for n, c in enumerate(chain[1:]):
             c.namespace = ''
             c.prepare()
             if currentType.isClass:
@@ -433,6 +434,9 @@ class BaseTranspiler():
                     if methodIndex in scope['methods']:
                         c.type = scope['methods'][methodIndex].type
                         c.signature = scope['methods'][methodIndex].signature
+                        parsedChain = [DotAccess(parsedChain, currentType)]
+                        c.args.args.insert(0, parsedChain[0])
+                        continue
             elif currentType.type == 'map': #TODO: Make this part of the token class
                 if f'{c}' == 'len':
                     c.type = Type('int')
@@ -453,6 +457,7 @@ class BaseTranspiler():
                         c.type = Type('unknown', native=True)
                     else:
                         self.currentScope.get(c.index).type
+            parsedChain.append(c)
 
             currentType = c.type
         return DotAccess(
@@ -667,7 +672,7 @@ class BaseTranspiler():
             # Native Photon local module import
             raise SyntaxError('Native Photon local module import not implemented yet.')
         else:
-            raise RuntimeError('Cannot import {name}.')
+            raise RuntimeError(f'Cannot import {name}.')
             #raise SyntaxError('System library import not implemented yet.')
         module = Module(moduleExpr, name, namespace, native=native)
         for i in module.imports:
