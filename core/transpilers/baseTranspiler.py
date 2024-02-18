@@ -281,12 +281,6 @@ class BaseTranspiler():
             target.type = value.type
         if not value.type.known:
             value.type = target.type
-        if isinstance(target, Var) and target.value == 'posX':
-            print(target, value)
-            print(target.type, value.type)
-            print(inMemory)
-            print(self.currentScope)
-            input()
         assign = Assign(
             target=target,
             value=value,
@@ -472,7 +466,6 @@ class BaseTranspiler():
         )
 
     def processClass(self, token):
-        print('Class scope')
         self.currentScope.startLocalScope()
         className = Var(token['name'], namespace=self.currentNamespace)
         self.currentScope.add(
@@ -533,7 +526,6 @@ class BaseTranspiler():
                 parameters = parameters,
                 new = new,
         ))
-        print('Second pass')
         # Second pass for code generation
         new = None
         thisClassCode = Scope(self.processTokens(token['block']))
