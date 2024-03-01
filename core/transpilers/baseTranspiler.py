@@ -572,6 +572,13 @@ class BaseTranspiler():
         return classToken
 
     def processFunc(self, token):
+        # kwargs must be processed in the current namespace
+        # because the values must be in the namespace
+        kwargs=self.processTokens(token['kwargs'])
+        for kwarg in kwargs:
+            # target namespace must be empty because it's
+            # an argument name
+            kwarg.target.namespace = ''
         self.currentScope.startLocalScope()
         oldNamespace = self.currentNamespace
         self.currentNamespace = ''
@@ -580,7 +587,6 @@ class BaseTranspiler():
         #in the local scope
         #use global syntax or try to infer global variables
         args=self.processTokens(token['args'])
-        kwargs=self.processTokens(token['kwargs'])
         for t in args + kwargs:
             self.currentScope.add(t)
         code=self.processTokens(token['block'], addToScope=True)
@@ -601,7 +607,7 @@ class BaseTranspiler():
             arg.namespace = ''
             signature.append(arg)
         for kwarg in deepcopy(kwargs):
-            kwarg.target.namespace = ''
+            kwarg.value.namespace = oldNamespace
             signature.append(kwarg)
         return Function(
             name=Var(

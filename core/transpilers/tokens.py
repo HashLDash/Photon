@@ -655,12 +655,14 @@ class Cast():
             self.expr = expr
         self.castTo = castTo
         self.type = self.castTo
+        self.namespace = self.expr.namespace
 
     @property
     def value(self):
         return self
 
     def __repr__(self):
+        self.expr.namespace = self.namespace
         castFrom = self.expr.type.type
         castTo = self.castTo.type
         if castTo == 'map':
