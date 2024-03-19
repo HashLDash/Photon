@@ -299,7 +299,7 @@ def convertToExpr(token):
         else:
             varType = 'float'
         return {'token':'expr', 'type':varType, 'args':[token], 'ops':[]}
-    elif token['token'] in {'var','group','inputFunc', 'call', 'array', 'dotAccess', 'map'}:
+    elif token['token'] in {'var','group','openFunc','inputFunc', 'call', 'array', 'dotAccess', 'map'}:
         return {'token':'expr', 'type':token['type'], 'args':[token], 'ops':[]}
     else:
         raise SyntaxError(f'Cant convert token {token} to expr')
@@ -491,6 +491,19 @@ def inputFunc(i, t):
         del t[i+1] # expr
     else:
         t[i] = convertToExpr({'token':'inputFunc', 'type':'str', 'expr':convertToExpr(t[i+2])})
+        del t[i+1] # expr
+    del t[i+1] # lparen
+    del t[i+1] # rparen
+    return t
+
+def openFunc(i, t):
+    ''' Return an openFunc token
+    '''
+    if t[i+2]['token'] == 'expr':
+        t[i] = convertToExpr({'token':'openFunc', 'type':'file', 'args':[t[i+2]]})
+        del t[i+1] # expr
+    elif t[i+2]['token'] == 'args':
+        t[i] = convertToExpr({'token':'openFunc', 'type':'file', 'args':t[i+2]['args']})
         del t[i+1] # expr
     del t[i+1] # lparen
     del t[i+1] # rparen

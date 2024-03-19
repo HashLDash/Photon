@@ -75,6 +75,7 @@ class BaseTranspiler():
         self.instructions = {
             'printFunc': self.processPrint,
             'inputFunc': self.processInput,
+            'openFunc': self.processOpen,
             'expr': self.processExpr,
             'assign': self.processAssign,
             'augAssign': self.processAugAssign,
@@ -702,7 +703,15 @@ class BaseTranspiler():
             return processedTokens
         return [self.preprocess(t) for t in tokens]
 
+    def processOpen(self, token):
+        args = self.processTokens(token['args'])
+        return Open(
+            args = args,
+        )
+    
     def processPrint(self, token):
+        #TODO: convert to a print token, instead of a generic Call object
+        # This will make it more flexible when using other targets
         formats = {
             'str': '%s',
             'int': '%ld',

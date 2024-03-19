@@ -84,5 +84,7 @@ function = defStatement expr lparen (expr args assign kwargs) rparen beginBlock
 classDefinition = classStatement expr lparen rparen beginBlock
                 | classStatement expr lparen (expr args) rparen beginBlock
 
+openFunc = open lparen (args expr) rparen
+
 inputFunc = input lparen (expr) rparen
           | input lparen rparen

@@ -8,7 +8,7 @@ from lexer import *
 
 statements = ['if','else','elif','def','cdef','for','in','as','return','import','class','while','break','continue','try', 'del', 'native']
 operators = ['+','-','%','/','*','**','<','>','not', '!', 'and','or','is', '&']
-builtins = ['input','sizeof','addr']
+builtins = ['open','input','sizeof','addr']
 types = ['str','cstr','const','struct','char','int','float','double','struct', 'func','uint','ulong','ubyte','file']
 symbols = {
     '.':'dot',
@@ -103,7 +103,7 @@ def token2word(tokens):
         elif 'symbol' in t:
             phrase += t['symbol']
         elif t['token'] in {'num', 'var', 'expr','print','printFunc',
-                'floatNumber', 'type', 'special',
+                'floatNumber', 'type', 'special','open','openFunc',
                 'assign','operator','group','ifStatement','if','elifStatement',
                 'elif','else', 'elseStatement','input','inputFunc', 'args','call',
                 'whileStatement','while','forStatement','inStatement','for','range',

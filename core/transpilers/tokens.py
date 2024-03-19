@@ -11,6 +11,7 @@ class Type():
         'unknown':'void',
         '':'void',
         'obj':'obj',
+        'file':'FILE*',
     }
     def __init__(self, type, elementType=None, keyType=None, valType=None, returnType=None, funcName=None, argsTypes=None, name=None, namespace='', native=False, **kwargs):
         if isinstance(type, Type):
@@ -462,6 +463,17 @@ class DotAccess():
             if currentType.native:
                 chain.append('.')
                 chain.append(repr(c))
+            elif currentType.type == 'file':
+                if isinstance(c, Call):
+                    fileName = ''.join(chain)
+                    if repr(c.name) == 'write':
+                        chain = [f'fprintf({fileName}, {c.args})']
+                    elif repr(c.name) == 'close':
+                        chain = [f'fclose({fileName})']
+                    else:
+                        raise SyntaxError(f'File object has no method {c.name}')
+                else:
+                    raise SyntaxError(f'File object has no attribute {c}')
             elif currentType.type == 'array' and isinstance(c, Call):
                 instanceName = ''.join(chain)
                 chain = [f'list_{currentType.elementType.type}']
@@ -567,6 +579,23 @@ class Map():
         if self.keyVals:
             return f'dict_{self.type.keyType.type}_{self.type.valType.type}_constructor({len(self.keyVals)},{size},' + ', '.join([repr(kv) for kv in self.keyVals])+')'
         return f'dict_{self.type.keyType.type}_{self.type.valType.type}_constructor({len(self.keyVals)},{size})'
+
+class Open():
+    imports = []
+    def __init__(self, args=None, namespace=''):
+        self.args = Args(args)
+        self.type = Type('file')
+        self.namespace = namespace
+
+    def prepare(self):
+        pass
+
+    def __repr__(self):
+        return f'fopen({self.args})'
+
+    @property
+    def index(self):
+        return None
 
 class Input():
     def __init__(self, expr=None, namespace=''):
@@ -811,6 +840,7 @@ class Call(Obj):
             args = self.args
         separator = ', ' if args and kwargs else ''
         if self.type.isClass:
+            input(self.type)
             return f'{self.name}__new({args}{separator}{kwargs})'
         else:
             return f'{self.name}({args}{separator}{kwargs})'

@@ -104,6 +104,8 @@ patterns = {
   ('classStatement', 'expr', 'lparen', 'rparen', 'beginBlock'): classDefinition,
   ('classStatement', 'expr', 'lparen', 'expr', 'rparen', 'beginBlock'): classDefinition,
   ('classStatement', 'expr', 'lparen', 'args', 'rparen', 'beginBlock'): classDefinition,
+  ('open', 'lparen', 'args', 'rparen'): openFunc,
+  ('open', 'lparen', 'expr', 'rparen'): openFunc,
   ('input', 'lparen', 'expr', 'rparen'): inputFunc,
   ('input', 'lparen', 'rparen'): inputFunc,
 }
