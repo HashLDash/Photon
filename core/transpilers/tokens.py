@@ -438,7 +438,7 @@ class Delete():
         return None
 
 class DotAccess():
-    imports = []
+    imports = ['#include "photonInput.h"']
     def __init__(self, chain=None, namespace='', mode='expr'):
         self.chain = chain
         self.namespace = namespace
@@ -470,6 +470,9 @@ class DotAccess():
                         chain = [f'fprintf({fileName}, {c.args})']
                     elif repr(c.name) == 'close':
                         chain = [f'fclose({fileName})']
+                    elif repr(c.name) == 'read':
+                        chain = [f'photonRead({fileName})']
+                        self.imports = ['#include "photonInput.h"']
                     else:
                         raise SyntaxError(f'File object has no method {c.name}')
                 else:

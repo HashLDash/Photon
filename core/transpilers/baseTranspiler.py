@@ -126,6 +126,8 @@ class BaseTranspiler():
             processedToken = self.instructions[token['opcode']](token)
             if processedToken is not None:
                 self.currentScope.add(processedToken)
+                for imp in getattr(processedToken, 'imports', []):
+                    self.imports.add(imp)
                 if token['opcode'] == 'expr':
                     processedToken.mode = 'declaration'
                 self.sequence.add(processedToken)
@@ -292,10 +294,10 @@ class BaseTranspiler():
         value.prepare()
         for i in value.imports:
             self.imports.add(i)
-            if value.type.type == 'map':
-                self.dictTypes.add((value.type.keyType.type, value.type.valType.type))
-            if value.type.type == 'array':
-                self.listTypes.add(value.type.elementType.type)
+        if value.type.type == 'map':
+            self.dictTypes.add((value.type.keyType.type, value.type.valType.type))
+        if value.type.type == 'array':
+            self.listTypes.add(value.type.elementType.type)
         return assign
 
     def processAugAssign(self, token):
@@ -444,6 +446,9 @@ class BaseTranspiler():
             elif currentType.type == 'array': #TODO: Make this part of the token class
                 if f'{c}' == 'len':
                     c.type = Type('int')
+            elif currentType.type == 'file': #TODO: Make this part of the token class
+                if isinstance(c, Call) and f'{c.name}' == 'read':
+                    c.type = Type('str')
             elif currentType.type == 'module':
                 module = self.currentScope.get(currentType.name)
                 if isinstance(c, Call):
