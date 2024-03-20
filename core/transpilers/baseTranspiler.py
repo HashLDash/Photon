@@ -466,10 +466,13 @@ class BaseTranspiler():
             parsedChain.append(c)
 
             currentType = c.type
-        return DotAccess(
+        dotAccess = DotAccess(
             chain,
             namespace=self.currentNamespace,
         )
+        for i in dotAccess.imports:
+            self.imports.add(i)
+        return dotAccess
 
     def processClass(self, token):
         self.currentScope.startLocalScope()
