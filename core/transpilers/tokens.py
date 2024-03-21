@@ -846,7 +846,6 @@ class Call(Obj):
             args = self.args
         separator = ', ' if args and kwargs else ''
         if self.type.isClass:
-            input(self.type)
             return f'{self.name}__new({args}{separator}{kwargs})'
         else:
             return f'{self.name}({args}{separator}{kwargs})'
