@@ -22,7 +22,7 @@ syntax match wComment " *#.*$"
 syntax match wFuncName "\v[[:alpha:]_.]+\ze(\s?\()"
 syntax keyword wStatement class def cdef if elif else for in return not while and or break continue del
 syntax match wBuiltinFunc "\v(len|print|time|open|collidedRecs|collidedPointRec|uniform|randInt|choose|post|chop|exitApp|localSetItem|localGetItem|localClear|abs|decimal|pass)+\ze(\s?\()"
-syntax keyword wBuiltinFunc import
+syntax keyword wBuiltinFunc native import
 syntax keyword wTypes str cstr int float func struct const char double
 syntax keyword wPlatforms android Android HTML5 html5 linux Linux Web C c Python python Py py JS js JavaScript
 

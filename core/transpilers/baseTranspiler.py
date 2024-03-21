@@ -2,23 +2,81 @@ from interpreter import Interpreter
 from copy import deepcopy
 import os
 from pprint import pprint
+from .tokens import *
+
+class CurrentScope():
+    def __init__(self):
+        self.currentScope = {}
+        self.localScope = [{}]
+        self.local = [False]
+
+    def startLocalScope(self):
+        self.local.append(True)
+        self.localScope.append({})
+
+    def endLocalScope(self):
+        del self.local[-1]
+        del self.localScope[-1]
+
+    def add(self, token):
+        if not isinstance(token, Var) and token.index is not None:
+            if self.local[-1]:
+                self.localScope[-1][token.index] = token
+            else:
+                self.currentScope[token.index] = token
+                if isinstance(token, Module):
+                    self.currentScope[token.name] = token
+
+    def update(self, scope):
+        self.currentScope.update(scope.currentScope)
+        for localScope in scope.localScope:
+            self.localScope[-1].update(localScope)
+
+    def __repr__(self):
+        s = 'SCOPE DUMP\n'
+        for i, t in self.currentScope.items():
+            s += f'"{i}" {t.type}\n'
+        for scope in self.localScope:
+            for i, t in scope.items():
+                s += f'"{i}" {t.type}\n'
+        return s
+
+    def get(self, index):
+        for scope in reversed(self.localScope):
+            if index in scope:
+                return scope[index]
+        return self.currentScope[index]
+
+    def inMemory(self, obj):
+        try:
+            self.get(obj.index)
+            return True
+        except KeyError:
+            return False
+        
+    def typeOf(self, obj):
+        #TODO CLASS INSTANCE IS NOT BEING FOUND
+        try:
+            return self.get(obj.index).type
+        except KeyError:
+            return Type('unknown')
 
 class BaseTranspiler():
     def __init__(self, filename, target='web', module=False, standardLibs='', debug=False):
-        self.debug = debug # make this a global variable instead, inseide the debug module
+        self.debug = debug
         self.standardLibs = standardLibs
         self.target = target
         self.lang = 'photon'
         self.libExtension = 'photonExt'
         self.filename = filename.split('/')[-1].replace('.w','.photon')
-        self.header = []
+        self.moduleName = self.filename.replace('.photon','')
         self.module = module
 
-        self.operators = ['**','*','%','/','-','+','==','!=','>','<','>=','<=','is','in','andnot','and','or','&', '<<', '>>'] # in order 
         self.instructions = {
             'printFunc': self.processPrint,
             'inputFunc': self.processInput,
-            'expr': self.processExpression,
+            'openFunc': self.processOpen,
+            'expr': self.processExpr,
             'assign': self.processAssign,
             'augAssign': self.processAugAssign,
             'if': self.processIf,
@@ -31,1254 +89,667 @@ class BaseTranspiler():
             'breakStatement': self.processBreak,
             'comment': self.processComment,
             'import': self.processImport,
-            '+': self.add,
-            '-': self.sub,
-            '*': self.mul,
-            '/': self.div,
-            '%': self.mod,
-            '**': self.exp,
-            '<': self.lessThan,
-            '>': self.greaterThan,
-            '==': self.equals,
-            '>=': self.greaterEqual,
-            '<=': self.lessEqual,
-            '!=': self.notEqual,
-            'and': self.andOperator,
-            'or': self.orOperator,
-            'delete': self.delete,
-        }
-        self.builtins = {
-            'open':{'type':'file', 'value':'open'},
-        }
-        self.terminator = ';'
-        self.currentScope = {}
-        # Old scope is a list because of nested scopes.
-        # E.g. methods of a class have the classScope and the method scope
-        self.oldScope = []
-        self.classes = {}
-        self.oldClasses = []
-        self.links = set()
-        self.inFunc = None
-        self.inClass = None
-        self.initializeGlobalVars = True
-        self.methodsInsideClass = True
-        self.insertMode = True
-        self.source = []
-        self.outOfMain = []
-        self.nativeTypes = {
-            'int':'int',
-            'float':'float',
-            'void':'void',
-            'array':'array',
-            'unknown':'auto',
+            'num': self.processNum,
+            'var': self.processVar,
+            'floatNumber': self.processNum,
+            'str': self.processString,
+            'call': self.processCall,
+            'array': self.processArray,
+            'map': self.processMap,
+            'keyVal': self.processKeyVal,
+            'dotAccess': self.processDotAccess,
+            'range': self.processRange,
+            'return': self.processReturn,
+            'bool': self.processBool,
+            'group': self.processGroup,
+            'delete': self.processDelete,
+            'null': self.processNull,
         }
 
-    def insertCode(self, line, index=None, isGlobal=False):
-        if isGlobal and not self.initializeGlobalVars:
-            return
-        if self.insertMode:
-            if self.inFunc or self.inClass or isGlobal:
-                if not index is None:
-                    self.outOfMain.insert(index, line)
-                else:
-                    self.outOfMain.append(line)
-            else:
-                if not index is None:
-                    self.source.insert(index, line)
-                else:
-                    self.source.append(line)
+        self.sequence = Sequence()
+        self.currentScope = CurrentScope()
+        self.currentNamespace = self.moduleName
+
+    def typeOf(self, obj):
+        if obj.type.known:
+            return obj.type
+        if isinstance(obj, String):
+            return Type('str')
+        try:
+            return self.currentScope.typeOf(obj)
+        except Exception as e:
+            print(f'Exception in typeOf {e}')
+            return Type('unknown')
 
     def process(self, token):
         if token is not None:
-            self.instructions[token['opcode']](token)
-
-    def nativeType(self, varType):
-        if varType in self.nativeTypes:
-            return self.nativeTypes[varType]
-        elif self.typeKnown(varType):
-            return varType
-        else:
-            raise NotImplemented
-
-    def getType(self, name):
-        try:
-            return self.currentScope[name]['type']
-        except KeyError:
-            pass
-        try:
-            if '.' in name:
-                float(name)
-                return 'float'
-            else:
-                int(name)
-                return 'int'
-        except ValueError:
-            pass
-        return 'unknown'
-
-    def inferType(self, expr):
-        if self.typeKnown(expr['type']):
-            return expr['type']
-        else:
-            print('Infering type')
-            input(expr)
-            return 'unknown'
-            raise NotImplemented
-
-    def typeKnown(self, varType):
-        if varType in {'unknown', self.nativeType('unknown')}:
-            return False
-        return True
-
-    def processInput(self, token):
-        if 'expr' in token:
-            expr = self.processExpr(token['expr'])
-        else:
-            expr = {'type':'null', 'value':''}
-        return {'token':'inputFunc', 'type':'str', 'value':self.formatInput(expr)}
-
-    def processVarInit(self, token):
-        name = token['args'][0]['name']
-        varType = token['args'][0]['type']
-        if self.typeKnown(varType):
-            self.currentScope[name] = {'type':varType}
-        self.insertCode(self.formatVarInit(name, varType))
-
-    def processVar(self, token):
-        name = token['name']
-        if self.typeKnown(token['type']):
-            # Type was explicit
-            varType = token['type']
-        elif name in self.currentScope:
-            # Already processed
-            varType = self.currentScope[name]['type']
-            if varType == 'array':
-                token['elementType'] = self.currentScope[name]['elementType']
-                token['size'] = self.currentScope[name]['size']
-            elif varType == 'map':
-                token['keyType'] = self.currentScope[name]['keyType']
-                token['valType'] = self.currentScope[name]['valType']
-        elif name == self.inFunc and self.returnValue:
-            for rv in self.returnValue:
-                if self.typeKnown(rv['type']):
-                    varType = rv['type']
-                    # If return is an array, get other info
-                    if varType == 'array':
-                        token['elementType'] = self.currentScope[name]['elementType']
-                        token['size'] = self.currentScope[name]['size']
-                    elif varType == 'map':
-                        token['keyType'] = self.currentScope[name]['keyType']
-                        token['valType'] = self.currentScope[name]['valType']
-        else:
-            varType = 'unknown'
-        if 'modifier' in token:
-            #TODO: This should go after indexAccess
-            token['name'] = token['modifier'].replace('not',self.notOperator) + token['name']
-        if varType == 'array':
-            if 'indexAccess' in token:
-                # Accessing an element of the array
-                token['type'] = varType
-                v = self.processIndexAccess(token)
-                return {'value':v['value'],
-                    'indexAccess':token['indexAccess'], 'type':v['type']}
-            return {'value':token['name'], 'type':varType,
-                'elementType':token['elementType'], 'size':token['size']}
-        if varType == 'map':
-            if 'indexAccess' in token:
-                # Accessing an element of the map
-                token['type'] = varType
-                v = self.processIndexAccess(token)
-                return {'value':v['value'],
-                    'indexAccess':token['indexAccess'], 'type':v['type']}
-            return {'value':token['name'], 'type':varType,
-                'keyType':token['keyType'], 'valType':token['valType']}
-        if varType == 'str':
-            if 'indexAccess' in token:
-                # Accessing an element of string
-                token['type'] = varType
-                v = self.processIndexAccess(token)
-                return {'value':v['value'],
-                    'indexAccess':token['indexAccess'], 'type':v['type']}
-        if name in self.currentScope and 'pointer' in self.currentScope[name]:
-            return {'value':token['name'], 'type':varType, 'pointer':self.currentScope[name]['pointer']}
-        return {'value':token['name'], 'type':varType}
-
-    def processIndexAccess(self, token):
-        if token['type'] == 'array':
-            varType = token['elementType']
-            return {'value':self.formatIndexAccess(token),
-                'type':varType}
-        elif token['type'] == 'map':
-            varType = token['valType']
-            return {'value':self.formatIndexAccess(token),
-                'type':varType}
-        elif token['type'] == 'str':
-            varType = 'char'
-            return {'value':self.formatIndexAccess(token),
-                'type':varType}
-        else:
-            raise SyntaxError(f'IndexAccess with type {token["type"]} not implemented yet')
-
-    def processFormatStr(self, token):
-        expressions = [self.processExpr(expr) for expr in token['expressions']]
-        string, expressions = self.formatStr(token['value'], expressions)
-        if expressions:
-            # It's a format string
-            token['values'] = expressions
-            token['format'] = string
-        else:
-            # Normal string
-            token['value'] = string
-        return token
-
-    def processArray(self, token):
-        types = set()
-        elements = []
-        for tok in token['elements']:
-            element = self.getValAndType(tok)
-            types.add(element['type'])
-            elements.append(element)
-        if self.typeKnown(token['elementType']):
-            # Type was explicit
-            varType = token['elementType']
-        else:
-            # Infer type
-            if len(types) == 0:
-                varType = 'unknown'
-            elif len(types) == 1:
-                varType = types.pop()
-            elif len(types) == 2:
-                t1 = types.pop()
-                t2 = types.pop()
-                if t1 in {'int','float'} and t2 in {'int','float'}:
-                    varType = 'float'
-                else:
-                    raise SyntaxError(f'Type inference in array with types {t1} and {t2} not implemented yet.')
-            else:
-                raise SyntaxError(f'Type inference in array with types {types} not implemented yet.')
-        return {'value':self.formatArray(elements, varType, token['size']), 'type':'array',
-        'elements':elements, 'elementType':varType, 'size':'unknown'}
-
-    def processMap(self, token):
-        keyTypes = set()
-        valTypes = set()
-        elements = []
-        for keyVal in token['elements']:
-            key, val = self.getValAndType(keyVal['key']), self.getValAndType(keyVal['val'])
-            keyTypes.add(key['type'])
-            valTypes.add(val['type'])
-            elements.append((key, val))
-        if self.typeKnown(token['keyType']) and self.typeKnown(token['valType']):
-            # Type was explicit
-            keyType = token['keyType']
-            valType = token['valType']
-        else:
-            # Infer type
-            if len(keyTypes) == 0:
-                keyType = 'unknown'
-                valType = 'unknown'
-            elif len(keyTypes) == 1:
-                keyType = keyTypes.pop()
-                valType = valTypes.pop()
-            else:
-                raise SyntaxError('Map with dynamic types not implemented yet.')
-        return {'value':self.formatMap(elements, keyType, valType),
-            'type':'map', 'elements':elements, 'valType':valType,
-            'keyType':keyType, 'size':'unknown'}
-
-    def getValAndType(self, token):
-        if 'value' in token and 'type' in token and (self.typeKnown(token['type']) or not self.insertMode):
-            if token['type'] == 'str':
-                token = self.processFormatStr(token)
-            elif token['type'] == 'bool':
-                if token['value'].lower() == 'false':
-                    token['value'] = self.false
-                elif token['value'].lower() == 'true':
-                    token['value'] = self.true
-            if 'modifier' in token:
-                token['value'] = token['modifier'].replace('not', self.notOperator) + token['value']
-                del token['modifier']
-            return token
-        elif token['token'] == 'expr':
-            return self.processExpr(token)
-        elif token['token'] == 'call':
-            return self.processCall(token)
-        elif token['token'] == 'printFunc':
-            return self.processPrint(token)
-        elif token['token'] == 'group':
-            return self.processGroup(token)
-        elif token['token'] == 'var':
-            return self.processVar(token)
-        elif token['token'] == 'dotAccess':
-            return self.processDotAccess(token)
-        elif token['token'] == 'inputFunc':
-            return self.processInput(token)
-        elif token['token'] == 'array':
-            return self.processArray(token)
-        elif token['token'] == 'map':
-            return self.processMap(token)
-        else:
-            raise ValueError(f'ValAndType with token {token} not implemented')
-
-    def processExpression(self, token):
-        ''' Process the expr token as a standalone code '''
-        expr = self.processExpr(token)
-        if 'token' in token['args'][0] and token['args'][0]['token'] == 'var':
-            self.insertCode(self.formatVarInit(expr['value'], expr['type']))
-        else:
-            self.insertCode(expr['value']+self.terminator)
-
-    def processExpr(self, token):
-        ''' Process expr tokens as values, returning its type and value '''
-        args = token['args']
-        ops = token['ops']
-        if not ops:
-            tok = args[0]
-            return self.getValAndType(tok)
-        elif len(args) == 1 and len(ops) == 1:
-            # modifier operator
-            if self.typeKnown(token['type']):
-                return {'value':ops[0]+token['args'][0]['value'],'type':token['type']}
-            else:
-                raise NotImplemented
-        else:
-            for op in self.operators:
-                while op in ops:
-                    index = ops.index(op)
-                    arg1 = args[index]
-                    arg2 = args[index+1]
-                    arg1 = self.getValAndType(arg1)
-                    arg2 = self.getValAndType(arg2)
-                    result = self.instructions[op](arg1, arg2)
-                    args[index] = result
-                    del ops[index]
-                    del args[index+1]
-            return args[0]
-
-        return token['args'][0]
-
-    def processClassAttribute(self, token):
-        if 'default' in token:
-            # positional default argument
-            initVals = {
-                'int': '0',
-                'str': '""',
-                'float': '0.0',
-            }
-            self.classes[self.inClass]['scope'][token['value']] = {'type': token['type']}
-            expr = {'value': initVals[token['type']],'type':token['type']}
-            self.classes[self.inClass]['attributes'].append({'variable':token, 'expr':expr})
-            return
-
-        if 'token' in token and token['token'] == 'expr':
-            variable = self.processExpr(token)
-            expr = {'value':'{}', 'type':'unknown'}
-        else:
-            variable = self.processVar(token['target'])
-            expr = token['expr']
-            
-            for attr in self.classes[self.inClass]['attributes']:
-                if 'returnType' in attr:
-                    continue
-                if variable['value'] == attr['variable']['value']:
-                    # Attribute already defined, skip
-                    return
-
-            if self.typeKnown(variable['type']) and expr['args'][0]['type'] == 'array':
-                # The type declaration is for the elementType
-                variable['elementType'] = variable['type']
-                expr['args'][0]['elementType'] = variable['type']
-                variable['type'] = 'array'
-                if not 'size' in variable:
-                    variable['size'] = expr['args'][0]['size']
-            expr = self.processExpr(expr)
-            if not self.typeKnown(variable['type']):
-                variable['type'] = expr['type']
-        self.classes[self.inClass]['scope'][variable['value']] = {'type': variable['type']}
-        if variable['type'] == 'array':
-            if not 'elementType' in variable:
-                variable['elementType'] = expr['elementType']
-                variable['size'] = expr['size']
-            self.classes[self.inClass]['scope'][variable['value']]['elementType'] = variable['elementType']
-            self.classes[self.inClass]['scope'][variable['value']]['size'] = variable['size']
-        self.classes[self.inClass]['attributes'].append({'variable':variable, 'expr':expr})
-
-    def processAssign(self, token):
-        target = token['target']
-        expr = token['expr']
-        if target['token'] in {'var', 'dotAccess'}:
-            variable = self.getValAndType(target)
-            if variable['type'] == 'array':
-                if not 'elementType' in expr['args'][0] or not self.typeKnown(expr['args'][0]['elementType']):
-                    # Add array info into expression
-                    expr['args'][0]['type'] == 'array'
-                    expr['args'][0]['elementType'] = variable['elementType']
-                    expr['args'][0]['size'] = variable['size']
-            elif variable['type'] == 'map':
-                if not self.typeKnown(expr['args'][0]['valType']):
-                    # Add map info into expression
-                    expr['args'][0]['keyType'] = variable['keyType']
-                    expr['args'][0]['valType'] = variable['valType']
-            elif self.typeKnown(variable['type']) and expr['args'][0]['type'] == 'array':
-                # The type declaration is for the elementType
-                expr['args'][0]['elementType'] = variable['type']
-        else:
-            raise SyntaxError(f'Assign with variable {target} no supported yet.')
-        expr = self.processExpr(expr)
-        inMemory = False
-        if variable['value'] in self.currentScope or target['token'] == 'dotAccess':
-            inMemory = True
-        elif self.typeKnown(variable['type']):
-            self.currentScope[variable['value']] = {'type':variable['type']}
-            if variable['type'] == 'array':
-                self.currentScope[variable['value']]['elementType'] = variable['elementType']
-                self.currentScope[variable['value']]['size'] = variable['size']
-                #if not self.typeKnown(expr['elementType']):
-                #    expr['elementType'] = variable['elementType']
-                #    expr['len'] = variable['len']
-            elif expr['type'] == 'array':
-                self.currentScope[variable['value']]['elementType'] = expr['elementType']
-                self.currentScope[variable['value']]['size'] = expr['size']
-                # We have to change the type to array because the type declaration was intended
-                # for the elementType
-                self.currentScope[variable['value']]['type'] = 'array'
-
-            if variable['type'] == 'map':
-                self.currentScope[variable['value']]['keyType'] = variable['keyType']
-                self.currentScope[variable['value']]['valType'] = variable['valType']
-            elif expr['type'] == 'map':
-                self.currentScope[variable['value']]['keyType'] = expr['keyType']
-                self.currentScope[variable['value']]['valType'] = expr['valType']
-                # We have to change the type to array because the type declaration was intended
-                # for the elementType
-                self.currentScope[variable['value']]['type'] = 'map'
-
-        else:
-            varType = self.inferType(expr)
-            if self.typeKnown(varType):
-                self.currentScope[variable['value']] = {'type':varType}
-                if varType == 'array':
-                    if self.typeKnown(expr['elementType']):
-                        self.currentScope[variable['value']]['elementType'] = expr['elementType']
-                    elif self.typeKnown(variable['type']):
-                        self.currentScope[variable['value']]['elementType'] = variable['type']
-                    else:
-                        raise SyntaxError(f'Array with unknown type not implemented yet.')
-                    self.currentScope[variable['value']]['size'] = expr['size']
-                elif varType == 'map':
-                    if self.typeKnown(expr['valType']) and self.typeKnown(expr['keyType']):
-                        self.currentScope[variable['value']]['keyType'] = expr['keyType']
-                        self.currentScope[variable['value']]['valType'] = expr['valType']
-                    elif self.typeKnown(variable['type']):
-                        self.currentScope[variable['value']]['keyType'] = variable['keyType']
-                        self.currentScope[variable['value']]['valType'] = variable['valType']
-                    else:
-                        raise SyntaxError(f'Array with unknown type not implemented yet.')
-                    self.currentScope[variable['value']]['size'] = expr['size']
-                target['type'] = varType
-
-        if target['token'] == 'var':
-            variableName = target['name']
-            if variableName in self.currentScope:
-                varType = self.currentScope[variableName]['type']
-            elif self.typeKnown(target['type']):
-                # Type was explicit
-                varType = self.nativeType(target['type'])
-            else:
-                varType = self.nativeType(self.inferType(expr))
-        elif target['token'] == 'dotAccess':
-            v = self.getValAndType(target)
-            variableName = v['value']
-            varType = v['type']
-        else:
-            raise SyntaxError(f'Format assign with variableName {target} not implemented yet.')
-
-        if expr['type'] == 'array' and expr['elementType'] != varType:
-            cast = self.nativeType(varType)
-        elif self.typeKnown(expr['type']) and expr['type'] != varType and self.typeKnown(varType):
-            cast = self.nativeType(varType)
-        else:
-            cast = None
-
-        if 'indexAccess' in target:
-            target['type'] = varType
-            self.insertCode(self.formatIndexAssign(target, expr, inMemory=inMemory))
-        else:
-            if not inMemory and not self.inFunc and not self.inClass:
-                # It's a global variable, initialize it
-                self.insertCode(self.formatVarInit(variableName, varType), isGlobal=True)
-                # Now set inMemory because it was already defined in global scope
-                inMemory = True
-            self.insertCode(self.formatAssign(variableName, varType, cast, expr, inMemory=inMemory))
-
-    def processAugAssign(self, token):
-        op = token['operator']
-        expr = self.processExpr(token['expr'])
-        if token['target']['token'] in {'var','dotAccess'}:
-            variable = self.getValAndType(token['target'])
-            if op == '+':
-                if variable['type'] == 'array':
-                    self.insertCode(self.formatArrayAppend(variable, expr))
-                elif 'indexAccess' in variable:
-                    indexVal = variable['indexAccess']['args'][0]
-                    index = indexVal['value'] if 'value' in indexVal else indexVal['name']
-                    self.insertCode(self.formatArrayIncrement(token['target'], index, expr))
-                elif variable['type'] in {'int', 'float', 'str'}:
-                    self.insertCode(self.formatIncrement(variable, expr))
-                else:
-                    raise SyntaxError(f'AugAssign with type {variable["type"]} not implemented yet.')
-            if op == '-':
-                if variable['type'] == 'array':
-                    self.insertCode(self.formatArrayRemoveAll(variable, expr))
-                else:
-                    raise NotImplemented
-        else:
-            raise SyntaxError(f'AugAssign with variable {token["target"]} not supported yet.')
-
-    def formatIndexAccess(self, token):
-        if token['type'] in {'array', 'map'}:
-            indexAccess = self.processExpr(token['indexAccess'])['value']
-            name = token['name']
-            return f'{name}[{indexAccess}]'
-        else:
-            raise SyntaxError(f'IndexAccess with type {token["type"]} not implemented yet')
-
-    def processIf(self, token):
-        expr = self.processExpr(token['expr'])
-        self.insertCode(self.formatIf(expr))
-        self.startScope()
-        for c in token['block']:
-            self.process(c)
-        self.endScope()
-        if 'elifs' in token:
-            for elifStatement in token['elifs']:
-                expr = self.processExpr(elifStatement['expr'])
-                self.insertCode(self.formatElif(expr))
-                self.startScope()
-                for c in elifStatement['elifBlock']:
-                    self.process(c)
-                self.endScope()
-        if 'else' in token:
-            self.insertCode(self.formatElse())
-            self.startScope()
-            for c in token['else']:
-                self.process(c)
-            self.endScope()
-        self.insertCode(self.formatEndIf())
-
-    def processWhile(self, token):
-        expr = self.processExpr(token['expr'])
-        self.insertCode(self.formatWhile(expr))
-        for c in token['block']:
-            self.process(c)
-        self.insertCode(self.formatEndWhile())
-
-    def processRange(self, token):
-        rangeType = 'unknown'
-        fromVal = self.processExpr(token['from'])
-        if 'step' in token:
-            step = self.processExpr(token['from'])
-        else:
-            step = {'type':'int', 'value':'1'}
-        toVal = self.processExpr(token['to'])
-        types = {fromVal['type'], step['type'], toVal['type']}
-        if len(types) == 1:
-            rangeType = types.pop()
-        elif len(types) == 2 and 'float' in types and 'int' in types:
-            rangeType = 'float'
-        return {'type':rangeType, 'from':fromVal, 'step':step, 'to':toVal}
-
-    def processFor(self, token):
-        if token['iterable']['token'] == 'expr':
-            iterable = self.processExpr(token['iterable'])
-        else:
-            iterable = self.processRange(token['iterable'])
-        variables = [ self.processVar(v)['value'] for v in token['vars'] ]
-        self.insertCode(self.formatFor(variables, iterable))
-        if iterable['type'] == 'array':
-            if len(variables) == 2:
-                self.currentScope[variables[0]] = {'type':'int'}
-            self.currentScope[variables[-1]] = {'type':iterable['elementType']}
-        elif iterable['type'] == 'str' or 'from' in iterable:
-            if len(variables) == 2:
-                self.currentScope[variables[0]] = {'type':'int'}
-            self.currentScope[variables[-1]] = {'type':iterable['type']}
-        elif iterable['type'] == 'map':
-            if len(variables) == 2:
-                self.currentScope[variables[0]] = {'type':iterable['keyType']}
-                self.currentScope[variables[1]] = {'type':iterable['valType']}
-            elif len(variables) == 3:
-                self.currentScope[variables[0]] = {'type':'int'}
-                self.currentScope[variables[1]] = {'type':iterable['keyType']}
-                self.currentScope[variables[2]] = {'type':iterable['valType']}
-            else:
-                self.currentScope[variables[0]] = {'type':iterable['keyType']}
-        else:
-            self.currentScope[variables[-1]] = {'type':iterable['type']}
-        for c in token['block']:
-            self.process(c)
-        self.insertCode(self.formatEndFor())
-
-    def processForTarget(self, token):
-        var = token['target'].lower().replace('python', 'py')
-        lang = self.lang.lower().replace('python', 'py')
-        target = self.target.lower()
-        if var == lang or var == target:
-            for tok in token['block']:
-                self.process(tok)
-
-    def processArgs(self, tokens, inferType=False):
-        args = []
-        for tok in tokens:
-            arg = self.getValAndType(tok)
-            if inferType:
-                args.append( arg )
-            else:
-                # ignore value type because of the scope
-                # Function arguments need explicit type
-                attr = {'type':tok['type'], 'value':arg['value']}
-                if tok['type'] == 'array':
-                    attr['elementType'] = arg['elementType']
-                    attr['size'] = arg['size']
-                if 'attribute' in tok:
-                    attr['default'] = True
-                    attr['value'] = tok['args'][0]['dotAccess'][-1]['name']
-                args.append(attr)
-        return args
-
-    def processKwargs(self, tokens, inferType=False):
-        kwargs = []
-        for tok in tokens:
-            if tok['expr']['type'] == 'array' and not self.typeKnown(tok['expr']['args'][0]['elementType']):
-                if tok['target']['type'] == 'array':
-                    tok['expr']['args'][0]['elementType'] = tok['target']['elementType']
-                else:
-                    tok['expr']['args'][0]['elementType'] = tok['target']['type']
-            kw = self.getValAndType(tok['expr'])
-            if self.typeKnown(tok['target']['type']) and tok['target']['type'] == 'func':
-                # It's a callback
-                kw['type'] = tok['target']['type']
-            name = tok['target']['name']
-            kw['name'] = name
-            if 'attribute' in tok['target']:
-                kw['default'] = True
-            kwargs.append(kw)
-        return kwargs
-
-    def processCall(self, token, className=None):
-        name = self.getValAndType(token['name'])
-        args = self.processArgs(token['args'], inferType=True)
-        outVal = {}
-        if name['value'] in self.builtins:
-            callType = self.builtins[name['value']]['type']
-            name['value'] = self.builtins[name['value']]['value']
-        else:
-            callType = name['type']
-        callback = False
-        # Put kwargs in the right order
-        if 'func' in token['type']:
-            # It'a a callback
-            kws = self.processKwargs(token['kwargs'], inferType=True)
-            ags = args
-        elif className is not None:
-            kws = self.classes[className]['methods'][name['value']]['kwargs']
-            ags = self.classes[className]['methods'][name['value']]['args']
-            callType = self.classes[className]['methods'][name['value']]['type']
-            if callType == 'array':
-                outVal['elementType'] = self.classes[className]['methods'][name['value']]['elementType']
-                outVal['size'] = self.classes[className]['methods'][name['value']]['size']
-        elif name['value'] in self.classes:
-            callType = name['value']
-            if 'new' in self.classes[callType]['methods']:
-                kws = self.classes[callType]['methods']['new']['kwargs']
-                ags = self.classes[callType]['methods']['new']['args']
-                args.insert(0, {'value':'self', 'type':callType})
-            else:
-                kws = []
-                ags = []
-        elif name['value'] in self.currentScope:
-            if 'token' in self.currentScope[name['value']] and self.currentScope[name['value']]['token'] == 'nativeFunc':
-                kws = []
-                ags = args
-            elif 'func' in self.currentScope[name['value']]['type']:
-                # Its a callback
-                callback = True
-                kws = self.processKwargs(token['kwargs'], inferType=True)
-                ags = args
-            else:
-                kws = self.currentScope[name['value']]['kwargs']
-                ags = self.currentScope[name['value']]['args']
-        else:
-            # Call signature not defined, use the order it was passed
-            kws = self.processKwargs(token['kwargs'], inferType=True)
-            ags = args
-
-        kwargs = []
-        # If the kwarg was passed, use it. Otherwise use the default value
-        for kw in kws:
-            for a in self.processKwargs(token['kwargs']):
-                if kw['name'] == a['name']:
-                    kwargs.append(a)
-                    break
-            else:
-                kwargs.append(kw)
-
-        arguments = []
-        for arg, a in zip(args, ags):
-            if arg['type'] != a['type']:
-                arg['cast'] = a['type']
-            arguments.append(arg)
-                
-        val = self.formatCall(name['value'], name['type'], arguments, kwargs, className, callback)
-        if 'modifier' in token:
-            val = token['modifier'].replace('not',self.notOperator) + val
-        outVal['value'] = val
-        outVal['type'] = callType
-        if callType == 'array' and not 'elementType' in outVal:
-            outVal['elementType'] = token['name']['elementType']
-            outVal['size'] = token['name']['size']
-        return outVal
-
-    def processDotAccess(self, token):
-        tokens = token['dotAccess']
-        varType = self.getValAndType(tokens[0])['type']
-        currentType = varType
-        tokens[0]['type'] = varType
-        for n, v in enumerate(tokens[1:], 1):
-            if currentType in self.classes:
-                if v['token'] == 'call':
-                    name = v['name']['name']
-                else:
-                    name = v['name']
-                if name in self.classes[varType]['scope']:
-                    currentType = self.classes[varType]['scope'][name]['type']
-                    if currentType == 'array':
-                        size = self.classes[varType]['scope'][name]['size']
-                        varType = self.classes[varType]['scope'][name]['elementType']
-                        tokens[n]['type'] = currentType
-                        tokens[n]['elementType'] = varType
-                        tokens[n]['size'] = size
-                    else:
-                        varType = currentType
-                        tokens[n]['type'] = varType
-            elif currentType in {'array', 'map'} and v['name'] == 'len':
-                tokens[n]['type'] = 'int'
-                currentType = 'int'
-                varType = 'int'
-            else:
-                varType = v['type']
-                currentType = varType
-        value, lastType = self.formatDotAccess(tokens)
-        if lastType is not None:
-            varType = lastType
-        
-        # pass other arguments to be compatible with processVar method
-        if currentType == 'array':
-            if 'indexAccess' in tokens[-1]:
-                # Accessing an element of the array
-                #tokens[-1]['type'] = varType
-                return {'value': value, #tokens[-1]['name'],
-                    'indexAccess':tokens[-1]['indexAccess'],
-                    'type':varType}
-            return {'value':value, 'type':currentType,
-                'elementType':tokens[-1]['elementType'], 'size':'unknown'}
-        #TODO: Implement map with indexAccess
-
-        return {'value':value, 'type':varType}
-
-    def startClassScope(self):
-        self.oldClasses.append(deepcopy(self.classes))
-
-    def endClassScope(self):
-        self.classes = self.oldClasses.pop()
-
-    def startScope(self):
-        self.oldScope.append(deepcopy(self.currentScope))
-
-    def endScope(self):
-        scope = deepcopy(self.currentScope)
-        self.currentScope = self.oldScope.pop()
-        return scope
-
-    def processClass(self, token):
-        name = token['name']
-        inheritedClasses = [v['value'] for v in self.processArgs(token['args'])]
-        if len(inheritedClasses) > 1:
-            raise SyntaxError('Multiple Inheritance is not allowed yet.')
-        self.classes[name] = {'scope':{}, 'attributes':[],'methods':{}, 'inherited':[]}
-        self.inClass = name
-        self.startScope()
-        index = len(self.outOfMain)
-        newDefined = False
-        for c in token['block']:
-            if c['token'] == 'func':
-                if c['name'] == 'new':
-                    newDefined = True
-                    break
-        for inherited in inheritedClasses:
-            if inherited in self.classes:
-                self.classes[name] = deepcopy(self.classes[inherited])
-                self.classes[name]['inherited'] = [inherited]
-                for methodName in self.classes[name]['methods']:
-                    if methodName == 'constructor':
-                        continue
-                    self.classes[name]['scope'][methodName]['args'][0]['type'] = name
-                    self.classes[name]['methods'][methodName]['scope']['self']['type'] = name
-                    if inherited:
-                        self.classes[name]['methods'][methodName]['scope']['super'] = {'type': inherited}
-                    self.classes[name]['methods'][methodName]['args'][0]['type'] = name
-                    definition = self.classes[name]['methods'][methodName]['code'][0]
-                    self.reformatInheritedMethodDefinition(definition, methodName, name, inherited)
-                for n, attr in enumerate(self.classes[name]['attributes']):
-                    if 'returnType' in attr:
-                        self.classes[name]['attributes'][n]['args'][0]['type'] = name
-
-        for c in token['block']:
-            if c['token'] in {'assign', 'expr'}:
-                self.processClassAttribute(c)
-            elif c['token'] == 'func':
-                self.processClassMethod(c)
-            elif c['token'] == 'comment':
-                self.processComment(c)
-            else:
-                raise SyntaxError(f'Cannot use {c["token"]} inside a class')
-        classScope = self.endScope()
-        # Include methods, args/kwargs
-        args = self.processArgs(token['args'])
-        self.insertCode(self.formatClass(name, args), index)
-        for attr in self.classes[name]['attributes']:
-            self.insertCode(self.formatClassAttribute(attr))
-        if not self.methodsInsideClass:
-            # Close class definition before writing methods
-            self.insertCode(self.formatEndClass())
-            self.classHeader(index)
-        # Write methods code
-        for methodName, info in self.classes[name]['methods'].items():
-            if methodName == 'constructor':
-                continue
-            self.insertCode('')
-            self.classes[name]['scope'][methodName] = info['scope'][methodName]
-            if info['type'] == 'array':
-                self.classes[name]['scope'][methodName]['elementType'] = info['elementType']
-                self.classes[name]['scope'][methodName]['size'] = info['size']
-            for c in info['code']:
-                self.insertCode(c)
-        # Write the constructor if it has one
-        if 'constructor' in self.classes[name]['methods']:
-            methodName = 'constructor'
-            info = self.classes[name]['methods'][methodName]
-            self.insertCode('')
-            self.classes[name]['scope'][methodName] = info['scope'][methodName]
-            if info['type'] == 'array':
-                self.classes[name]['scope'][methodName]['elementType'] = info['elementType']
-                self.classes[name]['scope'][methodName]['size'] = info['size']
-            for c in info['code']:
-                self.insertCode(c)
-        if self.methodsInsideClass:
-            # Close class definition after writing methods
-            self.insertCode(self.formatEndClass())
-        self.inClass = None
-
-    def reformatInheritedMethodDefinition(self, definition, methodName, className, inheritedName):
-        pass
-
-    def classHeader(self, index):
-        ''' Construct the main header if it needs '''
-        self.header.append(f'typedef struct {self.inClass} {self.inClass};')
-
-    def processClassMethod(self, token):
-        selfArg = {
-            'token': 'expr',
-            'type': self.inClass,
-            'args': [{'token': 'var', 'name': 'self', 'type': self.inClass}], 'ops': []}
-        token['args'] = [selfArg] + token['args']
-        index = len(self.outOfMain)
-        name = token['name']
-        if name == "new":
-            # Only change the name for transpilation
-            #token['name'] = self.constructorName
-            # add kwargs from inherited class
-            try:
-                inherited = self.classes[self.inClass]['inherited'][0]
-            except IndexError:
-                pass
-            else:
-                if 'new' in self.classes[inherited]['methods']:
-                    inheritedKwargs = self.classes[inherited]['methods']['new']['tokens']['kwargs']
-                    # Check if it's an inherited new method
-                    # to avoid duplicating the attributes
-                    if not inheritedKwargs == token['kwargs']:
-                        token['kwargs'] = inheritedKwargs + token['kwargs']
-        self.processFunc(token)
-        # delete self, because the next inheritance will insert it
-        del token['args'][0]
-        methodCode = self.outOfMain[index:]
-        del self.outOfMain[index:]
-        self.classes[self.inClass]['methods'][name] = deepcopy(self.currentScope[name])
-        self.classes[self.inClass]['methods'][name]['code'] = methodCode
-        self.classes[self.inClass]['methods'][name]['tokens'] = token
-
-        methodInfo = self.classes[self.inClass]['methods'][name]['scope'][name] 
-        attrData = {
-            'returnType':methodInfo['type'],
-            'name':name,
-            'args':methodInfo['args'],
-            'kwargs':methodInfo['kwargs']}
-        if methodInfo['type'] == 'array':
-            attrData['elementType'] = self.currentScope[name]['elementType']
-            attrData['size'] = self.currentScope[name]['size']
-        # Check if this method overrides other inherited method
-        for n, attr in enumerate(self.classes[self.inClass]['attributes']):
-            if 'returnType' in attr and attr['name'] == name:
-                # It is overriding this attr
-                self.classes[self.inClass]['attributes'][n] = attrData
-                break
-        else:
-            self.classes[self.inClass]['attributes'].append(attrData)
-        del self.currentScope[name]
-
-    def processFunc(self, token):
-        args = self.processArgs(token['args'])
-        kwargs = self.processKwargs(token['kwargs'])
-        functionName = token['name']
-        returnType = token['type']
-        returnValue = {'value':None, 'type':returnType}
-        self.inFunc = functionName
-        # infer return type if not known
-        if not self.typeKnown(returnType):
-            # Pre process code and get returnType
-            # change mode to not insert code on processing
-            self.insertMode = False
-            self.startScope()
-            self.returnValue = []
-            if self.inClass:
-                self.startClassScope()
-                inherited = self.classes[self.inClass]['inherited']
-                if inherited:
-                    self.currentScope['super'] = {'type':inherited[0]}
-            # put args in scope
-            for arg in args:
-                argType = arg['type']
-                argVal = arg['value']
-                self.currentScope[argVal] = {'type':argType}
-                if argType == 'array':
-                    self.currentScope[argVal]['elementType'] = arg['elementType']
-                    self.currentScope[argVal]['size'] = arg['size']
-                if argType in self.classes:
-                    self.currentScope[argVal]['pointer'] = True
-                if self.inClass and 'default' in arg:
-                    self.processClassAttribute(arg)
-            # put kwargs in scope
-            for kw in kwargs:
-                kwType = kw['type']
-                kwVal = kw['name']
-                self.currentScope[kwVal] = {'type':kwType}
-                if kwType in self.classes:
-                    self.currentScope[kwVal]['pointer'] = True
-                if kwType == 'array':
-                    self.currentScope[kwVal]['elementType'] = kw['elementType']
-                    self.currentScope[kwVal]['size'] = kw['size']
-                    
-                if 'default' in kw:
-                    attribute = {
-                        'target':{
-                            'name':kw['name'],
-                            'type':kw['type']
-                        },
-                        'expr':{
-                            'args':[
-                                self.getValAndType(kw)
-                            ],
-                            'ops':[]
-                        }
-                    }
-                    if kw['type'] == 'array':
-                        attribute['target']['type'] = kw['elementType']
-                        attribute['target']['elementType'] = kw['elementType']
-                        attribute['target']['size'] = kw['size']
-                        attribute['expr']['args'][0]['elementType'] = kw['elementType']
-                        attribute['expr']['args'][0]['size'] = kw['size']
-                        attribute['expr']['args'][0]['elements'] = kw['elements']
-                    if self.inClass:
-                        self.processClassAttribute(attribute)
-            # get a deepcopy or it will corrupt the block
-            block = deepcopy(token['block'])
-            for c in block:
-                self.process(c)
-            for rv in self.returnValue:
-                if self.typeKnown(rv['type']):
-                    returnType = rv['type']
-                    returnValue = rv
-                    break
-            else:
-                returnType = 'void'
-                returnValue = {'type':'void'}
-            self.endScope()
-            if self.inClass:
-                self.endClassScope()
-            # return to normal mode
-            self.insertMode = True
-            # End pre processing
-        self.startScope()
-        self.returnValue = []
-        scopeName = 'new' if functionName == self.constructorName else functionName
-        self.currentScope[scopeName] = {'type':returnType, 'token':'func', 'args':args, 'kwargs':kwargs}
-        if returnValue and returnValue['type'] == 'array':
-            self.currentScope[scopeName]['elementType'] = returnValue['elementType'] 
-            self.currentScope[scopeName]['size'] = returnValue['size']
-        # put args in scope
-        if self.inClass:
-            inherited = self.classes[self.inClass]['inherited']
-            if inherited:
-                self.currentScope['super'] = {'type':inherited[0]}
-        index = len(self.outOfMain)
-        for arg in args:
-            argType = arg['type']
-            argVal = arg['value']
-            self.currentScope[argVal] = {'type':argType}
-            if argType == 'array':
-                self.currentScope[argVal]['elementType'] = arg['elementType']
-                self.currentScope[argVal]['size'] = arg['size']
-            if argType in self.classes:
-                self.currentScope[argVal]['pointer'] = True
-            if self.inClass and 'default' in arg:
-                self.insertCode(self.formatClassDefaultValue(arg))
-                self.processClassAttribute(arg)
-        # put kwargs in scope
-        for kw in kwargs:
-            kwType = kw['type']
-            kwVal = kw['name']
-            self.currentScope[kwVal] = {'type':kwType}
-            if kwType in self.classes:
-                self.currentScope[kwVal]['pointer'] = True
-            if kwType == 'array':
-                self.currentScope[kwVal]['elementType'] = kw['elementType']
-                self.currentScope[kwVal]['size'] = kw['size']
-            if 'default' in kw:
-                if self.inClass:
-                    self.insertCode(self.formatClassDefaultValue(kw))
-                attribute = {
-                    'target':{
-                        'name':kw['name'],
-                        'type':kw['type']
-                    },
-                    'expr':{
-                        'args':[
-                            self.getValAndType(kw)
-                        ],
-                        'ops':[]
-                    }
-                }
-                if kw['type'] == 'array':
-                    attribute['target']['type'] = kw['elementType']
-                    attribute['target']['elementType'] = kw['elementType']
-                    attribute['target']['size'] = kw['size']
-                    attribute['expr']['args'][0]['elementType'] = kw['elementType']
-                    attribute['expr']['args'][0]['size'] = kw['size']
-                    attribute['expr']['args'][0]['elements'] = kw['elements']
-                if self.inClass:
-                    self.processClassAttribute(attribute)
-        for c in token['block']:
-            self.process(c)
-        returnType = returnValue['type']
-        if returnType == 'array':
-            elementType = returnValue['elementType']
-            returnType = f'list_{elementType}'
-        self.insertCode(self.formatFunc(functionName, returnType, args, kwargs),index)
-        self.insertCode(self.formatEndFunc())
-        self.inFunc = None
-        funcScope = self.endScope()
-        self.currentScope[scopeName] = {'scope':funcScope, 'type':returnValue['type'], 'token':'func', 'args':args, 'kwargs':kwargs}
-        if returnValue['type'] == 'array':
-            self.currentScope[scopeName]['elementType'] = returnValue['elementType'] 
-            self.currentScope[scopeName]['size'] = returnValue['size']
-
-    def processReturn(self, token):
-        if 'expr' in token:
-            expr = self.processExpr(token['expr'])
-            self.returnValue.append(expr)
-        else:
-            expr = None
-            self.returnValue.append({'type':'void'})
-        self.insertCode(self.formatReturn(expr))
-
-    def processBreak(self, token):
-        self.insertCode('break'+self.terminator)
-
-    def processComment(self, token):
-        # Do nothing for now
-        pass
-
-    def processImport(self, token):
-        folder = None
-        if token['expr']['args'][0]['token'] == 'var':
-            name = token['expr']['args'][0]['name']
-            if f"{name}.w" in os.listdir(folder) + os.listdir(self.standardLibs):
-                if f"{name}.w" in os.listdir(self.standardLibs):
-                    # Photon module import
-                    if name == 'wui':
-                        # Inject assets folder
-                        os.makedirs(f'Sources/{self.lang}', exist_ok=True)
-                        assetsPath = os.path.realpath(self.standardLibs+'../assets')
-                        os.system(f'cp -r {assetsPath} ./')
-                    filename = f'{self.standardLibs}{name}.w'
-                else:
-                    # Local module import
-                    filename = f'{name}.w'
-                interpreter = Interpreter(
-                        filename=filename,
-                        lang=self.lang,
-                        target=self.target,
-                        module=True,
-                        standardLibs=self.standardLibs,
-                        transpileOnly=True,
-                        debug=self.debug)
-                interpreter.run()
-                self.classes.update(interpreter.engine.classes)
-                self.currentScope.update(interpreter.engine.currentScope)
-                self.imports = self.imports.union(interpreter.engine.imports)
-                self.links = self.links.union(interpreter.engine.links)
-                self.outOfMain += interpreter.engine.outOfMain
-                self.source += interpreter.engine.source
-                self.header += interpreter.engine.header
-            elif f"{name}.{self.libExtension}" in os.listdir(self.standardLibs + f'/native/{self.lang}/'):
-                # Native Photon lib module import
-                self.insertCode(self.formatNativeLibImport(token['expr']))
-            elif f"{name}.{self.libExtension}" in os.listdir():
-                # Native Photon local module import
-                raise SyntaxError('Native Photon local module import not implemented yet.')
-            else:
-                # System library import
-                self.insertCode(self.formatSystemLibImport(token['expr']))
-
-    def processPrint(self, token):
-        if token['args']:
-            value = self.getValAndType(token['args'][0])
-        else:
-            value = {'value':'','type':'null'}
-        terminator = '\\n'
-        if token['kwargs']:
-            kwargs = self.processKwargs(token['kwargs'])
-            if kwargs[0]['name'] == 'end':
-                if kwargs[0]['type'] == 'str':
-                    terminator = kwargs[0]['value'][1:-1]
-                else:
-                    raise ValueError('end parameter on print can only be of type str.')
-        self.insertCode(self.formatPrint(value, terminator=terminator))
-
-    def add(self, arg1, arg2):
-        t1 = arg1['type']
-        t2 = arg2['type']
-        if t1 == 'int' and t2 == 'int':
-            varType = 'int'
-        elif t1 in {'float','int'} and t2 in {'float','int'}:
-            varType = 'float'
-        elif t1 == 'str' or t2 == 'str':
-            varType = 'str'
-            return {'value':f'{arg1["value"]} + {arg2["value"]}', 'type':varType, 'expressions':[]}
-        else:
-            varType = 'unknown'
-        return {'value':f'{arg1["value"]} + {arg2["value"]}', 'type':varType}
-
-    def sub(self, arg1, arg2):
-        t1 = arg1['type']
-        t2 = arg2['type']
-        if t1 == 'int' and t2 == 'int':
-            varType = 'int'
-        elif t1 in {'float','int'} and t2 in {'float','int'}:
-            varType = 'float'
-        else:
-            varType = 'unknown'
-        return {'value':f'{arg1["value"]} - {arg2["value"]}', 'type':varType}
-
-    def mul(self, arg1, arg2):
-        t1 = arg1['type']
-        t2 = arg2['type']
-        if t1 == 'int' and t2 == 'int':
-            varType = 'int'
-        elif t1 in {'float','int'} and t2 in {'float','int'}:
-            varType = 'float'
-        else:
-            varType = 'unknown'
-        return {'value':f'{arg1["value"]} * {arg2["value"]}', 'type':varType}
-
-    def div(self, arg1, arg2):
-        t1 = arg1['type']
-        t2 = arg2['type']
-        if t1 in {'float','int'} and t2 in {'float','int'}:
-            varType = 'float'
-        else:
-            varType = 'unknown'
-        return {'value':f'{arg1["value"]} / {arg2["value"]}', 'type':varType}
-    
-    def mod(self, arg1, arg2):
-        return {'value':f'{arg1["value"]} % {arg2["value"]}', 'type':'int'}
-
-    def exp(self, arg1, arg2):
-        if arg1['type'] == 'int' and arg2['type'] == 'int':
-            varType = 'int'
-        else:
-            varType = 'float'
-        return {'value':f'pow({arg1["value"]}, {arg2["value"]})', 'type':'float'}
-
-    def lessThan(self, arg1, arg2):
-        return {'value':f'{arg1["value"]} < {arg2["value"]}', 'type':'bool'}
-
-    def greaterThan(self, arg1, arg2):
-        return {'value':f'{arg1["value"]} > {arg2["value"]}', 'type':'bool'}
-
-    def equals(self, arg1, arg2):
-        return {'value':f'{arg1["value"]} == {arg2["value"]}', 'type':'bool'}
-
-    def greaterEqual(self, arg1, arg2):
-        return {'value':f'{arg1["value"]} >= {arg2["value"]}', 'type':'bool'}
-    
-    def lessEqual(self, arg1, arg2):
-        return {'value':f'{arg1["value"]} <= {arg2["value"]}', 'type':'bool'}
-
-    def notEqual(self, arg1, arg2):
-        return {'value':f'{arg1["value"]} != {arg2["value"]}', 'type':'bool'}
-
-    def andOperator(self, arg1, arg2):
-        return {'value':f'{arg1["value"]} && {arg2["value"]}', 'type':'bool'}
-
-    def orOperator(self, arg1, arg2):
-        return {'value':f'{arg1["value"]} || {arg2["value"]}', 'type':'bool'}
+            processedToken = self.instructions[token['opcode']](token)
+            if processedToken is not None:
+                self.currentScope.add(processedToken)
+                for imp in getattr(processedToken, 'imports', []):
+                    self.imports.add(imp)
+                if token['opcode'] == 'expr':
+                    processedToken.mode = 'declaration'
+                self.sequence.add(processedToken)
+
+    def preprocess(self, token):
+        processedToken = self.instructions[token['token']](token)
+        return processedToken
+
+    def processNull(self, token):
+        return Null()
+
+    def processNum(self, token):
+        return Num(value=token['value'], type=token['type'])
+
+    def processBool(self, token):
+        return Bool(value=token['value'])
 
     def processGroup(self, token):
-        expr = self.processExpr(token['expr'])
-        if 'modifier' in token:
-            op = token['modifier'].replace('not',self.notOperator)
-        else:
-            op = ''
-        return {'value':f'{op}({expr["value"]})', 'type':expr['type']}
+        return Group(expr=self.preprocess(token['expr']))
 
-    def delete(self, token):
-        t = deepcopy(token['expr'])
-        if 'indexAccess' in t['args'][-1]:
-            del t['args'][-1]['indexAccess']
-            v = self.processExpr(t)
-            name, varType = v['value'], v['type']
-            expr = self.processExpr(token['expr'])
-            expr['indexAccess'] = self.processExpr(expr['indexAccess'])
-        self.insertCode(self.formatDelete(expr, name, varType))
+    def processString(self, token):
+        for i in String.imports:
+            self.imports.add(i)
+        expressions = self.processTokens(token['expressions'])
+        return String(
+            value=token['value'],
+            expressions=expressions,
+        )
 
-    def isBlock(self, line):
-        for b in self.block:
-            # remove comment
+    def processInput(self, token):
+        return Input(
+            expr=self.preprocess(token['expr']),
+        )
+
+    def processVar(self, token):
+        indexAccess = self.preprocess(token['indexAccess']) if 'indexAccess' in token else None
+        varType = Type(**token)
+        #TODO: do the same for map
+        if varType.type == 'array':
+            if varType.elementType.isClass:
+                try:
+                    typeName = Var(varType.elementType.type, namespace=self.moduleName)
+                    # if this doesn't fail it's because the type is a class
+                    c = self.currentScope.get(typeName.index)
+                    varType = Type('array', elementType=typeName.index)
+                    self.listTypes.add(typeName.index)
+                except KeyError:
+                    varType.native = True
+        elif varType.isClass:
             try:
-                line = line[:line.index('#')]
-            except ValueError:
-                pass
-            if b in line:
-                if b == 'for ' or b == 'if ':
-                    if ('[' in line and ']' in line) and (line.index('[') < line.index('for ') < line.index(']')):
-                        # its a list comprehension
+                typeName = Var(token['type'], namespace=self.moduleName)
+                # if this doesn't fail it's because the type is a class
+                c = self.currentScope.get(typeName.index)
+                varType = Type(typeName.index)
+            except KeyError:
+                varType.native = True
+        var = Var(
+            value=token['name'],
+            type=varType,
+            namespace=self.currentNamespace,
+            indexAccess=indexAccess,
+            attribute=token.get('attribute', None)
+        )
+        if not var.type.known:
+            var.type = self.typeOf(var)
+        return var
+
+    def processDelete(self, token):
+        return Delete(expr=self.preprocess(token['expr']))
+
+    def processArray(self, token):
+        def inferType():
+            types = set()
+            for element in elements:
+                types.add(element.type.type)
+            if len(types) == 1:
+                elementType = element.type.type
+            elif types == {Type('int'), Type('float')}:
+                elementType = 'float'
+            else:
+                elementType = 'unknown'
+            return Type('array', elementType=elementType)
+
+        elements = self.processTokens(token['elements'])
+        arrayType = Type(**token)
+        if not arrayType.known:
+            arrayType = inferType()
+        array = Array(
+            *elements,
+            type=arrayType,
+        )
+        for i in array.imports:
+            self.imports.add(i)
+        self.listTypes.add(array.type.elementType.type)
+        return array
+
+    def processMap(self, token):
+        def inferType():
+            keyTypes = set()
+            valTypes = set()
+            for keyVal in keyVals:
+                keyTypes.add(keyVal.key.type)
+                valTypes.add(keyVal.val.type)
+            if len(keyTypes) == 0:
+                return Type('map')
+            if len(keyTypes) == 1:
+                keyType = keyVal.key.type
+            else:
+                raise NotImplemented('Keys of different types not implemented yet')
+            if len(valTypes) == 1:
+                valType = keyVal.val.type
+            else:
+                raise NotImplemented('Vals of different types not implemented yet')
+            return Type('map', keyType=keyType, valType=valType)
+
+        keyVals = self.processTokens(token['elements'])
+        mapType = Type(**token)
+        if not mapType.known:
+            mapType = inferType()
+        obj = Map(
+            *keyVals,
+            type=mapType,
+        )
+        for i in obj.imports:
+            self.imports.add(i)
+        if obj.type.known:
+            self.dictTypes.add((obj.type.keyType.type, obj.type.valType.type))
+        return obj
+
+    def processKeyVal(self, token):
+        return KeyVal(
+            key=self.preprocess(token['key']),
+            val=self.preprocess(token['val'])
+        )
+
+    def processExpr(self, token):
+        return Expr(
+            *[self.preprocess(t) for t in token['args']],
+            ops = token['ops']
+        )
+
+    def processAssign(self, token):
+        target = self.preprocess(token['target'])
+        value = self.preprocess(token['expr'])
+        inMemory = self.currentScope.inMemory(target)
+        if inMemory:
+            target.type = self.typeOf(target)
+
+        cast = None
+        if target.type.known and value.type.known:
+            if target.type.type != value.type.type:
+                cast = target.type
+        if not target.type.known:
+            target.type = value.type
+        if not value.type.known:
+            value.type = target.type
+        assign = Assign(
+            target=target,
+            value=value,
+            namespace=self.currentNamespace,
+            inMemory=inMemory,
+            cast=cast,
+        )
+        value.prepare()
+        for i in value.imports:
+            self.imports.add(i)
+        if value.type.type == 'map':
+            self.dictTypes.add((value.type.keyType.type, value.type.valType.type))
+        if value.type.type == 'array':
+            self.listTypes.add(value.type.elementType.type)
+        return assign
+
+    def processAugAssign(self, token):
+        return AugAssign(
+            target=self.preprocess(token['target']),
+            expr=self.preprocess(token['expr']),
+            operator=token['operator']
+        )
+
+    def processIf(self, token):
+        #TODO: create context manager for localScope
+        self.currentScope.startLocalScope()
+        ifBlock = self.processTokens(token['block'], addToScope=True)
+        self.currentScope.endLocalScope()
+        elifs = []
+        if 'elifs' in token:
+            for e in token['elifs']:
+                self.currentScope.startLocalScope()
+                elifs.append(
+                    Elif(
+                        self.preprocess(e['expr']),
+                        self.processTokens(e['elifBlock'], addToScope=True)
+                    )
+                )
+                self.currentScope.endLocalScope()
+        self.currentScope.startLocalScope()
+        elseBlock = None if not 'else' in token else self.processTokens(token['else'], addToScope=True)
+        self.currentScope.endLocalScope()
+        return If(
+            expr = self.preprocess(token['expr']),
+            ifBlock = ifBlock,
+            elifs = elifs,
+            elseBlock = elseBlock,
+        )
+
+    def processWhile(self, token):
+        return While(
+            expr=self.preprocess(token['expr']),
+            block=self.processTokens(token['block'])
+        )
+
+    def processFor(self, token):
+        iterable = self.preprocess(token['iterable'])
+        self.currentScope.startLocalScope()
+        args = self.processTokens(token['vars'])
+        if isinstance(iterable, Range):
+            if len(args) == 1:
+                args[0].type = iterable.type
+            elif len(args) == 2:
+                args[0].type = Type('int')
+                args[1].type = iterable.type
+            else:
+                raise SyntaxError('For with range cannot have more than 2 variables')
+        elif isinstance(iterable, Expr):
+            if iterable.type.type == 'array':
+                if len(args) == 1:
+                    args[0].type = Type(iterable.type.elementType)
+                elif len(args) == 2:
+                    args[0].type = Type('int')
+                    args[1].type = Type(iterable.type.elementType)
+            elif iterable.type.type == 'map':
+                if len(args) == 1:
+                    args[0].type = Type(iterable.type.keyType)
+                elif len(args) == 2:
+                    args[0].type = Type(iterable.type.keyType)
+                    args[1].type = Type(iterable.type.valType)
+            elif iterable.type.type == 'str':
+                if len(args) == 1:
+                    args[0].type = Type('str')
+                elif len(args) == 2:
+                    args[0].type = Type('int')
+                    args[1].type = Type('str')
+        else:
+            raise ValueError(f'Iterable with type {type(iterable)} not supported in processFor')
+        for t in args:
+            self.currentScope.add(Assign(target=t, value=Num(0, t.type)))
+        code=self.processTokens(token['block'])
+        self.currentScope.endLocalScope()
+        forToken = For(
+            code=code,
+            args=args,
+            iterable=iterable,
+        )
+        for i in forToken.imports:
+            self.imports.add(i)
+        return forToken
+
+    def processForTarget(self, token):
+        target = token['target'].lower()
+        if target in [self.lang, self.target]:
+            block = self.processTokens(token['block'], addToScope=True)
+        else:
+            block = []
+        return Sequence(block)
+
+    def processCall(self, token, className=None):
+        name = self.preprocess(token['name'])
+        try:
+            call = self.currentScope.get(name.index)
+        except KeyError:
+            call = None
+        signature = []
+        if call:
+            if call.type.isClass:
+                call = self.currentScope.get(call.index).new
+            if getattr(call, 'args', None) is not None and (call.args or call.kwargs):
+                for arg in call.args.args:
+                    arg.namespace = ''
+                    signature.append(arg)
+                for kwarg in call.kwargs.kwargs:
+                    kwarg.target.namespace = ''
+                    signature.append(kwarg)
+        return Call(
+            name=self.processVar(token['name']),
+            args=self.processTokens(token['args']),
+            kwargs=self.processTokens(token['kwargs']),
+            signature=signature,
+            namespace=self.currentNamespace,
+        )
+
+    def processDotAccess(self, token):
+        initialType = self.preprocess(token['dotAccess'][0]).type
+        oldNamespace = self.currentNamespace
+        chain = self.processTokens(token['dotAccess'])
+        chain[0].type = initialType
+        currentType = initialType
+        parsedChain = [chain[0]]
+        for n, c in enumerate(chain[1:]):
+            c.namespace = ''
+            c.prepare()
+            if currentType.isClass:
+                scope = self.currentScope.get(currentType.type).__dict__
+                if c.index in scope['parameters']:
+                    c.type = scope['parameters'][c.index].type
+                elif isinstance(c, Call):
+                    methodIndex = f'{c.name}'
+                    if methodIndex in scope['methods']:
+                        c.type = scope['methods'][methodIndex].type
+                        c.signature = scope['methods'][methodIndex].signature
+                        parsedChain = [DotAccess(parsedChain, currentType)]
+                        c.args.args.insert(0, parsedChain[0])
                         continue
+            elif currentType.type == 'map': #TODO: Make this part of the token class
+                if f'{c}' == 'len':
+                    c.type = Type('int')
+            elif currentType.type == 'array': #TODO: Make this part of the token class
+                if f'{c}' == 'len':
+                    c.type = Type('int')
+            elif currentType.type == 'file': #TODO: Make this part of the token class
+                if isinstance(c, Call) and f'{c.name}' == 'read':
+                    c.type = Type('str')
+            elif currentType.type == 'module':
+                module = self.currentScope.get(currentType.name)
+                if isinstance(c, Call):
+                    c.name.namespace = module.namespace
+                    if module.native:
+                        c.type = Type('unknown', native=True)
                     else:
-                        return True
-                return True
-        return False
+                        self.currentScope.get(c.name.index).type
+                elif isinstance(c, Var):
+                    c.namespace = module.namespace
+                    if module.native:
+                        c.type = Type('unknown', native=True)
+                    else:
+                        self.currentScope.get(c.index).type
+            parsedChain.append(c)
+
+            currentType = c.type
+        dotAccess = DotAccess(
+            chain,
+            namespace=self.currentNamespace,
+        )
+        for i in dotAccess.imports:
+            self.imports.add(i)
+        return dotAccess
+
+    def processClass(self, token):
+        self.currentScope.startLocalScope()
+        className = Var(token['name'], namespace=self.currentNamespace)
+        self.currentScope.add(
+            Assign(
+                target=Var('self', repr(className)),
+                value=Call(Var(className.name))))
+        parameters = {}
+        methods = {}
+        new = None
+        newArgs = []
+        newKwargs = []
+        args = self.processTokens(token['args'])
+        parentMethods = {}
+        # First pass for type inference
+        for arg in args:
+            parentClass = self.currentScope.get(arg.index)
+            parameters.update(parentClass.parameters)
+            newArgs = newArgs + parentClass.new.args.args
+            newKwargs = newKwargs + parentClass.new.kwargs.kwargs
+        for t in token['block']:
+            try:
+                oldNamespace = self.currentNamespace
+                oldScope = deepcopy(self.currentScope.localScope[-1])
+                nScopes = len(self.currentScope.localScope)
+                t = self.preprocess(t)
+            except KeyError as e:
+                # we must recover the namespace when
+                # it breaks in the middle of execution
+                # and the scope (discard deeper scopes)
+                self.currentNamespace = oldNamespace
+                self.currentScope.localScope = self.currentScope.localScope[:nScopes]
+                self.currentScope.localScope[-1] = oldScope
+                continue
+            if isinstance(t, Function):
+                if t.name.value == 'new':
+                    new = t
+                    new.kwargs.kwargs = newKwargs + new.kwargs.kwargs
+                    for kw in new.kwargs.kwargs:
+                        if kw.target.attribute:
+                            parameters[kw.index] = kw
+                else:
+                    t.args.args.insert(0, Var('self', repr(className)))
+                    t.signature.insert(0, Var('self', repr(className)))
+                parameters[t.index] = t
+                t.name.namespace = className
+                methods[t.name.value] = t
+            elif isinstance(t, Assign):
+                t.target.namespace = ''
+                parameters[t.index] = t
+            elif isinstance(t, Expr):
+                t.namespace = ''
+                parameters[repr(t)] = t
+        if new is None:
+            new = Function(name=Var(f'new',namespace=className))
+            methods[new.name.value] = new
+        new.name.type = Type(repr(className))
+        self.currentScope.add(
+            Class(
+                name=className,
+                args=self.processTokens(token['args']),
+                parameters = parameters,
+                new = new,
+        ))
+        # Second pass for code generation
+        new = None
+        thisClassCode = Scope(self.processTokens(token['block']))
+        for t in thisClassCode.sequence:
+            if isinstance(t, Function):
+                if t.name.value == 'new':
+                    new = t
+                    new.args.args = newArgs + new.args.args
+                    new.kwargs.kwargs = newKwargs + new.kwargs.kwargs
+                    for kw in t.kwargs.kwargs:
+                        if kw.target.attribute:
+                            parameters[kw.index] = kw
+                else:
+                    t.args.args.insert(0, Var('self', repr(className)))
+                    t.signature.insert(0, Var('self', repr(className)))
+                parameters[t.index] = t
+                t.name.namespace = className
+                methods[t.name.value] = t
+            elif isinstance(t, Assign):
+                t.target.namespace = ''
+                parameters[t.index] = t
+            elif isinstance(t, Expr):
+                t.namespace = ''
+                parameters[repr(t)] = t
+        if new is None:
+            new = Function(
+                name=Var(f'new',namespace=className),
+                args=newArgs,
+                kwargs=newKwargs)
+        new.name.type = Type(repr(className))
+        methods[new.name.value] = new
+        classToken = Class(
+            name=className,
+            args=self.processTokens(token['args']),
+            parameters=parameters,
+            methods=methods,
+            new=new,
+        )
+        self.currentScope.endLocalScope()
+        self.classes[repr(className)] = classToken
+        return classToken
+
+    def processFunc(self, token):
+        # kwargs must be processed in the current namespace
+        # because the values must be in the namespace
+        kwargs=self.processTokens(token['kwargs'])
+        for kwarg in kwargs:
+            # target namespace must be empty because it's
+            # an argument name
+            kwarg.target.namespace = ''
+        self.currentScope.startLocalScope()
+        oldNamespace = self.currentNamespace
+        self.currentNamespace = ''
+        #TODO WARNING: Global variables cannot be called inside
+        #because the namespace will be different
+        #in the local scope
+        #use global syntax or try to infer global variables
+        args=self.processTokens(token['args'])
+        for t in args + kwargs:
+            self.currentScope.add(t)
+        code=self.processTokens(token['block'], addToScope=True)
+        self.currentNamespace = oldNamespace
+        self.currentScope.endLocalScope()
+        returnType = Type(token['type'])
+        if not returnType.known:
+            types = []
+            for t in code:
+                if isinstance(t, Return):
+                    types.append(t.type.type)
+            if len(set(types)) == 1:
+                returnType = Type(types[0])
+            elif len(set(types)) == 2 and 'int' in types and 'float' in types:
+                returnType = Type('float')
+        signature = []
+        for arg in deepcopy(args):
+            arg.namespace = ''
+            signature.append(arg)
+        for kwarg in deepcopy(kwargs):
+            kwarg.value.namespace = oldNamespace
+            signature.append(kwarg)
+        return Function(
+            name=Var(
+                token['name'],
+                type=returnType,
+                namespace=self.currentNamespace,
+            ),
+            args=args,
+            kwargs=kwargs,
+            code=code,
+            signature=signature,
+        )
+
+    def processRange(self, token):
+        return Range(
+            initial=self.preprocess(token['from']),
+            final=self.preprocess(token['to']),
+            step=self.preprocess(token['step']) if 'step' in token else Num(1, 'int'),
+        )
+
+    def processReturn(self, token):
+        return Return(
+            expr=self.preprocess(token['expr'])
+        )
+
+    def processBreak(self, token):
+        return Break()
+
+    def processComment(self, token):
+        return Comment()
+
+    def processImport(self, token):
+        #TODO: relative path and package imports
+        folder = None
+        native = token['native']
+        moduleExpr = self.preprocess(token['expr'])
+        moduleExpr.namespace = ''
+        name = f'{moduleExpr}'
+        moduleExpr.namespace = self.currentNamespace
+        if native:
+            # System library import
+            namespace = ''
+        elif f"{name}.w" in os.listdir(folder) + os.listdir(self.standardLibs):
+            if f"{name}.w" in os.listdir(folder):
+                # Local module import
+                moduleExpr.namespace = ''
+                filename = f'{name}.w'
+                moduleExpr.namespace = self.currentNamespace
+            else:
+                filename = f'{self.standardLibs}/{name}.w'
+                # Photon module import
+                # Inject assets folder
+                #raise SyntaxError('Standard lib import not implemented yet.')
+            interpreter = Interpreter(
+                    filename=filename,
+                    lang=self.lang,
+                    target=self.target,
+                    module=True,
+                    standardLibs=self.standardLibs,
+                    transpileOnly=True,
+                    debug=self.debug)
+            interpreter.run()
+            self.classes.update(interpreter.engine.classes)
+            self.currentScope.update(interpreter.engine.currentScope)
+            self.imports = self.imports.union(interpreter.engine.imports)
+            self.links = self.links.union(interpreter.engine.links)
+            self.sequence = self.sequence + interpreter.engine.sequence
+            namespace = name
+        elif f"{name}.{self.libExtension}" in os.listdir(self.standardLibs + f'/native/{self.lang}/'):
+            # Native Photon lib module import
+            raise SyntaxError('Native Photon lib module import not implemented yet.')
+        elif f"{name}.{self.libExtension}" in os.listdir():
+            # Native Photon local module import
+            raise SyntaxError('Native Photon local module import not implemented yet.')
+        else:
+            raise RuntimeError(f'Cannot import {name}.')
+            #raise SyntaxError('System library import not implemented yet.')
+        module = Module(moduleExpr, name, namespace, native=native)
+        for i in module.imports:
+            self.imports.add(i)
+        for i in module.links:
+            self.links.add(i)
+        return module
+
+    def processTokens(self, tokens, addToScope=False):
+        if addToScope:
+            processedTokens = []
+            for t in tokens:
+                processedToken = self.preprocess(t)
+                self.currentScope.add(processedToken)
+                processedTokens.append(processedToken)
+            return processedTokens
+        return [self.preprocess(t) for t in tokens]
+
+    def processOpen(self, token):
+        args = self.processTokens(token['args'])
+        return Open(
+            args = args,
+        )
+    
+    def processPrint(self, token):
+        #TODO: convert to a print token, instead of a generic Call object
+        # This will make it more flexible when using other targets
+        formats = {
+            'str': '%s',
+            'int': '%ld',
+            'float': '%g',
+            'array': '%s',
+            'map': '%s',
+        }
+        args = self.processTokens(token['args'])
+        types = []
+        for arg in args:
+            argType = self.typeOf(arg)
+            if argType.type == 'map':
+                if getattr(arg, 'indexAccess', None) is not None:
+                    argType = argType.valType
+            elif argType.type == 'array':
+                if getattr(arg, 'indexAccess', None) is not None:
+                    argType = argType.elementType
+            elif argType.type == 'func':
+                argType = argType.returnType
+                argType.funcName = arg.value
+            if argType.isClass:
+                argType = Type('str')
+            types.append(argType)
+        template = String(value='"'+" ".join([formats[t.type] for t in types])+'\\n"')
+        args.insert(0, template)
+        args = Args(args, mode='format')
+        return Call(
+            name = Var('printf', 'unknown', namespace=''),
+            args = args,
+        )
 
     def run(self):
-        print('Running')
+        raise RuntimeError('Run not implemented for this target')

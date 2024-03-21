@@ -1,5 +1,5 @@
 import wuiGraphics
-import raylib
+native import raylib
 
 def pass():
     print("Apertou!!")
@@ -20,14 +20,14 @@ class Label(Widget):
 
     def render():
         if .font.baseSize == 0:
-            .font = LoadFontEx("assets/Roboto-Italic.ttf", .fontSize, 0, 250)
+            .font = raylib.LoadFontEx("assets/Roboto-Italic.ttf", .fontSize, 0, 250)
         
         lineBuffer = ''
         word = ''
         for c in .text:
             if c == ' ':
-                if measureText(.font, lineBuffer+' '+word, .fontSize) > .width:
-                    .lines += lineBuffer
+                if wuiGraphics.measureText(.font, lineBuffer+' '+word, .fontSize) > .width:
+                    .lines.append(lineBuffer)
                     lineBuffer = word
                 else:
                     if lineBuffer == '':
@@ -36,23 +36,23 @@ class Label(Widget):
                         lineBuffer += ' ' + word
                 word = ''
             elif c == '\n':
-                if measureText(.font, lineBuffer+' '+word, .fontSize) > .width:
-                    .lines += lineBuffer
-                    .lines += word
+                if wuiGraphics.measureText(.font, lineBuffer+' '+word, .fontSize) > .width:
+                    .lines.append(lineBuffer)
+                    .lines.append(word)
                 else:
                     if lineBuffer == '':
-                        .lines += word
+                        .lines.append(word)
                     else:
-                        .lines += lineBuffer + ' ' + word
+                        .lines.append(lineBuffer + ' ' + word)
                 lineBuffer = ''
                 word = ''
             else:
                 word += c
-        if measureText(.font, lineBuffer+word, .fontSize) > .width:
-            .lines += lineBuffer
-            .lines += word
+        if wuiGraphics.measureText(.font, lineBuffer+word, .fontSize) > .width:
+            .lines.append(lineBuffer)
+            .lines(word)
         else:
-            .lines += lineBuffer + word
+            .lines.append(lineBuffer + word)
         
         dy = .y
         if .valign == "center":
@@ -62,14 +62,14 @@ class Label(Widget):
 
         dx = 0.0
         for line in .lines:
-            textWidth = measureText(.font, line, .fontSize)
+            textWidth = wuiGraphics.measureText(.font, line, .fontSize)
             if .align == "center":
                 dx = .x + (.width - textWidth)/2
             elif .align == "left":
                 dx = .x
             elif .align == "right":
                 dx = .x + .width - textWidth
-            drawText(.font, line, dx, dy, .fontSize, .color)
+            wuiGraphics.drawText(.font, line, dx, dy, .fontSize, .color)
             dy += .fontSize
         .lines.len = 0
     
@@ -77,14 +77,14 @@ class Button(Label):
     def new(func .onPress=pass, func .onRelease=pass, .radius=0.5, .buttonColor=Color BLUE):
 
     def render():
-        int posX = GetMouseX()
-        int posY = GetMouseY()
+        int posX = raylib.GetMouseX()
+        int posY = raylib.GetMouseY()
         if posX > .x and posX < .x + .width and posY > .y and posY < .y + .height:
-            if IsMouseButtonPressed(MOUSE_LEFT_BUTTON):
+            if raylib.IsMouseButtonPressed(MOUSE_LEFT_BUTTON):
                 .onPress()
-            elif IsMouseButtonReleased(MOUSE_LEFT_BUTTON):
+            elif raylib.IsMouseButtonReleased(MOUSE_LEFT_BUTTON):
                 .onRelease()
-        drawRoundedRectangle(.x, .y, .width, .height, .radius, .buttonColor)
+        wuiGraphics.drawRoundedRectangle(.x, .y, .width, .height, .radius, .buttonColor)
         super.render()
 
 class Layout(Widget):
@@ -95,10 +95,10 @@ class Layout(Widget):
             child.render()
 
     def addWidget(Widget widget):
-        .children += widget
+        .children.append(widget)
 
     def removeWidget(Widget widget):
-        .children -= widget
+        .children.remove(widget)
 
 class Box(Layout):
     def new(.orientation='vertical'):
@@ -129,15 +129,15 @@ class Box(Layout):
 class App():
     def run(Widget widget):
         for C:
-            InitWindow(800, 600, "Photon")
+            raylib.InitWindow(800, 600, "Photon")
         for Python:
             title = "Photon"
             title = title.encode()
-            InitWindow(800, 600, title)
-        SetTargetFPS(60)
-        while not WindowShouldClose():
-            BeginDrawing()
-            ClearBackground(WHITE)
+            raylib.InitWindow(800, 600, title)
+        raylib.SetTargetFPS(60)
+        while not raylib.WindowShouldClose():
+            raylib.BeginDrawing()
+            raylib.ClearBackground(WHITE)
             widget.render()
-            EndDrawing()
+            raylib.EndDrawing()
 

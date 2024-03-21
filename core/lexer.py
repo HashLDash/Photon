@@ -23,8 +23,9 @@ def comment(i, t):
     ''' Remove comment from token list '''
     for n, token in enumerate(t):
         if token['token'] in {'singleQuote', 'doubleQuote'}:
-            # It is part of a string
-            return 'continue'
+            if n < i:
+                # It is part of a string
+                return 'continue'
         if token['token'] == 'hashtag':
             # remove all tokens after the hashtag
             if n == 1:
@@ -298,7 +299,7 @@ def convertToExpr(token):
         else:
             varType = 'float'
         return {'token':'expr', 'type':varType, 'args':[token], 'ops':[]}
-    elif token['token'] in {'var','group','inputFunc', 'call', 'array', 'dotAccess', 'map'}:
+    elif token['token'] in {'var','group','openFunc','inputFunc', 'call', 'array', 'dotAccess', 'map'}:
         return {'token':'expr', 'type':token['type'], 'args':[token], 'ops':[]}
     else:
         raise SyntaxError(f'Cant convert token {token} to expr')
@@ -331,7 +332,7 @@ def expr(i, t):
             pass
         # Modifier operator
         t2 = t[i+1].copy()
-        t2['args'][0]['modifier'] = t[i]['operator']
+        t2['ops'].append(t[i]['operator'])
         t[i] = t2
         del t[i+1] # var or num
     elif t[i]['token'] == 'group':
@@ -490,6 +491,19 @@ def inputFunc(i, t):
         del t[i+1] # expr
     else:
         t[i] = convertToExpr({'token':'inputFunc', 'type':'str', 'expr':convertToExpr(t[i+2])})
+        del t[i+1] # expr
+    del t[i+1] # lparen
+    del t[i+1] # rparen
+    return t
+
+def openFunc(i, t):
+    ''' Return an openFunc token
+    '''
+    if t[i+2]['token'] == 'expr':
+        t[i] = convertToExpr({'token':'openFunc', 'type':'file', 'args':[t[i+2]]})
+        del t[i+1] # expr
+    elif t[i+2]['token'] == 'args':
+        t[i] = convertToExpr({'token':'openFunc', 'type':'file', 'args':t[i+2]['args']})
         del t[i+1] # expr
     del t[i+1] # lparen
     del t[i+1] # rparen
@@ -662,7 +676,12 @@ def funcReturn(i, t):
 
 def imports(i, t):
     ''' Return an import token if valid '''
-
+    if t[i]['token'] == 'nativeStatement':
+        native = True
+        del t[i]
+    else:
+        native = False
+    t[i]['native'] = native
     t[i]['token'] = 'import'
     t[i]['expr'] = t[i+1]
     del t[i+1] # expr
@@ -765,7 +784,16 @@ def dotAccess(i, t):
             if t[i]['token'] == 'var':
                 varType = t[i]['args'][0]['name']
             elif t[i]['token'] == 'type':
+                # type declaration for instance attribute with shorthand notation
                 varType = t[i]['type']
+                t[i+3]['args'][0]['type'] = varType
+                if varType == 'array':
+                    t[i+3]['args'][0]['elementType'] = t[i]['elementType']
+                    t[i+3]['args'][0]['size'] = t[i]['size']
+                elif varType == 'map':
+                    t[i+3]['args'][0]['keyType'] = t[i]['keyType']
+                    t[i+3]['args'][0]['valType'] = t[i]['valType']
+                    t[i+3]['args'][0]['size'] = t[i]['size']
             elif t[i]['token'] == 'expr':
                 varType = t[i]['args'][0]['name']
             else:

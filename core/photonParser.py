@@ -6,9 +6,9 @@
 import re
 from lexer import *
 
-statements = ['if','else','elif','def','cdef','for','in','as','return','import','class','while','break','continue','try', 'del']
+statements = ['if','else','elif','def','cdef','for','in','as','return','import','class','while','break','continue','try', 'del', 'native']
 operators = ['+','-','%','/','*','**','<','>','not', '!', 'and','or','is', '&']
-builtins = ['input','sizeof','addr']
+builtins = ['open','input','sizeof','addr']
 types = ['str','cstr','const','struct','char','int','float','double','struct', 'func','uint','ulong','ubyte','file']
 symbols = {
     '.':'dot',
@@ -73,7 +73,7 @@ def parse(line, filename='', no=-1, debug=False):
         elif i in types:
             tokenized.append({'token':'type','type':i})
         elif i in symbols:
-            if i == ' ' and tokens[n+1] == '.' and tokenized[-1]['token'] in {'var', 'type'}:
+            if i == ' ' and tokens[n+1] == '.' and tokenized[-1]['token'] in {'var', 'type', 'rbracket'}:
                 tokenized.append({'token':symbols[i], 'symbol':i})
                 continue
             if i == "'" or i == '"':
@@ -103,14 +103,14 @@ def token2word(tokens):
         elif 'symbol' in t:
             phrase += t['symbol']
         elif t['token'] in {'num', 'var', 'expr','print','printFunc',
-                'floatNumber', 'type', 'special',
+                'floatNumber', 'type', 'special','open','openFunc',
                 'assign','operator','group','ifStatement','if','elifStatement',
-                'elif','input','inputFunc', 'args','call', 'whileStatement',
-                'while','forStatement','inStatement','for','range','defStatement',
-                'func','returnStatement','return','breakStatement','comment',
-                'augAssign','classStatement','class','dotAccess', 'importStatement',
-                'import', 'kwargs','keyVal','keyVals','forTarget', 'delStatement',
-                'delete', 'asStatement'}:
+                'elif','else', 'elseStatement','input','inputFunc', 'args','call',
+                'whileStatement','while','forStatement','inStatement','for','range',
+                'defStatement','func','returnStatement','return','breakStatement',
+                'comment','augAssign','classStatement','class','dotAccess',
+                'importStatement','import', 'kwargs','keyVal','keyVals','forTarget',
+                'delStatement','delete', 'asStatement', 'nativeStatement'}:
             phrase += t['token']
         else:
             raise Exception(f'Cannot convert the token {t["token"]} to a word')

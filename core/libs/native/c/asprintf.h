@@ -41,4 +41,17 @@
     }
 #endif
 // asprintf
+
+#ifndef __photon_format_str
+    char* __photon_format_str(const char* fmt, ...) {
+        char* str = malloc(sizeof(char));
+        if (!str) return "";
+        va_list ap;
+        va_start(ap, fmt);
+        vasprintf(&str, fmt, ap);
+        va_end(ap);
+        return str;
+    }
+#endif
+// __photon_format_str
 #endif
