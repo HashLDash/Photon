@@ -446,6 +446,7 @@ class DotAccess():
         self.type = chain[-1].type
         self.indexAccess = getattr(chain[-1], 'indexAccess', None)
         self.mode = mode
+        self.processed = False
 
     def prepare(self):
         pass
@@ -499,12 +500,14 @@ class DotAccess():
             self.chain[-1].mode = 'method'
             chain[-1] = repr(self.chain[-1])
             self.chain[-1].mode = 'expr'
+        self.processed = True
         return ''.join(chain)
 
     def __repr__(self):
-        self.value = self.expression()
-        if self.mode == 'format':
-            self.value = self.format()
+        if not self.processed:
+            self.value = self.expression()
+            if self.mode == 'format':
+                self.value = self.format()
         return self.value
 
     @property
