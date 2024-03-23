@@ -456,13 +456,13 @@ class BaseTranspiler():
                     if module.native:
                         c.type = Type('unknown', native=True)
                     else:
-                        self.currentScope.get(c.name.index).type
+                        c.type = self.currentScope.get(c.name.index).type
                 elif isinstance(c, Var):
                     c.namespace = module.namespace
                     if module.native:
                         c.type = Type('unknown', native=True)
                     else:
-                        self.currentScope.get(c.index).type
+                        c.type = self.currentScope.get(c.index).type
             parsedChain.append(c)
 
             currentType = c.type
@@ -740,7 +740,7 @@ class BaseTranspiler():
             elif argType.type == 'func':
                 argType = argType.returnType
                 argType.funcName = arg.value
-            if argType.isClass:
+            elif argType.isClass:
                 argType = Type('str')
             types.append(argType)
         template = String(value='"'+" ".join([formats[t.type] for t in types])+'\\n"')
