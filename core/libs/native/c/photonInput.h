@@ -74,6 +74,9 @@ char *photonRead(FILE* file)
         c = fgetc(file);
     }
     line[read_size] = '\0';
+    if (!read_size) {
+        return NULL;
+    }
     return line;
 }
 #endif

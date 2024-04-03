@@ -243,7 +243,14 @@ class Obj():
         return None
 
 class Bool(Obj):
-    def __repr__(self):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.type = Type('bool')
+
+    def format(self):
+        return f'{self.expression()} ? "true": "false"'
+
+    def expression(self):
         return '1' if self.value == 'true' else '0'
 
 class Num(Obj):
@@ -252,6 +259,17 @@ class Num(Obj):
 
 class String(Obj):
     imports = ['#include "asprintf.h"']
+    types = {
+        'str':'%s',
+        'int':'%ld',
+        'float':'%g',
+        'bool':'%s',
+    }
+    def getFormat(self, valType):
+        if valType in self.types:
+            return self.types[valType]
+        return '%s'
+        
     def __init__(self, expressions='', **kwargs):
         kwargs['type'] = 'str'
         super().__init__(**kwargs)
@@ -262,20 +280,20 @@ class String(Obj):
             valType = expr.type.type
             if 'func' in valType:
                 valType = valType.replace(' func','').strip()
-            if valType == 'str':
-                self.value = self.value.replace('{}', '%s', 1)
-            elif valType == 'int':
-                self.value = self.value.replace('{}', '%ld', 1)
-            elif valType == 'float':
-                self.value = self.value.replace('{}', '%g', 1)
-            elif valType == 'bool':
-                self.value = self.value.replace('{}', '%s', 1)
+            if valType in self.types:
+                self.value = self.value.replace('{}', self.getFormat(valType), 1)
             elif valType == 'array':
-                self.value = self.value.replace('{}', '%s', 1)
+                if expr.indexAccess:
+                    self.value = self.value.replace('{}', self.getFormat(expr.type.elementType.type), 1)
+                else:
+                    self.value = self.value.replace('{}', '%s', 1)
             elif valType == 'map':
+                if expr.indexAccess:
+                    self.value = self.value.replace('{}', self.getFormat(expr.type.valType.type), 1)
+                else:
+                    self.value = self.value.replace('{}', '%s', 1)
+            elif expr.type.isClass:
                 self.value = self.value.replace('{}', '%s', 1)
-            #elif valType in self.classes:
-            #    self.value = self.value.replace('{}', '%s', 1)
             else:
                 raise SyntaxError(f'Cannot format {valType} in formatStr')
 
@@ -305,7 +323,11 @@ class Var(Obj):
         return f'{self.type} {self.value}'
 
     def format(self):
-        if self.type.type not in ['str','int','float']:
+        if self.type.type in ['map', 'array']:
+            return self.expression()
+        if self.type.type == 'bool':
+            return f'{self.name} ? "true" : "false"'
+        if self.type.type not in ['str','int','float', 'bool']:
             if self.type.isClass:
                 return f'"<class {self.type.type}>"'
             call = repr(self.type).replace("*","").replace('struct ','')
