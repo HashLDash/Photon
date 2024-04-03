@@ -243,7 +243,14 @@ class Obj():
         return None
 
 class Bool(Obj):
-    def __repr__(self):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.type = Type('bool')
+
+    def format(self):
+        return f'{self.expression()} ? "true": "false"'
+
+    def expression(self):
         return '1' if self.value == 'true' else '0'
 
 class Num(Obj):
@@ -318,7 +325,9 @@ class Var(Obj):
     def format(self):
         if self.type.type in ['map', 'array']:
             return self.expression()
-        if self.type.type not in ['str','int','float']:
+        if self.type.type == 'bool':
+            return f'{self.name} ? "true" : "false"'
+        if self.type.type not in ['str','int','float', 'bool']:
             if self.type.isClass:
                 return f'"<class {self.type.type}>"'
             call = repr(self.type).replace("*","").replace('struct ','')

@@ -726,6 +726,7 @@ class BaseTranspiler():
             'float': '%g',
             'array': '%s',
             'map': '%s',
+            'bool': '%s',
         }
         args = self.processTokens(token['args'])
         types = []

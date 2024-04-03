@@ -179,4 +179,3 @@ if __name__ == "__main__":
     except IndexError:
         filename = ''
     Interpreter(filename).run()
-
