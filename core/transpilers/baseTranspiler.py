@@ -336,7 +336,7 @@ class BaseTranspiler():
     def processWhile(self, token):
         return While(
             expr=self.preprocess(token['expr']),
-            block=self.processTokens(token['block'])
+            block=self.processTokens(token['block'], addToScope=True)
         )
 
     def processFor(self, token):
@@ -374,7 +374,7 @@ class BaseTranspiler():
             raise ValueError(f'Iterable with type {type(iterable)} not supported in processFor')
         for t in args:
             self.currentScope.add(Assign(target=t, value=Num(0, t.type)))
-        code=self.processTokens(token['block'])
+        code=self.processTokens(token['block'], addToScope=True)
         self.currentScope.endLocalScope()
         forToken = For(
             code=code,
