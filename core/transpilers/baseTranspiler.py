@@ -104,6 +104,7 @@ class BaseTranspiler():
             'group': self.processGroup,
             'delete': self.processDelete,
             'null': self.processNull,
+            'cast': self.processCast,
         }
 
         self.sequence = Sequence()
@@ -155,6 +156,12 @@ class BaseTranspiler():
         return String(
             value=token['value'],
             expressions=expressions,
+        )
+
+    def processCast(self, token):
+        return Cast(
+            expr=self.preprocess(token['expr']),
+            castTo=Type(token['type'])
         )
 
     def processInput(self, token):

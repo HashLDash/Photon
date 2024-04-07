@@ -31,6 +31,7 @@ patterns = {
   ('equal', 'operator'): operator,
   ('operator', 'equal'): operator,
   ('operator', 'operator'): operator,
+  ('type', 'lparen', 'expr', 'rparen'): cast,
   ('expr', 'lparen', 'rparen'): call,
   ('expr', 'lparen', 'expr', 'rparen'): call,
   ('expr', 'lparen', 'args', 'rparen'): call,

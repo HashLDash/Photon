@@ -26,6 +26,8 @@ group = lparen expr rparen
 
 operator = (equal operator) (equal operator)
 
+cast = type lparen (expr) rparen
+
 call = expr lparen rparen
      | expr lparen (expr args assign kwargs) rparen
      | expr lparen (expr args) comma (assign kwargs) rparen

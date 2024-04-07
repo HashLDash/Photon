@@ -299,7 +299,7 @@ def convertToExpr(token):
         else:
             varType = 'float'
         return {'token':'expr', 'type':varType, 'args':[token], 'ops':[]}
-    elif token['token'] in {'var','group','openFunc','inputFunc', 'call', 'array', 'dotAccess', 'map'}:
+    elif token['token'] in {'var','group','openFunc','inputFunc', 'call', 'array', 'dotAccess', 'map', 'cast'}:
         return {'token':'expr', 'type':token['type'], 'args':[token], 'ops':[]}
     else:
         raise SyntaxError(f'Cant convert token {token} to expr')
@@ -479,6 +479,16 @@ def call(i, t):
             t[i] = callToken
     del t[i+1] # rparen
     del t[i+1] # lparen
+    return t
+
+def cast(i, t):
+    ''' Return a cast token
+    '''
+    if t[i+2]['token'] == 'expr':
+        t[i] = convertToExpr({'token':'cast', 'type':t[i]['type'], 'expr':t[i+2]})
+        del t[i+1] # expr
+    del t[i+1] # lparen
+    del t[i+1] # rparen
     return t
 
 def inputFunc(i, t):
