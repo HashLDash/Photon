@@ -496,11 +496,17 @@ class BaseTranspiler():
         args = self.processTokens(token['args'])
         parentMethods = {}
         # First pass for type inference
+        parentClass = None
         for arg in args:
             parentClass = self.currentScope.get(arg.index)
             parameters.update(parentClass.parameters)
             newArgs = newArgs + parentClass.new.args.args
             newKwargs = newKwargs + parentClass.new.kwargs.kwargs
+        if parentClass is not None:
+            self.currentScope.add(
+                Assign(
+                    target=Var('super', repr(parentClass.name)),
+                    value=Call(Var(parentClass.name))))
         for t in token['block']:
             try:
                 oldNamespace = self.currentNamespace

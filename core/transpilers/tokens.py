@@ -508,9 +508,14 @@ class DotAccess():
                 chain.append(repr(c))
             elif currentType.isClass and isinstance(c, Call):
                 instanceName = ''.join(chain)
-                chain = [instanceName]
-                chain.append('->')
-                chain.append(repr(c))
+                if instanceName == 'super':
+                    del c.args.args[0]
+                    c.args.args.insert(0, Cast(Var('self', currentType), castTo=currentType))
+                    chain = [f'{currentType.type}__{repr(c)}']
+                else:
+                    chain = [instanceName]
+                    chain.append('->')
+                    chain.append(repr(c))
             elif currentType.isModule:
                 chain[n-1] = ''
                 chain.append(repr(c))
