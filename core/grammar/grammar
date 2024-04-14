@@ -55,9 +55,6 @@ hashmap = lbrace rbrace
 funcReturn = returnStatement
            | returnStatement expr
 
-imports = nativeStatement importStatement expr
-        | importStatement expr
-
 rangeExpr = expr dot dot expr
           | expr dot dot expr dot dot expr
 
@@ -76,6 +73,11 @@ kwargs = (assign kwargs) comma (assign kwargs)
 augAssign = expr operator equal expr
 
 assign = expr equal expr
+
+fromImport = fromStatement expr importStatement (expr args operator)
+
+imports = nativeStatement importStatement expr
+        | importStatement expr
 
 delete = delStatement expr
 

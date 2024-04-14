@@ -440,8 +440,9 @@ class Expr(Obj):
 
     @property
     def index(self):
+        self.prepare()
         if len(self.elements) == 1:
-            return self.elements[0].index
+            return self.value.index
         return super().index
 
 class Delete():
@@ -907,6 +908,7 @@ class Function(Obj):
 class Class():
     def __init__(self, name='', args=None, code=None, parameters=None, methods=None, new=None):
         self.name = name
+        self.namespace = name.namespace
         self.args = Args(args)
         self.code = Scope(code)
         self.type = Type(repr(self.name))

@@ -697,6 +697,27 @@ def imports(i, t):
     del t[i+1] # expr
     return t
 
+def fromImport(i, t):
+    ''' Return a fromImport token if valid '''
+    t[i] = {
+        'token':'fromImport',
+        'module':t[i+1],
+        'symbols':[]
+    }
+    if t[i+3]['token'] == 'args':
+        t[i]['symbols'] = t[i+3]['args']
+    elif t[i+3]['token'] == 'expr':
+        t[i]['symbols'] = [t[i+3]]
+    elif t[i+3]['token'] == 'operator':
+        if t[i+3]['operator'] == '*':
+            t[i]['symbols'] = [t[i+3]]
+        else:
+            raise SyntaxError(f'Invalid symbol {t[i+3]["operator"]} when importing module')
+    del t[i+1] # expr
+    del t[i+1] # import
+    del t[i+1] # args, expr, operator
+    return t
+
 def array(i, t):
     ''' Verify if its an array and return an array token if it is '''
     if t[i-1]['token'] in {'var','expr'}:

@@ -18,6 +18,14 @@ class CurrentScope():
         del self.local[-1]
         del self.localScope[-1]
 
+    def addAlias(self, alias, token):
+        if self.local[-1]:
+            self.localScope[-1][alias] = token
+        else:
+            self.currentScope[alias] = token
+            if isinstance(token, Module):
+                self.currentScope[alias] = token
+
     def add(self, token):
         if not isinstance(token, Var) and token.index is not None:
             if self.local[-1]:
@@ -88,6 +96,7 @@ class BaseTranspiler():
             'return': self.processReturn,
             'breakStatement': self.processBreak,
             'comment': self.processComment,
+            'fromImport': self.processFromImport,
             'import': self.processImport,
             'num': self.processNum,
             'var': self.processVar,
@@ -402,12 +411,14 @@ class BaseTranspiler():
 
     def processCall(self, token, className=None):
         name = self.preprocess(token['name'])
+        namespace = self.currentNamespace
         try:
             call = self.currentScope.get(name.index)
         except KeyError:
             call = None
         signature = []
         if call:
+            namespace = call.name.namespace
             if call.type.isClass:
                 call = self.currentScope.get(call.index).new
             if getattr(call, 'args', None) is not None and (call.args or call.kwargs):
@@ -418,11 +429,11 @@ class BaseTranspiler():
                     kwarg.target.namespace = ''
                     signature.append(kwarg)
         return Call(
-            name=self.processVar(token['name']),
+            name=name,
             args=self.processTokens(token['args']),
             kwargs=self.processTokens(token['kwargs']),
             signature=signature,
-            namespace=self.currentNamespace,
+            namespace=namespace,
         )
 
     def processDotAccess(self, token):
@@ -660,6 +671,62 @@ class BaseTranspiler():
 
     def processComment(self, token):
         return Comment()
+
+    def processFromImport(self, token):
+        #TODO: relative path and package imports
+        folder = None
+        native = False
+        moduleExpr = self.preprocess(token['module'])
+        moduleExpr.namespace = ''
+        name = f'{moduleExpr}'
+        moduleExpr.namespace = self.currentNamespace
+        symbols = self.processTokens(token['symbols'])
+        if f"{name}.w" in os.listdir(folder) + os.listdir(self.standardLibs):
+            if f"{name}.w" in os.listdir(folder):
+                # Local module import
+                moduleExpr.namespace = ''
+                filename = f'{name}.w'
+                moduleExpr.namespace = self.currentNamespace
+            else:
+                filename = f'{self.standardLibs}/{name}.w'
+                # Photon module import
+                # Inject assets folder
+                #raise SyntaxError('Standard lib import not implemented yet.')
+            interpreter = Interpreter(
+                    filename=filename,
+                    lang=self.lang,
+                    target=self.target,
+                    module=True,
+                    standardLibs=self.standardLibs,
+                    transpileOnly=True,
+                    debug=self.debug)
+            interpreter.run()
+            self.classes.update(interpreter.engine.classes)
+            self.currentScope.update(interpreter.engine.currentScope)
+            self.imports = self.imports.union(interpreter.engine.imports)
+            self.links = self.links.union(interpreter.engine.links)
+            self.sequence = self.sequence + interpreter.engine.sequence
+            namespace = name
+            for symbol in symbols:
+                symbol.namespace = name
+                t = self.currentScope.get(symbol.index)
+                symbol.namespace = self.currentNamespace
+                self.currentScope.addAlias(symbol.index, t)
+        elif f"{name}.{self.libExtension}" in os.listdir(self.standardLibs + f'/native/{self.lang}/'):
+            # Native Photon lib module import
+            raise SyntaxError('Native Photon lib module import not implemented yet.')
+        elif f"{name}.{self.libExtension}" in os.listdir():
+            # Native Photon local module import
+            raise SyntaxError('Native Photon local module import not implemented yet.')
+        else:
+            raise RuntimeError(f'Cannot import {name}.')
+            #raise SyntaxError('System library import not implemented yet.')
+        module = Module(moduleExpr, name, namespace, native=native)
+        for i in module.imports:
+            self.imports.add(i)
+        for i in module.links:
+            self.links.add(i)
+        return module
 
     def processImport(self, token):
         #TODO: relative path and package imports

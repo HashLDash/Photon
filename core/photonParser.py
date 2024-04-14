@@ -6,7 +6,7 @@
 import re
 from lexer import *
 
-statements = ['if','else','elif','def','cdef','for','in','as','return','import','class','while','break','continue','try', 'del', 'native']
+statements = ['if','else','elif','def','cdef','for','in','as','return','import','class','while','break','continue','try', 'del', 'native', 'from']
 operators = ['+','-','%','/','*','**','<','>','not', '!', 'and','or','is', '&']
 builtins = ['open','input','sizeof','addr']
 types = ['str','cstr','const','struct','char','int','float','double','struct', 'func','uint','ulong','ubyte','file']
@@ -110,7 +110,8 @@ def token2word(tokens):
                 'defStatement','func','returnStatement','return','breakStatement',
                 'comment','augAssign','classStatement','class','dotAccess',
                 'importStatement','import', 'kwargs','keyVal','keyVals','forTarget',
-                'delStatement','delete', 'asStatement', 'nativeStatement'}:
+                'delStatement','delete', 'asStatement', 'nativeStatement', 'fromStatement',
+                'fromImport'}:
             phrase += t['token']
         else:
             raise Exception(f'Cannot convert the token {t["token"]} to a word')
