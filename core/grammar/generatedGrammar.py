@@ -6,6 +6,8 @@ patterns = {
   ('type', 'lbracket', 'rbracket', 'space'): arrayType,
   ('var', 'lbracket', 'rbracket', 'var'): arrayType,
   ('var', 'lbracket', 'rbracket', 'space'): arrayType,
+  ('dotAccess', 'lbracket', 'rbracket', 'var'): arrayType,
+  ('dotAccess', 'lbracket', 'rbracket', 'space'): arrayType,
   ('type', 'lbracket', 'num', 'rbracket', 'var'): arrayType,
   ('type', 'lbracket', 'num', 'rbracket', 'space'): arrayType,
   ('var', 'lbracket', 'num', 'rbracket', 'var'): arrayType,

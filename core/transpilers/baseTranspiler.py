@@ -188,16 +188,16 @@ class BaseTranspiler():
                     typeName = Var(varType.elementType.type, namespace=self.moduleName)
                     # if this doesn't fail it's because the type is a class
                     c = self.currentScope.get(typeName.index)
-                    varType = Type('array', elementType=typeName.index)
-                    self.listTypes.add(typeName.index)
-                except KeyError:
+                    varType = Type('array', elementType=c.index)
+                    self.listTypes.add(c.index)
+                except KeyError as e:
                     varType.native = True
         elif varType.isClass:
             try:
                 typeName = Var(token['type'], namespace=self.moduleName)
                 # if this doesn't fail it's because the type is a class
                 c = self.currentScope.get(typeName.index)
-                varType = Type(typeName.index)
+                varType = Type(c.index)
             except KeyError:
                 varType.native = True
         var = Var(

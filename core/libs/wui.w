@@ -75,7 +75,7 @@ class Label(Widget):
         .lines.len = 0
     
 class Button(Label):
-    def new(func .onPress=pass, func .onRelease=pass, .radius=0.5, Color .buttonColor=BLUE):
+    def new(func .onPress=pass, func .onRelease=pass, .radius=0.5, Color .buttonColor=raylib.BLUE):
 
     def render():
         int posX = raylib.GetMouseX()
