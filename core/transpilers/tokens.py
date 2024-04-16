@@ -870,7 +870,11 @@ class Call(Obj):
                     args.append(arg)
             args = Args(args, mode='expr')
         else:
-            kwargs = self.kwargs
+            kwargs = []
+            for kwarg in self.kwargs.kwargs:
+                kwarg.namespace = ''
+                kwargs.append(kwarg)
+            kwargs = Kwargs(kwargs, mode='value')
             args = self.args
         separator = ', ' if args and kwargs else ''
         if self.type.isClass:

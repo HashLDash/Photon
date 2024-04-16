@@ -474,7 +474,19 @@ class BaseTranspiler():
                     if module.native:
                         c.type = Type('unknown', native=True)
                     else:
-                        c.type = self.currentScope.get(c.name.index).type
+                        #TODO: maybe the class should have a signature precomputed
+                        # instead of doing this here and in processCall
+                        cOriginal = self.currentScope.get(c.name.index)
+                        signature = []
+                        if isinstance(cOriginal, Class):
+                            for arg in cOriginal.new.args.args:
+                                arg.namespace = ''
+                                signature.append(arg)
+                            for kwarg in cOriginal.new.kwargs.kwargs:
+                                kwarg.target.namespace = ''
+                                signature.append(kwarg)
+                            c.signature = signature
+                        c.type = cOriginal.type
                 elif isinstance(c, Var):
                     c.namespace = module.namespace
                     if module.native:
@@ -674,6 +686,7 @@ class BaseTranspiler():
 
     def processFromImport(self, token):
         #TODO: relative path and package imports
+        #TODO: this method and processImport need to be refactored
         folder = None
         native = False
         moduleExpr = self.preprocess(token['module'])

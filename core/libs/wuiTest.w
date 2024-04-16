@@ -1,5 +1,5 @@
-import wuiGraphics
 native import raylib
+import wuiGraphics
 
 def pass():
     print("Apertou!!")
@@ -16,7 +16,7 @@ class Widget():
 class Label(Widget):
     Font font
     str[] lines = []
-    def new(.text="", .fontSize=40, .align="center", .valign="center", Color .color=raylib.BLACK):
+    def new(.text="", .fontSize=40, .align="center", .valign="center", Color .color= raylib.BLACK):
 
     def render():
         if .font.baseSize == 0:
@@ -63,7 +63,7 @@ class Label(Widget):
 
         dx = 0.0
         for line in .lines:
-            textWidth = wuiGraphics.measureText(.font, line, .fontSize)
+            int textWidth = wuiGraphics.measureText(.font, line, .fontSize)
             if .align == "center":
                 dx = .x + (.width - textWidth)/2
             elif .align == "left":
@@ -73,20 +73,6 @@ class Label(Widget):
             wuiGraphics.drawText(.font, line, dx, dy, .fontSize, .color)
             dy += .fontSize
         .lines.len = 0
-    
-class Button(Label):
-    def new(func .onPress=pass, func .onRelease=pass, .radius=0.5, Color .buttonColor=BLUE):
-
-    def render():
-        int posX = raylib.GetMouseX()
-        int posY = raylib.GetMouseY()
-        if posX > .x and posX < .x + .width and posY > .y and posY < .y + .height:
-            if raylib.IsMouseButtonPressed(MOUSE_LEFT_BUTTON):
-                .onPress()
-            elif raylib.IsMouseButtonReleased(MOUSE_LEFT_BUTTON):
-                .onRelease()
-        wuiGraphics.drawRoundedRectangle(.x, .y, .width, .height, .radius, .buttonColor)
-        super.render()
 
 class Layout(Widget):
     def new(Widget[] .children=[]):
@@ -101,44 +87,30 @@ class Layout(Widget):
     def removeWidget(Widget widget):
         .children.remove(widget)
 
-class Box(Layout):
-    def new(.orientation='vertical'):
+class Button(Label):
+    def new(.radius=0.5, Color .buttonColor=raylib.BLUE, func .onPress=pass):
 
     def render():
-        dx = .x
-        dy = .y
-        if .children.len > 0:
-            if .orientation == 'vertical':
-                wHeight = .height / .children.len
-                for child in .children:
-                    child.x = dx
-                    child.y = dy
-                    child.width = .width
-                    child.height = wHeight
-                    child.render()
-                    dy += wHeight
-            else:
-                wWidth = .width / .children.len
-                for child in .children:
-                    child.x = dx
-                    child.y = dy
-                    child.width = wWidth
-                    child.height = .height
-                    child.render()
-                    dx += wWidth
+        int posX = raylib.GetMouseX()
+        int posY = raylib.GetMouseY()
+        if posX > .x and posX < .x + .width and posY > .y and posY < .y + .height:
+            if raylib.IsMouseButtonPressed(raylib.MOUSE_LEFT_BUTTON):
+                .onPress()
+        wuiGraphics.drawRoundedRectangle(.x, .y, .width, .height, .radius, .buttonColor)
 
 class App():
     def run(Widget widget):
-        for C:
-            raylib.InitWindow(800, 600, "Photon")
-        for Python:
-            title = "Photon"
-            title = title.encode()
-            raylib.InitWindow(800, 600, title)
-        raylib.SetTargetFPS(60)
-        while not raylib.WindowShouldClose():
-            raylib.BeginDrawing()
-            raylib.ClearBackground(WHITE)
+        InitWindow(800, 600, "Photon")
+        SetTargetFPS(60)
+        while not WindowShouldClose():
+            BeginDrawing()
+            ClearBackground(raylib.WHITE)
             widget.render()
-            raylib.EndDrawing()
+            EndDrawing()
 
+app = App()
+app.run(
+    Layout(
+        Widget[] children=[
+            Button(test='Click Me', x=100, y=100, width=100, height=100),
+            Label(text="Hello World! From Photon with namespaces2!", x=350, y=225)]))
