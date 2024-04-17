@@ -325,6 +325,7 @@ class Var(Obj):
     def format(self):
         if self.type.type in ['map', 'array']:
             if not self.indexAccess:
+                input(f'hereeee {repr(self.type)}')
                 call = repr(self.type).replace("*","").replace('struct ','')
                 return f'{call}_str({self.name})'
             return self.expression()

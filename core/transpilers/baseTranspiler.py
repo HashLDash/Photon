@@ -180,17 +180,32 @@ class BaseTranspiler():
 
     def processVar(self, token):
         indexAccess = self.preprocess(token['indexAccess']) if 'indexAccess' in token else None
+        elementType = token.get('elementType', None)
+        tokenType = token.get('type', 'unknown')
+        # type can be an expression. E.g. dotAccess
+        if elementType is not None and isinstance(elementType, dict):
+            typeExpr = self.preprocess(elementType)
+            token['elementType'] = self.currentScope.get(repr(typeExpr)).type.type
+        elif tokenType is not None and isinstance(tokenType, dict):
+            typeExpr = self.preprocess(tokenType)
+            token['type'] = self.currentScope.get(repr(typeExpr)).type.type
         varType = Type(**token)
+
         #TODO: do the same for map
         if varType.type == 'array':
             if varType.elementType.isClass:
                 try:
-                    typeName = Var(varType.elementType.type, namespace=self.moduleName)
-                    # if this doesn't fail it's because the type is a class
-                    c = self.currentScope.get(typeName.index)
-                    varType = Type('array', elementType=c.index)
-                    self.listTypes.add(c.index)
+                    if not isinstance(elementType, dict):
+                        # elementType was not a token and not already processed, proceed
+                        typeName = Var(varType.elementType.type, namespace=self.moduleName)
+                        # if this doesn't fail it's because the type is a class
+                        c = self.currentScope.get(typeName.index)
+                        varType = Type('array', elementType=c.index)
+                        self.listTypes.add(c.index)
+                    else:
+                        self.listTypes.add(varType.elementType.type)
                 except KeyError as e:
+                    input(f'FUCK {e}')
                     varType.native = True
         elif varType.isClass:
             try:

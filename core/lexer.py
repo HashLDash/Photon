@@ -134,10 +134,16 @@ def arrayType(i, t):
     (var type) lbracket num rbracket var -> array
     (var type) lbracket rbracket var -> array
     '''
+    if t[i]['token'] in ['var', 'expr']:
+        if i > 0 and t[i-1]['token'] == 'dot':
+            # Not ready yet
+            return 'continue'
     if t[i]['token'] == 'var':
         elementType = t[i]['name']
     elif t[i]['token'] == 'type':
         elementType = t[i]['type']
+    elif t[i]['token'] == 'expr':
+        elementType = t[i]['args'][0]
     else:
         raise SyntaxError('Array type tok {t[i]["token"} not implemented.')
 
