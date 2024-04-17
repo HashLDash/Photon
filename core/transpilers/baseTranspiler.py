@@ -40,6 +40,17 @@ class CurrentScope():
         for localScope in scope.localScope:
             self.localScope[-1].update(localScope)
 
+    def values(self, namespace=None):
+        vals = []
+        for token in self.currentScope.values():
+            if token.namespace == namespace:
+                vals.append(deepcopy(token))
+        for localScope in self.localScope:
+            for token in localScope.values():
+                if token.namespace == namespace:
+                    vals.append(deepcopy(token))
+        return vals
+
     def __repr__(self):
         s = 'SCOPE DUMP\n'
         for i, t in self.currentScope.items():
@@ -179,6 +190,7 @@ class BaseTranspiler():
         )
 
     def processVar(self, token):
+        namespace = self.currentNamespace
         indexAccess = self.preprocess(token['indexAccess']) if 'indexAccess' in token else None
         elementType = token.get('elementType', None)
         tokenType = token.get('type', 'unknown')
@@ -205,7 +217,6 @@ class BaseTranspiler():
                     else:
                         self.listTypes.add(varType.elementType.type)
                 except KeyError as e:
-                    input(f'FUCK {e}')
                     varType.native = True
         elif varType.isClass:
             try:
@@ -215,10 +226,20 @@ class BaseTranspiler():
                 varType = Type(c.index)
             except KeyError:
                 varType.native = True
+
+        # correct namespace if this token was imported
+        var = Var(value=token['name'], namespace=self.currentNamespace)
+        try:
+            var = self.currentScope.get(var.index)
+            namespace = var.namespace
+        except KeyError:
+            # Not already processed, continue
+            pass
+
         var = Var(
             value=token['name'],
             type=varType,
-            namespace=self.currentNamespace,
+            namespace=namespace,
             indexAccess=indexAccess,
             attribute=token.get('attribute', None)
         )
@@ -570,7 +591,9 @@ class BaseTranspiler():
                     t.args.args.insert(0, Var('self', repr(className)))
                     t.signature.insert(0, Var('self', repr(className)))
                 parameters[t.index] = t
+                #t.namespace = className
                 t.name.namespace = className
+                #t.prepare()
                 methods[t.name.value] = t
             elif isinstance(t, Assign):
                 t.target.namespace = ''
@@ -605,7 +628,9 @@ class BaseTranspiler():
                     t.args.args.insert(0, Var('self', repr(className)))
                     t.signature.insert(0, Var('self', repr(className)))
                 parameters[t.index] = t
+                #t.namespace = className
                 t.name.namespace = className
+                #t.prepare()
                 methods[t.name.value] = t
             elif isinstance(t, Assign):
                 t.target.namespace = ''
@@ -708,7 +733,10 @@ class BaseTranspiler():
         moduleExpr.namespace = ''
         name = f'{moduleExpr}'
         moduleExpr.namespace = self.currentNamespace
-        symbols = self.processTokens(token['symbols'])
+        if len(token['symbols']) == 1 and token['symbols'][0].get('operator') == '*':
+            symbols = '*'
+        else:
+            symbols = self.processTokens(token['symbols'])
         if f"{name}.w" in os.listdir(folder) + os.listdir(self.standardLibs):
             if f"{name}.w" in os.listdir(folder):
                 # Local module import
@@ -735,11 +763,15 @@ class BaseTranspiler():
             self.links = self.links.union(interpreter.engine.links)
             self.sequence = self.sequence + interpreter.engine.sequence
             namespace = name
+            if symbols == '*':
+                symbols = interpreter.engine.currentScope.values(namespace=namespace)
             for symbol in symbols:
                 symbol.namespace = name
+                print(symbol.index)
                 t = self.currentScope.get(symbol.index)
                 symbol.namespace = self.currentNamespace
                 self.currentScope.addAlias(symbol.index, t)
+            input(self.currentScope)
         elif f"{name}.{self.libExtension}" in os.listdir(self.standardLibs + f'/native/{self.lang}/'):
             # Native Photon lib module import
             raise SyntaxError('Native Photon lib module import not implemented yet.')

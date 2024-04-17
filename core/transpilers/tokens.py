@@ -325,7 +325,6 @@ class Var(Obj):
     def format(self):
         if self.type.type in ['map', 'array']:
             if not self.indexAccess:
-                input(f'hereeee {repr(self.type)}')
                 call = repr(self.type).replace("*","").replace('struct ','')
                 return f'{call}_str({self.name})'
             return self.expression()
@@ -755,9 +754,13 @@ class Assign(Obj):
     def __init__(self, target='', inMemory=False, cast=None, **kwargs):
         super().__init__(**kwargs)
         self.target = target
+        self.namespace = target.namespace
         self.inMemory = inMemory
         self.type = self.target.type
         self.cast = cast
+
+    def prepare(self):
+        self.target.namespace = self.namespace
 
     def declaration(self):
         if self.type.type == 'func':
@@ -785,6 +788,7 @@ class Assign(Obj):
 
     @property
     def index(self):
+        self.prepare()
         return self.target.index
 
 class Args():
@@ -848,7 +852,6 @@ class Call(Obj):
 
     def prepare(self):
         self.name.namespace = self.namespace
-        print(self.name, self.namespace)
 
     def __repr__(self):
         if self.signature:
@@ -890,6 +893,7 @@ class Function(Obj):
     def __init__(self, name='', args='', kwargs='', code=None, signature=None, **defaults):
         super().__init__(**defaults)
         self.name = name
+        self.namespace = name.namespace
         self.type = name.type
         self.args = Args(args, mode='declaration')
         self.kwargs = Kwargs(kwargs, mode='declaration')
@@ -897,6 +901,7 @@ class Function(Obj):
         self.signature = signature if signature is not None else []
 
     def prepare(self):
+        self.name.namespace = self.namespace
         self.separator = ', ' if self.args and self.kwargs else ''
 
     def declaration(self):
@@ -911,6 +916,7 @@ class Function(Obj):
 
     @property
     def index(self):
+        self.prepare()
         return self.name.index
 
 class Class():
@@ -925,6 +931,9 @@ class Class():
         self.new = new
         self.formatNewMethod()
         self.postCode = ''
+
+    def prepare(self):
+        self.name.namespace = self.namespace
 
     def formatNewMethod(self):
         paramsInit = [
@@ -968,6 +977,7 @@ class Class():
 
     @property
     def index(self):
+        self.prepare()
         return self.name.index
 
 class Elif():
