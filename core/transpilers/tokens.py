@@ -848,6 +848,7 @@ class Call(Obj):
 
     def prepare(self):
         self.name.namespace = self.namespace
+        print(self.name, self.namespace)
 
     def __repr__(self):
         if self.signature:
@@ -868,8 +869,7 @@ class Call(Obj):
             kwargs = Kwargs(kwargs, mode='value')
             for arg, sig in zip(self.args, self.signature):
                 if arg.type != sig.type:
-                    target = Var(repr(arg.value), arg.type)
-                    args.append(Cast(target, sig.type))
+                    args.append(Cast(arg, sig.type))
                 else:
                     args.append(arg)
             args = Args(args, mode='expr')
