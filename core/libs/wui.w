@@ -1,6 +1,8 @@
 import wuiGraphics
 native import raylib
 
+Color WHITE = raylib.WHITE
+
 def pass():
     print("Apertou!!")
 
