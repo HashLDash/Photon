@@ -761,6 +761,8 @@ class Assign(Obj):
         self.inMemory = inMemory
         self.type = self.target.type
         self.cast = cast
+        if self.cast is not None:
+            self.value = Cast(self.value, self.cast)
 
     def prepare(self):
         self.target.namespace = self.namespace
@@ -772,8 +774,6 @@ class Assign(Obj):
         return f'{self.target.type} {self.target}'
 
     def expression(self):
-        if self.cast is not None:
-            self.value = Cast(self.value, self.cast)
         if self.inMemory or isinstance(self.target, DotAccess):
             if self.target.indexAccess:
                 if self.target.type.type == 'array':

@@ -331,7 +331,7 @@ class BaseTranspiler():
 
         cast = None
         if target.type.known and value.type.known:
-            if target.type.type != value.type.type:
+            if target.type != value.type:
                 cast = target.type
         if not target.type.known:
             target.type = value.type
