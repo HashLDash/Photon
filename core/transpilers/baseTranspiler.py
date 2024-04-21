@@ -232,6 +232,7 @@ class BaseTranspiler():
         try:
             var = self.currentScope.get(var.index)
             namespace = var.namespace
+            varType = var.type
         except KeyError:
             # Not already processed, continue
             pass
@@ -462,7 +463,7 @@ class BaseTranspiler():
                     arg.namespace = ''
                     signature.append(arg)
                 for kwarg in call.kwargs.kwargs:
-                    kwarg.target.namespace = ''
+                    kwarg.namespace = ''
                     signature.append(kwarg)
         return Call(
             name=name,
@@ -519,7 +520,7 @@ class BaseTranspiler():
                                 arg.namespace = ''
                                 signature.append(arg)
                             for kwarg in cOriginal.new.kwargs.kwargs:
-                                kwarg.target.namespace = ''
+                                kwarg.namespace = ''
                                 signature.append(kwarg)
                             c.signature = signature
                         c.type = cOriginal.type
@@ -591,18 +592,18 @@ class BaseTranspiler():
                     t.args.args.insert(0, Var('self', repr(className)))
                     t.signature.insert(0, Var('self', repr(className)))
                 parameters[t.index] = t
-                #t.namespace = className
+                t.namespace = className
                 t.name.namespace = className
                 #t.prepare()
                 methods[t.name.value] = t
             elif isinstance(t, Assign):
-                t.target.namespace = ''
+                t.namespace = ''
                 parameters[t.index] = t
             elif isinstance(t, Expr):
                 t.namespace = ''
                 parameters[repr(t)] = t
         if new is None:
-            new = Function(name=Var(f'new',namespace=className))
+            new = Function(name=Var(f'new', namespace=className))
             methods[new.name.value] = new
         new.name.type = Type(repr(className))
         self.currentScope.add(
@@ -628,12 +629,12 @@ class BaseTranspiler():
                     t.args.args.insert(0, Var('self', repr(className)))
                     t.signature.insert(0, Var('self', repr(className)))
                 parameters[t.index] = t
-                #t.namespace = className
+                t.namespace = className
                 t.name.namespace = className
                 #t.prepare()
                 methods[t.name.value] = t
             elif isinstance(t, Assign):
-                t.target.namespace = ''
+                t.namespace = ''
                 parameters[t.index] = t
             elif isinstance(t, Expr):
                 t.namespace = ''
@@ -663,7 +664,7 @@ class BaseTranspiler():
         for kwarg in kwargs:
             # target namespace must be empty because it's
             # an argument name
-            kwarg.target.namespace = ''
+            kwarg.namespace = ''
         self.currentScope.startLocalScope()
         oldNamespace = self.currentNamespace
         self.currentNamespace = ''
@@ -767,11 +768,9 @@ class BaseTranspiler():
                 symbols = interpreter.engine.currentScope.values(namespace=namespace)
             for symbol in symbols:
                 symbol.namespace = name
-                print(symbol.index)
                 t = self.currentScope.get(symbol.index)
                 symbol.namespace = self.currentNamespace
                 self.currentScope.addAlias(symbol.index, t)
-            input(self.currentScope)
         elif f"{name}.{self.libExtension}" in os.listdir(self.standardLibs + f'/native/{self.lang}/'):
             # Native Photon lib module import
             raise SyntaxError('Native Photon lib module import not implemented yet.')

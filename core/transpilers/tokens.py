@@ -175,6 +175,9 @@ class Scope():
                 self.sequence = obj
         self.indent = ' '*indent
 
+    def __len__(self):
+        return len(self.sequence)
+
     def __repr__(self):
         return f'{self.beginSymbol}\n' + '\n'.join(
             [self.indent + r 
@@ -854,6 +857,8 @@ class Call(Obj):
         self.name.namespace = self.namespace
 
     def __repr__(self):
+        if self.mode == 'format' and self.type.isClass:
+            return f'"<class {self.type.type}>"'
         if self.signature:
             kwargs = []
             args = []
@@ -1080,6 +1085,8 @@ class For():
                         {iterableIndex} += 1;
                     }}}}
                     '''
+            else:
+                raise TypeError('Iterable type is unknown')
         else:
             raise ValueError(f'Iterable of type {type(self.iterable)} no supported in for.')
 
