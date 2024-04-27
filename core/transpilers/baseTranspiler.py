@@ -591,7 +591,7 @@ class BaseTranspiler():
                 else:
                     t.args.args.insert(0, Var('self', repr(className)))
                     t.signature.insert(0, Var('self', repr(className)))
-                parameters[t.index] = t
+                parameters[t.name.value] = t
                 t.namespace = className
                 t.name.namespace = className
                 #t.prepare()
@@ -628,7 +628,7 @@ class BaseTranspiler():
                 else:
                     t.args.args.insert(0, Var('self', repr(className)))
                     t.signature.insert(0, Var('self', repr(className)))
-                parameters[t.index] = t
+                parameters[t.name.value] = t
                 t.namespace = className
                 t.name.namespace = className
                 #t.prepare()
