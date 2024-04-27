@@ -141,6 +141,7 @@ class App():
         while not raylib.WindowShouldClose():
             raylib.BeginDrawing()
             raylib.ClearBackground(WHITE)
+            widget.update()
             widget.render()
             raylib.EndDrawing()
 
