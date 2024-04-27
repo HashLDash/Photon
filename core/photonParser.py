@@ -54,7 +54,7 @@ def parse(line, filename='', no=-1, debug=False):
     lineNumber = no
     currentFilename = filename
     currentLine = line
-    tokens = [i for i in re.split('(\W)',line) if not i == '' ]
+    tokens = [i for i in re.split(r'(\W)',line) if not i == '' ]
     indentation = 0
     indentationSet = False
     tokenized = []
