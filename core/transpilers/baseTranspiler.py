@@ -130,6 +130,7 @@ class BaseTranspiler():
         self.sequence = Sequence()
         self.currentScope = CurrentScope()
         self.currentNamespace = self.moduleName
+        self.importedModules = []
 
     def typeOf(self, obj):
         if obj.type.known:
@@ -749,6 +750,9 @@ class BaseTranspiler():
                 # Photon module import
                 # Inject assets folder
                 #raise SyntaxError('Standard lib import not implemented yet.')
+            if filename in self.importedModules:
+                return
+            self.importedModules.append(filename)
             interpreter = Interpreter(
                     filename=filename,
                     lang=self.lang,
@@ -757,12 +761,14 @@ class BaseTranspiler():
                     standardLibs=self.standardLibs,
                     transpileOnly=True,
                     debug=self.debug)
+            interpreter.engine.importedModules = deepcopy(self.importedModules)
             interpreter.run()
             self.classes.update(interpreter.engine.classes)
             self.currentScope.update(interpreter.engine.currentScope)
             self.imports = self.imports.union(interpreter.engine.imports)
             self.links = self.links.union(interpreter.engine.links)
             self.sequence = self.sequence + interpreter.engine.sequence
+            self.importedModules = interpreter.engine.importedModules
             namespace = name
             if symbols == '*':
                 symbols = interpreter.engine.currentScope.values(namespace=namespace)
@@ -809,6 +815,9 @@ class BaseTranspiler():
                 # Photon module import
                 # Inject assets folder
                 #raise SyntaxError('Standard lib import not implemented yet.')
+            if filename in self.importedModules:
+                return
+            self.importedModules.append(filename)
             interpreter = Interpreter(
                     filename=filename,
                     lang=self.lang,
@@ -817,12 +826,14 @@ class BaseTranspiler():
                     standardLibs=self.standardLibs,
                     transpileOnly=True,
                     debug=self.debug)
+            interpreter.engine.importedModules = deepcopy(self.importedModules)
             interpreter.run()
             self.classes.update(interpreter.engine.classes)
             self.currentScope.update(interpreter.engine.currentScope)
             self.imports = self.imports.union(interpreter.engine.imports)
             self.links = self.links.union(interpreter.engine.links)
             self.sequence = self.sequence + interpreter.engine.sequence
+            self.importedModules = interpreter.engine.importedModules
             namespace = name
         elif f"{name}.{self.libExtension}" in os.listdir(self.standardLibs + f'/native/{self.lang}/'):
             # Native Photon lib module import

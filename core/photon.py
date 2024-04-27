@@ -50,7 +50,7 @@ if __name__ == "__main__":
         first = sys.argv[1]
     except IndexError:
         print(f'Photon - {__version__} - pyEngine')
-        Interpreter(standardLibs = os.path.join(PHOTON_INSTALL_PATH, 'libs/'), debug = DEBUG).run()
+        Interpreter(standardLibs = os.path.join(PHOTON_INSTALL_PATH, 'libs'), debug = DEBUG).run()
         sys.exit()
     if first == '--version' or first == '-v' :
         print(f'Photon Version {__version__}')
@@ -59,7 +59,7 @@ if __name__ == "__main__":
             filename = "main.w"
             if "shared" != sys.argv[-1] and (sys.argv[-1][-2] + sys.argv[-1][-1]) == ".w":
                 filename = sys.argv[-1]
-            Builder(platform = sys.argv[2], filename = filename, standardLibs = os.path.join(PHOTON_INSTALL_PATH, 'libs/'), debug = DEBUG)
+            Builder(platform = sys.argv[2], filename = filename, standardLibs = os.path.join(PHOTON_INSTALL_PATH, 'libs'), debug = DEBUG)
         except IndexError:
             print(f'ERROR: Platform [{(", ".join(platforms))}] not informed.')
     elif first == '--lang' or first == '-l':
@@ -124,4 +124,4 @@ if __name__ == "__main__":
             if not haveDependencies(lang, sys.platform):
                 resolveDependencies(lang, sys.platform)
                 print('Dependencies successfuly installed.')
-        Interpreter(filename = first, lang = lang, standardLibs = os.path.join(PHOTON_INSTALL_PATH, 'libs/'), debug = DEBUG).run()
+        Interpreter(filename = first, lang = lang, standardLibs = os.path.join(PHOTON_INSTALL_PATH, 'libs'), debug = DEBUG).run()

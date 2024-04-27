@@ -28,3 +28,6 @@ def drawRoundedRectangle(float x, float y, float width, float height, float radi
         rec = raylib.Rectangle(x, y, width, height)
     raylib.DrawRectangleRounded(rec, radius, segments, color)
 
+def drawRectangle(float x, float y, float width, float height, Color color):
+    raylib.DrawRectangle(x, y, width, height, color)
+
