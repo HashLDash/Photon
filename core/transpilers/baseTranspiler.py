@@ -488,6 +488,10 @@ class BaseTranspiler():
                 scope = self.currentScope.get(currentType.type).__dict__
                 if c.index in scope['parameters']:
                     c.type = scope['parameters'][c.index].type
+                    if c.type.type == 'array' and c.indexAccess:
+                        currentType = c.type.elementType
+                        parsedChain.append(c)
+                        continue
                 elif isinstance(c, Call):
                     methodIndex = f'{c.name}'
                     if methodIndex in scope['methods']:
@@ -536,6 +540,7 @@ class BaseTranspiler():
             currentType = c.type
         dotAccess = DotAccess(
             chain,
+            type=currentType,
             namespace=self.currentNamespace,
         )
         for i in dotAccess.imports:

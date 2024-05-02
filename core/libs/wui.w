@@ -93,6 +93,10 @@ class Button(Label):
 class Layout(Widget):
     def new(Widget[] .children=[]):
 
+    def update():
+        for child in .children:
+            child.update()
+
     def render():
         for child in .children:
             child.render()

@@ -468,11 +468,11 @@ class Delete():
 
 class DotAccess():
     imports = ['#include "photonInput.h"']
-    def __init__(self, chain=None, namespace='', mode='expr'):
+    def __init__(self, chain=None, type=None, namespace='', mode='expr'):
         self.chain = chain
         self.namespace = namespace
         self.chain[0].namespace = namespace
-        self.type = chain[-1].type
+        self.type = type
         self.indexAccess = getattr(chain[-1], 'indexAccess', None)
         self.mode = mode
         self.processed = False
@@ -513,6 +513,14 @@ class DotAccess():
                 chain.append('_')
                 c.args.args.insert(0, Var(instanceName, currentType))
                 chain.append(repr(c))
+            elif c.type.type == 'array' and c.indexAccess:
+                chain.append('->')
+                chain.append(c.name)
+                instanceName = ''.join(chain)
+                chain.append('_')
+                c.value = instanceName
+                chain = [repr(c)]
+                c.type = c.type.elementType
             elif currentType.isClass and isinstance(c, Call):
                 instanceName = ''.join(chain)
                 if instanceName == 'super':
