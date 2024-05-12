@@ -462,9 +462,7 @@ class BaseTranspiler():
             call = None
         signature = []
         if call:
-            if call.type.isModule:
-                input('is module??')
-            else:
+            if not call.type.isModule:
                 namespace = call.name.namespace
                 if call.type.isClass:
                     call = self.currentScope.get(call.index).new
