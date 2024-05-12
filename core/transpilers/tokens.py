@@ -401,6 +401,9 @@ class Expr(Obj):
             if self.ops[0] == 'not':
                 elements[0] = Expr(value=f'!{elements[0]}', type=Type('bool'))
                 self.ops = []
+            elif self.ops[0] == '-':
+                elements[0] = Expr(value=f'-{elements[0]}', type=elements[0].type)
+                self.ops = []
         else:
             self.type = 'unknown'
             for op in self.operatorOrder:
