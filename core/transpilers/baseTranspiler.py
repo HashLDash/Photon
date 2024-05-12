@@ -492,21 +492,25 @@ class BaseTranspiler():
             c.namespace = ''
             c.prepare()
             if currentType.isClass:
-                scope = self.currentScope.get(currentType.type).__dict__
-                if c.index in scope['parameters']:
-                    c.type = scope['parameters'][c.index].type
-                    if c.type.type == 'array' and c.indexAccess:
-                        currentType = c.type.elementType
-                        parsedChain.append(c)
-                        continue
-                elif isinstance(c, Call):
-                    methodIndex = f'{c.name}'
-                    if methodIndex in scope['methods']:
-                        c.type = scope['methods'][methodIndex].type
-                        c.signature = scope['methods'][methodIndex].signature
-                        parsedChain = [DotAccess(parsedChain, currentType)]
-                        c.args.args.insert(0, parsedChain[0])
-                        continue
+                try:
+                    scope = self.currentScope.get(currentType.type).__dict__
+                except KeyError:
+                    pass
+                else:
+                    if c.index in scope['parameters']:
+                        c.type = scope['parameters'][c.index].type
+                        if c.type.type == 'array' and c.indexAccess:
+                            currentType = c.type.elementType
+                            parsedChain.append(c)
+                            continue
+                    elif isinstance(c, Call):
+                        methodIndex = f'{c.name}'
+                        if methodIndex in scope['methods']:
+                            c.type = scope['methods'][methodIndex].type
+                            c.signature = scope['methods'][methodIndex].signature
+                            parsedChain = [DotAccess(parsedChain, currentType)]
+                            c.args.args.insert(0, parsedChain[0])
+                            continue
             elif currentType.type == 'map': #TODO: Make this part of the token class
                 if f'{c}' == 'len':
                     c.type = Type('int')
@@ -681,10 +685,6 @@ class BaseTranspiler():
         self.currentScope.startLocalScope()
         oldNamespace = self.currentNamespace
         self.currentNamespace = ''
-        #TODO WARNING: Global variables cannot be called inside
-        #because the namespace will be different
-        #in the local scope
-        #use global syntax or try to infer global variables
         args=self.processTokens(token['args'])
         for t in args + kwargs:
             self.currentScope.add(t)
