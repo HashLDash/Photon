@@ -134,17 +134,17 @@ class Box(Layout):
                     dx += wWidth
 
 class App():
+    def new(Color .background=raylib.WHITE, .fps=60.0, .width=800, .height=600, .title="Photon"):
+
     def run(Widget widget):
         for C:
-            raylib.InitWindow(800, 600, "Photon")
+            raylib.InitWindow(.width, .height, .title)
         for Python:
-            title = "Photon"
-            title = title.encode()
-            raylib.InitWindow(800, 600, title)
-        raylib.SetTargetFPS(60)
+            raylib.InitWindow(.width, .height, .title.encode())
+        raylib.SetTargetFPS(.fps)
         while not raylib.WindowShouldClose():
             raylib.BeginDrawing()
-            raylib.ClearBackground(WHITE)
+            raylib.ClearBackground(.background)
             widget.update()
             widget.render()
             raylib.EndDrawing()

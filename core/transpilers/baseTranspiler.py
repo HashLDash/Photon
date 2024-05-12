@@ -247,6 +247,12 @@ class BaseTranspiler():
         )
         if not var.type.known:
             var.type = self.typeOf(var)
+            if not var.type.known and not var.namespace:
+                globalVar = deepcopy(var)
+                globalVar.namespace = self.moduleName
+                globalVar.type = self.typeOf(globalVar)
+                if globalVar.type.known:
+                    return globalVar
         return var
 
     def processDelete(self, token):
@@ -456,16 +462,19 @@ class BaseTranspiler():
             call = None
         signature = []
         if call:
-            namespace = call.name.namespace
-            if call.type.isClass:
-                call = self.currentScope.get(call.index).new
-            if getattr(call, 'args', None) is not None and (call.args or call.kwargs):
-                for arg in call.args.args:
-                    arg.namespace = ''
-                    signature.append(arg)
-                for kwarg in call.kwargs.kwargs:
-                    kwarg.namespace = ''
-                    signature.append(kwarg)
+            if call.type.isModule:
+                input('is module??')
+            else:
+                namespace = call.name.namespace
+                if call.type.isClass:
+                    call = self.currentScope.get(call.index).new
+                if getattr(call, 'args', None) is not None and (call.args or call.kwargs):
+                    for arg in call.args.args:
+                        arg.namespace = ''
+                        signature.append(arg)
+                    for kwarg in call.kwargs.kwargs:
+                        kwarg.namespace = ''
+                        signature.append(kwarg)
         return Call(
             name=name,
             args=self.processTokens(token['args']),
@@ -802,9 +811,15 @@ class BaseTranspiler():
         #TODO: relative path and package imports
         folder = None
         native = token['native']
+
         moduleExpr = self.preprocess(token['expr'])
         moduleExpr.namespace = ''
-        name = f'{moduleExpr}'
+        if token['expr']['args'][0]['token'] == 'dotAccess':
+            names = [n['name'] for n in token['expr']['args'][0]['dotAccess']]
+            name = '/'.join(names)
+            moduleExpr = Var(value=names[-1], namespace='')
+        else:
+            name = f'{moduleExpr}'
         moduleExpr.namespace = self.currentNamespace
         if native:
             # System library import
