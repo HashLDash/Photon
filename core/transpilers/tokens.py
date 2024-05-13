@@ -463,6 +463,8 @@ class Delete():
         if self.expr.type.type in ['array', 'map']:
             call = f'{self.expr.type}'.replace('*','')
             return f'{call}_del({self.expr}, {self.expr.value.indexAccess})'
+        if isinstance(self.expr.value, DotAccess):
+            return repr(self.expr.value).replace('_get(', '_del(', 1)
         raise SyntaxError(f'Delete not supported for type {type(self.expr.value)}')
 
     @property
