@@ -791,6 +791,8 @@ class Assign(Obj):
                     return f'list_{self.target.type.elementType.type}_set({self.target.name}, {self.target.indexAccess}, {self.value})'
                 if self.target.type.type == 'map':
                     return f'dict_{self.type.keyType.type}_{self.type.valType.type}_set({self.target.name}, {self.target.indexAccess}, {self.value})'
+                if isinstance(self.target, DotAccess) and self.target.chain[-1].type.type == 'array':
+                    return repr(self.target).replace('_get(', '_set(', 1)[:-1] + f', {self.value})'
                 else:
                     return f'{self.target.name}[{self.target.indexAccess}] = {self.value}'
             return f'{self.target} = {self.value}'
