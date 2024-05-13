@@ -788,7 +788,7 @@ class Assign(Obj):
         if self.inMemory or isinstance(self.target, DotAccess):
             if self.target.indexAccess:
                 if self.target.type.type == 'array':
-                    return f'list_{self.target.type.elementType}_set({self.target.name}, {self.target.indexAccess}, {self.value})'
+                    return f'list_{self.target.type.elementType.type}_set({self.target.name}, {self.target.indexAccess}, {self.value})'
                 if self.target.type.type == 'map':
                     return f'dict_{self.type.keyType.type}_{self.type.valType.type}_set({self.target.name}, {self.target.indexAccess}, {self.value})'
                 else:
