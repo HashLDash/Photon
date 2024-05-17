@@ -37,7 +37,7 @@ if __name__ == "__main__":
     from interpreter import Interpreter
     from builder import Builder
     from dependencies import haveDependencies, resolveDependencies
-    __version__ = '0.0.7'
+    __version__ = '0.0.9'
     try:
         if '-d' in sys.argv:
             sys.argv.remove('-d')
