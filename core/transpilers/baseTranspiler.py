@@ -510,6 +510,7 @@ class BaseTranspiler():
                             c.signature = scope['methods'][methodIndex].signature
                             parsedChain = [DotAccess(parsedChain, currentType)]
                             c.args.args.insert(0, parsedChain[0])
+                            currentType = c.type
                             continue
             elif currentType.type == 'map': #TODO: Make this part of the token class
                 if f'{c}' == 'len':
@@ -698,7 +699,7 @@ class BaseTranspiler():
                 if isinstance(t, Return):
                     types.append(t.type.type)
             if len(set(types)) == 1:
-                returnType = Type(types[0])
+                returnType = t.type
             elif len(set(types)) == 2 and 'int' in types and 'float' in types:
                 returnType = Type('float')
         signature = []

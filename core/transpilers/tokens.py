@@ -518,7 +518,7 @@ class DotAccess():
                 chain.append('_')
                 c.args.args.insert(0, Var(instanceName, currentType))
                 chain.append(repr(c))
-            elif c.type.type == 'array' and c.indexAccess:
+            elif c.type.type == 'array' and getattr(c, 'indexAccess', None):
                 chain.append('->')
                 chain.append(c.name)
                 instanceName = ''.join(chain)
@@ -1063,7 +1063,7 @@ class For():
                     return f'{{{self.iterable.type} {iterableVar} = {self.iterable};\n{self.args[0].type} {self.args[0]} = {iterableVar}->values[0]; for (long __forIndex=0; __forIndex < {iterableVar}->len; __forIndex++, {self.args[0]} = {iterableVar}->values[__forIndex]) {self.code}}}'
                 if len(self.args.args) == 2:
                     iterableVar = f'__iterable_{self.args[1]}'
-                    return f'{{{self.iterable.type} {iterableVar} = {self.iterable};\n{self.args[1].type} {self.args[1]} = {iterableVar}->values[0]; for ({self.args[0].type} {self.args[0]}=0; {self.args[0]} < {iterableVar}->len; {self.args[0]}++, {self.args[1]} = {iterableVar}->values[{self.args[1]}]) {self.code}}}'
+                    return f'{{{self.iterable.type} {iterableVar} = {self.iterable};\n{self.args[1].type} {self.args[1]} = {iterableVar}->values[0]; for ({self.args[0].type} {self.args[0]}=0; {self.args[0]} < {iterableVar}->len; {self.args[0]}++, {self.args[1]} = {iterableVar}->values[{self.args[0]}]) {self.code}}}'
             if self.iterable.type.type == 'map':
                 if len(self.args.args) == 1:
                     iterableVar = f'__iterable_{self.args[0]}'
