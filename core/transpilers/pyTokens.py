@@ -1,173 +1,72 @@
 # Basic Types
 from copy import deepcopy
 from pprint import pprint
+from . import tokens as base
 
-class Comment():
-    def __repr__(self):
-        return ''
-
-    @property
-    def index(self):
-        return None
-
-class Null():
-    imports = []
-    def __init__(self):
-        self.namespace = ''
-        self.type = Type('void')
-    
-    def prepare(self):
-        pass
+class Type(base.Type):
+    nativeTypes = {
+        'int':'int',
+        'str':'str',
+        'float':'float',
+        'bool':'bool',
+        'unknown':'unknown',
+        '':'',
+        'obj':'obj',
+        'file':'file',
+    }
 
     def __repr__(self):
-        raise NotImplemented
+        if self.native:
+            return self.type
+        elif self.type == 'array':
+            return f'list_{self.elementType.type}*'
+        elif self.type == 'map':
+            return f'dict_{self.keyType.type}_{self.valType.type}*'
+        elif self.type == 'func':
+            return f'{self.returnType} (*{self.funcName})({", ".join(self.argsTypes)})'
+        elif self.type in self.nativeTypes:
+            return self.nativeTypes[self.type] 
+        elif self.isClass:
+            return f'struct {self.type}*'
+        else:
+            return f'{self.type}'
 
-    @property
-    def index(self):
-        return None
+class Comment(base.Comment):
+    pass
 
-class Module():
+class Null(base.Null):
+    pass
+
+class Module(base.Module):
     def __init__(self, expr, name, namespace, native=False):
-        self.expr = expr
-        self.name = name
-        self.namespace = namespace
-        self.type = Type('module', name=name)
-        self.native = native
-        self.links = []
-        self.imports = []
+        super().__init__(*args, **kwargs)
+        if self.native:
+            self.imports = [f'import {self.name}']
 
-    def __repr__(self):
-        return f'//module {self.name}'
+class Group(base.Group):
+    pass
 
-    @property
-    def index(self):
-        return self.expr.index
+class Scope(base.Scope):
+    beginSymbol = ':'
+    endSymbol = ''
 
-class Group():
-    imports = []
-    def __init__(self, expr):
-        self.expr = expr
-        self.namespace = expr.namespace
-        self.type = expr.type
+class NativeCode(base.NativeCode):
+    pass
 
-    def prepare(self):
-        pass
-
-    def __repr__(self):
-        return f'({self.expr})'
-
-class Scope():
-    beginSymbol = '{'
-    endSymbol = '}'
-    def __init__(self, obj, indent=4):
-        if isinstance(obj, Scope):
-            self.sequence = obj.sequence
-        else:
-            if not isinstance(obj, Sequence):
-                self.sequence = Sequence(obj)
-            else: 
-                self.sequence = obj
-        self.indent = ' '*indent
-
-    def __len__(self):
-        return len(self.sequence)
-
-    def __repr__(self):
-        return f'{self.beginSymbol}\n' + '\n'.join(
-            [self.indent + r 
-                for r in repr(self.sequence).split('\n')]
-        ) + f'\n{self.endSymbol}'
-
-    def extend(self, scope):
-        self.sequence = self.sequence + scope.sequence
-
-    def __iter__(self):
-        return iter(self.sequence)
-
-class NativeCode():
-    imports = []
-    def __init__(self, line):
-        self.line = line
-
-    def prepare(self):
-        pass
-
-    def __repr__(self):
-        return self.line
-
-class Obj():
-    def __init__(self, value='', type='', namespace='', mode='expr'):
-        self.value = value
-        self.type = Type(type)
-        self.namespace = namespace
-        self.mode = mode
-        self.imports = []
-
-    def prepare(self):
-        pass
-
-    def expression(self):
-        return 'Obj-expr'
-
-    def declaration(self):
-        return 'Obj-expr'
-
+class Bool(base.Bool):
     def format(self):
-        return 'Obj-expr'
+        return f'{self.expression()}'
 
-    def method(self):
-        return 'Obj-method'
+class Num(base.Num):
+    pass
 
-    def __repr__(self):
-        self.prepare()
-        if self.mode == 'expr':
-            return self.expression()
-        elif self.mode == 'declaration':
-            return self.declaration()
-        elif self.mode == 'format':
-            return self.format()
-        elif self.mode == 'method':
-            return self.method()
-        elif self.mode == 'types':
-            return self.types()
-        elif self.mode == 'empty':
-            return ''
-        else:
-            raise ValueError(f'Mode {self.mode} not implemented.')
-
-    @property
-    def index(self):
-        return None
-
-class Bool(Obj):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.type = Type('bool')
-
-    def format(self):
-        return f'{self.expression()} ? "true": "false"'
-
-    def expression(self):
-        return '1' if self.value == 'true' else '0'
-
-class Num(Obj):
-    def __repr__(self):
-        return str(self.value)
-
-class String(Obj):
-    imports = []
-    def __init__(self, expressions='', **kwargs):
-        kwargs['type'] = 'str'
-        super().__init__(**kwargs)
-        self.value = '"' + self.value[1:-1].replace('"', '\\"') + '"'
-        self.expressions = expressions if expressions else []
-
+class String(base.String):
     def __repr__(self):
         if self.expressions:
-            raise NotImplemented 
+            return f'{" + ".join([repr(expr) for expr in self.expressions])})'
         return self.value
 
-class Var(Obj):
+class Var(base.Var):
     imports = []
     def __init__(self, *args, indexAccess=None, attribute=None, **kwargs):
         super().__init__(*args, **kwargs)
@@ -228,92 +127,16 @@ class Var(Obj):
             return f'{self.namespace}__{self.value}'
         return f'{self.value}'
 
-class Expr(Obj):
+class Expr(base.Expr):
     operatorOrder = [
         'not','**','*','%','/','-','+','==','!=','>','<','>=','<=',
         'is','in','andnot','and','or','&', '<<', '>>'
     ]
     opConversions = {
-        'and': '&&',
-        'or': '||',
-        'not': '!',
+        'and': 'and',
+        'or': 'or',
+        'not': 'not',
     }
-    def __init__(self, *elements, ops=None, **kwargs):
-        super().__init__(**kwargs)
-        self.elements = list(elements)
-        self.ops = ops if ops else []
-        if not self.value:
-            self.process()
-        else:
-            # Already processed, so it's native code
-            self.value = NativeCode(self.value)
-
-    def prepare(self):
-        self.value.mode = self.mode
-        self.value.type = self.type
-        self.value.namespace = self.namespace
-        self.value.prepare()
-        self.imports = self.value.imports
-
-    def process(self):
-        ops = self.ops.copy()
-        elements = deepcopy(self.elements)
-        if len(elements) == 1 and len(self.ops) == 1:
-            if self.ops[0] == 'not':
-                elements[0] = Expr(value=f'!{elements[0]}', type=Type('bool'))
-                self.ops = []
-            elif self.ops[0] == '-':
-                elements[0] = Expr(value=f'-{elements[0]}', type=elements[0].type)
-                self.ops = []
-        else:
-            self.type = 'unknown'
-            for op in self.operatorOrder:
-                while op in ops:
-                    index = ops.index(op)
-                    arg1 = elements[index]
-                    arg2 = elements[index+1]
-                    elements[index] = self.operations(op, arg1, arg2)
-                    del ops[index]
-                    del elements[index+1]
-        self.value = elements[0]
-        self.namespace = elements[0].namespace
-        self.type = elements[0].type
-        self.indexAccess = getattr(elements[0], 'indexAccess', None)
-
-    def operations(self, op, arg1, arg2):
-        t = None
-        intOrFloat = [Type('int'), Type('float')]
-        if op in ['+', '-','*','**']:
-            if arg1.type == arg2.type:
-                t = arg1.type
-            elif arg1.type in intOrFloat or arg2.type in intOrFloat:
-                t = Type('float')
-            else:
-                t = Type('unknown')
-        elif op == '/':
-            t = Type('float')
-        elif op == '%':
-            t = Type('int')
-        elif op in ['not','==','!=','>','<','>=','<=','in','and','or']:
-            t = Type('bool')
-        if op in self.opConversions:
-            op = self.opConversions[op]
-        if arg1.type == Type('str') and op == '+':
-            if arg1.type == arg2.type:
-                return Expr(value=f'__photon_format_str("%s%s", {arg1}, {arg2})', type=t)
-            raise RuntimeError(f'Sum of str with {arg2.type.type} not supported')
-        return Expr(value=f'{arg1} {op} {arg2}', type=t)
-
-    def __repr__(self):
-        self.prepare()
-        return repr(self.value)
-
-    @property
-    def index(self):
-        self.prepare()
-        if len(self.elements) == 1:
-            return self.value.index
-        return super().index
 
 class Delete():
     def __init__(self, expr):
@@ -333,7 +156,7 @@ class Delete():
         return None
 
 class DotAccess():
-    imports = []
+    imports = ['#include "photonInput.h"']
     def __init__(self, chain=None, type=None, namespace='', mode='expr'):
         self.chain = chain
         self.namespace = namespace
@@ -368,6 +191,7 @@ class DotAccess():
                         chain = [f'fclose({fileName})']
                     elif repr(c.name) == 'read':
                         chain = [f'photonRead({fileName})']
+                        self.imports = ['#include "photonInput.h"']
                     else:
                         raise SyntaxError(f'File object has no method {c.name}')
                 else:
@@ -444,13 +268,24 @@ class Array():
     def prepare(self):
         self.len = len(self.elements)
         self.size = 8 if self.len < 8 else self.len
-        self.imports = []
+        if self.type.known:
+            self.imports = ['#include "asprintf.h"']
+            if not self.type.elementType.isClass:
+                self.imports.append(f'#include "list_{self.type.elementType.type}.h"')
+        else:
+            self.imports = []
 
     def expression(self):
-        raise NotImplemented
+        if self.elements:
+            return f'list_{self.type.elementType.type}_constructor({self.len}, {self.size}, ' + ','.join([repr(e) for e in self.elements])+')'
+        return f'list_{self.type.elementType.type}_constructor({self.len}, {self.size})'
 
     def __repr__(self):
-        raise NotImplemented
+        self.prepare()
+        value = self.expression()
+        if self.mode == 'format':
+            return f'list_{self.type.elementType.type}_str({value})'
+        return value
 
 class KeyVal():
     def __init__(self, key='', val=''):
@@ -468,10 +303,19 @@ class Map():
         self.prepare()
     
     def prepare(self):
-        self.imports = []
+        if self.type.known:
+            self.imports = [
+                f'#include "dict_{self.type.keyType.type}_{self.type.valType.type}.h"',
+                '#include "asprintf.h"']
+        else:
+            self.imports = []
 
     def __repr__(self):
-        raise NotImplemented
+        self.prepare()
+        size = 8 if (l:=len(self.keyVals)) < 8 else l
+        if self.keyVals:
+            return f'dict_{self.type.keyType.type}_{self.type.valType.type}_constructor({len(self.keyVals)},{size},' + ', '.join([repr(kv) for kv in self.keyVals])+')'
+        return f'dict_{self.type.keyType.type}_{self.type.valType.type}_constructor({len(self.keyVals)},{size})'
 
 class Open():
     imports = []
@@ -484,7 +328,7 @@ class Open():
         pass
 
     def __repr__(self):
-        raise NotImplemented
+        return f'fopen({self.args})'
 
     @property
     def index(self):
@@ -493,7 +337,7 @@ class Open():
 class Input():
     def __init__(self, expr=None, namespace=''):
         self.expr = expr
-        self.imports = []
+        self.imports = ['#include "photonInput.h"']
         self.type = Type('str')
         self.namespace = namespace
 
@@ -501,7 +345,7 @@ class Input():
         pass
 
     def __repr__(self):
-        raise NotImplemented
+        return f'photonInput({self.expr})'
 
     @property
     def index(self):
@@ -557,7 +401,16 @@ class Sequence():
 class Cast():
     conversion = {
         'int':{
-            'str': 'castToIntFromStr',
+            'str': 'strtol({self.expr}, NULL, 10)',
+            'float': '(long)({self.expr})',
+        },
+        'float':{
+            'str': 'strtod({self.expr}, NULL)',
+            'int': '(double)({self.expr})',
+        },
+        'str':{
+            'int': '__photon_format_str("%ld", {self.expr})',
+            'float': '__photon_format_str("%lf", {self.expr})',
         },
     }
 
@@ -597,7 +450,7 @@ class Cast():
         except KeyError as e:
             raise SyntaxError(f'Cast not implemented for type {castTo} from {castFrom} {e}')
 
-class Assign(Obj):
+class Assign(base.Assign):
     def __init__(self, target='', inMemory=False, cast=None, **kwargs):
         super().__init__(**kwargs)
         self.target = target
@@ -612,10 +465,25 @@ class Assign(Obj):
         self.target.namespace = self.namespace
 
     def declaration(self):
-        raise NotImplemented
+        if self.type.type == 'func':
+            self.type.funcName = self.target.value
+            return f'{self.type}'
+        return f'{self.target.type} {self.target}'
 
     def expression(self):
-        raise NotImplemented
+        if self.inMemory or isinstance(self.target, DotAccess):
+            if self.target.indexAccess:
+                if self.target.type.type == 'array':
+                    return f'list_{self.target.type.elementType.type}_set({self.target.name}, {self.target.indexAccess}, {self.value})'
+                if self.target.type.type == 'map':
+                    return f'dict_{self.type.keyType.type}_{self.type.valType.type}_set({self.target.name}, {self.target.indexAccess}, {self.value})'
+                if isinstance(self.target, DotAccess) and self.target.chain[-1].type.type == 'array':
+                    return repr(self.target).replace('_get(', '_set(', 1)[:-1] + f', {self.value})'
+                else:
+                    return f'{self.target.name}[{self.target.indexAccess}] = {self.value}'
+            return f'{self.target} = {self.value}'
+        else:
+            return f'{self.target.type} {self.target} = {self.value}'
 
     def types(self):
         return f'{self.type}'
@@ -674,7 +542,7 @@ class Kwargs():
             return ', '.join([repr(kwarg.value) for kwarg in self.kwargs])
         return ', '.join([repr(kwarg) for kwarg in self.kwargs])
 
-class Call(Obj):
+class Call(base.Call):
     def __init__(self, name='', args='', kwargs='', signature='', namespace='', **defaults):
         super().__init__(**defaults)
         self.name = name
@@ -730,13 +598,13 @@ class Print():
         self.args = Args(args)
 
     def __repr__(self):
-        raise NotImplemented
+        return f'print({self.args})'
 
     @property
     def index(self):
         return
 
-class Function(Obj):
+class Function(base.Function):
     def __init__(self, name='', args='', kwargs='', code=None, signature=None, **defaults):
         super().__init__(**defaults)
         self.name = name
@@ -752,10 +620,14 @@ class Function(Obj):
         self.separator = ', ' if self.args and self.kwargs else ''
 
     def declaration(self):
-        raise NotImplemented 
+        oldMode = self.args.mode
+        self.args.mode = 'types'
+        result = f'{self.name.type} (*{self.name.value})({self.args}{self.separator}{self.kwargs})'
+        self.args.mode = oldMode
+        return result
 
     def expression(self):
-        raise NotImplemented
+        return f'{self.name.type} {self.name}({self.args}{self.separator}{self.kwargs}) {self.code}'
 
     @property
     def index(self):
@@ -779,7 +651,22 @@ class Class():
         self.name.namespace = self.namespace
 
     def formatNewMethod(self):
-        raise NotImplemented
+        paramsInit = [
+            NativeCode(f'{self.new.name.type} self = malloc(sizeof({self.name}))')]
+        for p in self.parameters.values():
+            if isinstance(p, Assign):
+                if not p.target.attribute:
+                    paramsInit.append(
+                        NativeCode(f'self->{p.target} = {p.value}'))
+                else:
+                    paramsInit.append(
+                        NativeCode(f'self->{p.target} = {p.target}'))
+            elif isinstance(p, Function):
+                paramsInit.append( 
+                    NativeCode(f'self->{p.name.value} = {p.name}'))
+        code = paramsInit + self.new.code.sequence.sequence
+        code.append(NativeCode(f'return self'))
+        self.new.code = Scope(code)
 
     def declarationMode(self):
         for _, t in self.parameters.items():
@@ -790,7 +677,18 @@ class Class():
             t.mode = 'expr'
 
     def __repr__(self):
-        raise NotImplemented
+        self.declarationMode()
+        declarations = Scope(
+            list(self.parameters.values())
+        )
+        value = f'typedef struct {self.name} {declarations} {self.name};\n'
+        self.writeMode()
+        for method in self.methods.values():
+            if method.name.value == 'new':
+                continue
+            value += f'{method}\n'
+        value += f'{self.new}\n'
+        return value+self.postCode
 
     @property
     def index(self):
@@ -803,14 +701,14 @@ class Elif():
         self.block = Scope(block)
 
     def __repr__(self):
-        raise NotImplemented
+        return f'else if ({self.expr}) {self.block}'
 
 class Else():
     def __init__(self, block):
         self.block = Scope(block)
 
     def __repr__(self):
-        raise NotImplemented
+        return f'else {self.block}'
 
 class If():
     def __init__(self, expr, ifBlock, elifs=None, elseBlock=None):
@@ -820,7 +718,7 @@ class If():
         self.elseBlock = Else(elseBlock) if elseBlock is not None else ''
 
     def __repr__(self):
-        raise NotImplemented
+        return f'if ({self.expr}) {self.ifBlock} {"".join(repr(e) for e in self.elifs)} {self.elseBlock}'
 
     @property
     def index(self):
@@ -832,7 +730,7 @@ class While():
         self.block = Scope(block)
 
     def __repr__(self):
-        raise NotImplemented
+        return f'while ({self.expr}) {self.block}'
 
     @property
     def index(self):
@@ -844,31 +742,59 @@ class For():
         self.iterable = iterable
         self.code = Scope(code)
         self.imports = []
+        if self.iterable.type.type == 'str':
+            self.imports.append('#include <string.h>')
 
     def __repr__(self):
-        #TODO break each type of for into different methods
-        # so this logic won't be replicated to different targets
         if isinstance(self.iterable, Range):
             if len(self.args.args) == 1:
-                raise NotImplemented
+                return f'for ({self.args[0].type} {self.args[0]}={self.iterable.initial}; {self.args[0]} < {self.iterable.final}; {self.args[0]} += {self.iterable.step}) {self.code}'
             if len(self.args.args) == 2:
-                raise NotImplemented
+                return f'{{{self.args[0].type} {self.args[0]}=0; for ({self.args[1].type} {self.args[1]}={self.iterable.initial}; {self.args[1]} < {self.iterable.final}; {self.args[0]}++, {self.args[1]} += {self.iterable.step}) {self.code}}}'
         elif isinstance(self.iterable, Expr):
             if self.iterable.type.type == 'array':
                 if len(self.args.args) == 1:
-                    raise NotImplemented
+                    iterableVar = f'__iterable_{self.args[0]}'
+                    return f'{{{self.iterable.type} {iterableVar} = {self.iterable};\n{self.args[0].type} {self.args[0]} = {iterableVar}->values[0]; for (long __forIndex=0; __forIndex < {iterableVar}->len; __forIndex++, {self.args[0]} = {iterableVar}->values[__forIndex]) {self.code}}}'
                 if len(self.args.args) == 2:
-                    raise NotImplemented
+                    iterableVar = f'__iterable_{self.args[1]}'
+                    return f'{{{self.iterable.type} {iterableVar} = {self.iterable};\n{self.args[1].type} {self.args[1]} = {iterableVar}->values[0]; for ({self.args[0].type} {self.args[0]}=0; {self.args[0]} < {iterableVar}->len; {self.args[0]}++, {self.args[1]} = {iterableVar}->values[{self.args[0]}]) {self.code}}}'
             if self.iterable.type.type == 'map':
                 if len(self.args.args) == 1:
-                    raise NotImplemented
+                    iterableVar = f'__iterable_{self.args[0]}'
+                    iterableIndex = f'__iterable_index_{self.args[0]}'
+                    return f'{{{self.iterable.type} {iterableVar} = {self.iterable};\n{self.args[0].type} {self.args[0]} = {iterableVar}->entries[0].key; for (long {iterableIndex}=0; {iterableIndex} < {iterableVar}->len; {iterableIndex}++, {self.args[0]} = {iterableVar}->entries[{iterableIndex}].key) {self.code}}}'
                 if len(self.args.args) == 2:
-                    raise NotImplemented
+                    iterableVar = f'__iterable_{self.args[1]}'
+                    iterableIndex = f'__iterable_index_{self.args[1]}'
+                    return f'{{{self.iterable.type} {iterableVar} = {self.iterable};\n{self.args[0].type} {self.args[0]} = {iterableVar}->entries[0].key;\n{self.args[1].type} {self.args[1]} = {iterableVar}->entries[0].val;\nfor (long {iterableIndex}=0; {iterableIndex} < {iterableVar}->len; {iterableIndex}++, {self.args[0]} = {iterableVar}->entries[{iterableIndex}].key, {self.args[1]} = {iterableVar}->entries[{iterableIndex}].val) {self.code}}}'
             if self.iterable.type.type == 'str':
                 if len(self.args.args) == 1:
-                    raise NotImplemented
+                    iterableVar = f'__iterable_{self.args[0]}'
+                    return f'''{{{self.iterable.type} {iterableVar} = {self.iterable};\n;long __i = 0;char {self.args[0]}[] = " ";\nwhile({iterableVar}[__i] != '\\0') {{
+                        int __len = mblen({iterableVar}+__i, 2);
+                        for (int __j = 0; __j<__len;__j++) {{
+                            {self.args[0]}[__j] = {iterableVar}[__i+__j];
+                        }}
+                        {self.args[0]}[__len] = '\\0';
+                        {self.code}
+                        __i += __len;
+                    }}}}
+                    '''
                 if len(self.args.args) == 2:
-                    raise NotImplemented
+                    iterableVar = f'__iterable_{self.args[1]}'
+                    iterableIndex = f'{self.args[0]}'
+                    return f'''{{{self.iterable.type} {iterableVar} = {self.iterable};\nlong {iterableIndex} = 0;long __i = 0; char {self.args[1]}[] = " ";\nwhile({iterableVar}[__i] != '\\0') {{
+                        int __len = mblen({iterableVar}+__i, 2);
+                        for (int __j = 0; __j<__len;__j++) {{
+                            {self.args[1]}[__j] = {iterableVar}[__i+__j];
+                        }}
+                        {self.args[1]}[__len] = '\\0';
+                        {self.code}
+                        __i += __len;
+                        {iterableIndex} += 1;
+                    }}}}
+                    '''
             else:
                 raise TypeError('Iterable type is unknown')
         else:

@@ -2,7 +2,6 @@ from interpreter import Interpreter
 from copy import deepcopy
 import os
 from pprint import pprint
-from .tokens import *
 
 class CurrentScope():
     def __init__(self):
@@ -85,7 +84,6 @@ class BaseTranspiler():
         self.debug = debug
         self.standardLibs = standardLibs
         self.target = target
-        self.lang = 'photon'
         self.libExtension = 'photonExt'
         self.filename = filename.split('/')[-1].replace('.w','.photon')
         self.moduleName = self.filename.replace('.photon','')
@@ -131,6 +129,12 @@ class BaseTranspiler():
         self.currentScope = CurrentScope()
         self.currentNamespace = self.moduleName
         self.importedModules = []
+
+    def loadTokens(self, lang):
+        import importlib
+        tokens = importlib.import_module(f'.{lang}Tokens', package=__package__)
+        for name, token in tokens.__dict__.items():
+            globals()[name] = token
 
     def typeOf(self, obj):
         if obj.type.known:
@@ -887,37 +891,8 @@ class BaseTranspiler():
         )
     
     def processPrint(self, token):
-        #TODO: convert to a print token, instead of a generic Call object
-        # This will make it more flexible when using other targets
-        formats = {
-            'str': '%s',
-            'int': '%ld',
-            'float': '%g',
-            'array': '%s',
-            'map': '%s',
-            'bool': '%s',
-        }
         args = self.processTokens(token['args'])
-        types = []
-        for arg in args:
-            argType = self.typeOf(arg)
-            if argType.type == 'map':
-                if getattr(arg, 'indexAccess', None) is not None:
-                    argType = argType.valType
-            elif argType.type == 'array':
-                if getattr(arg, 'indexAccess', None) is not None:
-                    argType = argType.elementType
-            elif argType.type == 'func':
-                argType = argType.returnType
-                argType.funcName = arg.value
-            elif argType.isClass:
-                argType = Type('str')
-            types.append(argType)
-        template = String(value='"'+" ".join([formats[t.type] for t in types])+'\\n"')
-        args.insert(0, template)
-        args = Args(args, mode='format')
-        return Call(
-            name = Var('printf', 'unknown', namespace=''),
+        return Print(
             args = args,
         )
 

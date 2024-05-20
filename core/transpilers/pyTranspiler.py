@@ -7,9 +7,10 @@ def debug(*args):
 
 class Transpiler(BaseTranspiler):
     def __init__(self, filename, **kwargs):
+        self.lang = 'py'
+        self.loadTokens(self.lang)
         super().__init__(filename, **kwargs)
         self.filename = self.filename.replace('.w','.py')
-        self.lang = 'py'
         self.libExtension = 'py'
         self.commentSymbol = '#'
         self.imports = set()
@@ -290,13 +291,8 @@ class Transpiler(BaseTranspiler):
                             f.write(line)
                 else:
                     f.write(imp + '\n')
-            for line in [''] + self.outOfMain + [''] + boilerPlateStart + self.source + boilerPlateEnd:
-                if line:
-                    if line.startswith('#end') or line.startswith('elif ') or line.startswith('else:'):
-                        indent -= 4
-                    f.write(' ' * indent + line.replace('#end', '') + '\n')
-                    if self.isBlock(line):
-                        indent += 4
+            for line in [''] + boilerPlateStart + [self.sequence] + boilerPlateEnd:
+                f.write(f'{line}\n')
         debug('Generated ' + self.filename)
 
     def run(self):

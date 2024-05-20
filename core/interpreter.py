@@ -32,7 +32,7 @@ class Interpreter():
             sys.exit()
         self.filename = filename
         if filename:
-            self.engine = Transpiler(filename=filename,target=target, module=module, standardLibs=standardLibs, debug=debug)
+            self.engine = Transpiler(filename=filename, target=target, module=module, standardLibs=standardLibs, debug=debug)
             self.input = self.file
             try:
                 # Read utf8 but write as the default on the OS

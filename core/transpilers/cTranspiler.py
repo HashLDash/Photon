@@ -9,8 +9,9 @@ def debug(*args):
 
 class Transpiler(BaseTranspiler):
     def __init__(self, filename, **kwargs):
-        super().__init__(filename, **kwargs)
         self.lang = 'c'
+        self.loadTokens(self.lang)
+        super().__init__(filename, **kwargs)
         self.libExtension = 'h'
         self.filename = self.filename.replace('.w', '.c')
         self.imports = {'#include <stdio.h>', '#include <stdlib.h>', '#include <locale.h>', '#include "main.h"'}
