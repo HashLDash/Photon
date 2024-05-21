@@ -30,7 +30,7 @@ def photonConfigLang(defineLang = None):
     return defaultConfig['lang']
 
 if __name__ == "__main__":
-    langs = ['c', 'd', 'js', 'ts', 'dart', 'haxe', 'py']
+    langs = ['c', 'd', 'js', 'ts', 'dart', 'haxe', 'python']
     platforms = ['web', 'linux', 'flutter-android']
     PHOTON_INSTALL_PATH = getattr(sys, '_MEIPASS', os.path.dirname(os.path.realpath(__file__)))
     sys.path.insert(0, PHOTON_INSTALL_PATH)
@@ -67,19 +67,19 @@ if __name__ == "__main__":
         command = command.lower()
         if command in langs:
             command = photonConfigLang(command)
-            print(f'Setting default lang to: {command.upper()}')
+            print(f'Setting default lang to: {command}')
             if not haveDependencies(command, sys.platform):
                 resolveDependencies(command, sys.platform)
                 print('Dependencies successfuly installed.')
         elif command == '':
             command = photonConfigLang()
             index = langs.index(command)
-            langs[index] = f'({langs[index].upper()})'
+            langs[index] = f'({langs[index]})'
             print(f'List of languages: {(", ".join(langs))}')
             print('-' * 49)
-            print(f'The current language is: {command.upper()}')
+            print(f'The current language is: {command}')
         else:
-            print(f'ERROR: It was not possible to select the language ({command.upper()}).')
+            print(f'ERROR: It was not possible to select the language ({command}).')
     elif first == '--help' or first == '-h' or first == '-?':
         print('Available commands:\r\n')
         print('# Runs the script using the default lang')

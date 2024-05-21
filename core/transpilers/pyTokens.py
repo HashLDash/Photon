@@ -1,79 +1,88 @@
 # Basic Types
 from copy import deepcopy
 from pprint import pprint
-from . import tokens as base
+from .baseType import BaseType
 
-class Type(base.Type):
+class Type(BaseType):
     nativeTypes = {
         'int':'int',
         'str':'str',
         'float':'float',
         'bool':'bool',
-        'unknown':'unknown',
-        '':'',
+        'unknown':'None',
+        '':'None',
         'obj':'obj',
         'file':'file',
     }
 
     def __repr__(self):
         if self.native:
-            return self.type
+            return f'TypeVar("{self.type}")'
         elif self.type == 'array':
-            return f'list_{self.elementType.type}*'
+            return f'list[{self.elementType.type}]'
         elif self.type == 'map':
-            return f'dict_{self.keyType.type}_{self.valType.type}*'
+            return f'dict[{self.keyType.type}, {self.valType.type}]'
         elif self.type == 'func':
-            return f'{self.returnType} (*{self.funcName})({", ".join(self.argsTypes)})'
+            return f'Callable[[{", ".join(self.argsTypes)}], {self.returnType}]'
         elif self.type in self.nativeTypes:
             return self.nativeTypes[self.type] 
         elif self.isClass:
-            return f'struct {self.type}*'
+            return f'TypeVar("{self.type}")'
         else:
-            return f'{self.type}'
+            return f'TypeVar("{self.type}")'
 
-class Comment(base.Comment):
+exec(open(__file__.rsplit('/', 1)[0]+"/tokens.py").read())
+
+class Comment(Comment):
     pass
 
-class Null(base.Null):
-    pass
+class Null(Null):
+    def __repr__(self):
+        return 'None'
 
-class Module(base.Module):
+class Module(Module):
     def __init__(self, expr, name, namespace, native=False):
-        super().__init__(*args, **kwargs)
+        super().__init__(expr, name, namespace, native=native)
         if self.native:
             self.imports = [f'import {self.name}']
 
-class Group(base.Group):
+    def __repr__(self):
+        return f'#module {self.name}'
+
+class Group(Group):
     pass
 
-class Scope(base.Scope):
+class Scope(Scope):
     beginSymbol = ':'
     endSymbol = ''
+    def __repr__(self):
+        if repr(self.sequence).strip():
+            return super().__repr__()
+        else:
+            return f':\n{self.indent}pass\n'
 
-class NativeCode(base.NativeCode):
+class NativeCode(NativeCode):
     pass
 
-class Bool(base.Bool):
+class Bool(Bool):
     def format(self):
-        return f'{self.expression()}'
+        return f'"true" if {self.expression()} else "false"'
 
-class Num(base.Num):
+    def expression(self):
+        return '1' if self.value == 'true' else '0'
+
+class Num(Num):
     pass
 
-class String(base.String):
+class String(String):
+    imports = []
     def __repr__(self):
         if self.expressions:
-            return f'{" + ".join([repr(expr) for expr in self.expressions])})'
+            return f'{self.value}.format({", ".join([repr(expr) for expr in self.expressions])})'
         return self.value
 
-class Var(base.Var):
+class Var(Var):
     imports = []
-    def __init__(self, *args, indexAccess=None, attribute=None, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.indexAccess = indexAccess
-        self.attribute = attribute
-        self.prepare()
-
     def prepare(self):
         if self.namespace:
             self.name = f'{self.namespace}__{self.value}'
@@ -81,24 +90,19 @@ class Var(base.Var):
             self.name = self.value
 
     def declaration(self):
-        if self.type.type == 'func':
-            self.type.funcName = self.value
-            return f'{self.type}'
-        return f'{self.type} {self.value}'
+        return f'{self.value}:{self.type}'
 
     def format(self):
         if self.type.type in ['map', 'array']:
             if not self.indexAccess:
-                call = repr(self.type).replace("*","").replace('struct ','')
-                return f'{call}_str({self.name})'
+                return f'str({self.name})'
             return self.expression()
         if self.type.type == 'bool':
-            return f'{self.name} ? "true" : "false"'
+            return f'"true" if {self.name} else "false"'
         if self.type.type not in ['str','int','float', 'bool']:
             if self.type.isClass:
                 return f'"<class {self.type.type}>"'
-            call = repr(self.type).replace("*","").replace('struct ','')
-            return f'{call}_str({self.name})'
+            return f'str({self.name})'
         return self.name
 
     def method(self):
@@ -107,27 +111,14 @@ class Var(base.Var):
     def expression(self):
         if self.indexAccess:
             if self.type.type == 'array':
-                return f'list_{self.type.elementType.type}_get({self.name}, {self.indexAccess})'
+                return f'{self.name}[{self.indexAccess}]'
             if self.type.type == 'map':
-                return f'dict_{self.type.keyType.type}_{self.type.valType.type}_get({self.name}, {self.indexAccess})'
+                return f'{self.name}[{self.indexAccess}]'
             else:
                 return f'{self.name}[{self.indexAccess}]'
         return self.name
 
-    def types(self):
-        return f'{self.type}'
-
-    def __hash__(self):
-        self.prepare()
-        return hash(self.name)
-
-    @property
-    def index(self):
-        if self.namespace:
-            return f'{self.namespace}__{self.value}'
-        return f'{self.value}'
-
-class Expr(base.Expr):
+class Expr(Expr):
     operatorOrder = [
         'not','**','*','%','/','-','+','==','!=','>','<','>=','<=',
         'is','in','andnot','and','or','&', '<<', '>>'
@@ -137,45 +128,28 @@ class Expr(base.Expr):
         'or': 'or',
         'not': 'not',
     }
+    def concatenate(self, arg1, arg2, t):
+        return Expr(value=f'{arg1} + {arg2}', type=t)
 
-class Delete():
-    def __init__(self, expr):
-        self.expr = expr
-
+class Delete(Delete):
     def __repr__(self):
         self.expr.mode = 'method'
         if self.expr.type.type in ['array', 'map']:
-            call = f'{self.expr.type}'.replace('*','')
-            return f'{call}_del({self.expr}, {self.expr.value.indexAccess})'
+            return f'del {self.expr}[{self.expr.value.indexAccess}]'
         if isinstance(self.expr.value, DotAccess):
             return repr(self.expr.value).replace('_get(', '_del(', 1)
         raise SyntaxError(f'Delete not supported for type {type(self.expr.value)}')
 
-    @property
-    def index(self):
-        return None
-
-class DotAccess():
-    imports = ['#include "photonInput.h"']
-    def __init__(self, chain=None, type=None, namespace='', mode='expr'):
-        self.chain = chain
-        self.namespace = namespace
-        self.chain[0].namespace = namespace
-        self.type = type
-        self.indexAccess = getattr(chain[-1], 'indexAccess', None)
-        self.mode = mode
-        self.processed = False
-
-    def prepare(self):
-        pass
-
+class DotAccess(DotAccess):
+    imports = []
     def format(self):
-        call = repr(self.type).replace("*","")
         if self.type.isClass or self.type.type in ['array', 'map']:
-            return f'{call}_str({self.value})'
+            return f'str({self.value})'
         return self.value
 
     def expression(self):
+        if self.chain[0].type.isModule:
+            self.chain[0].namespace = ''
         chain = [repr(self.chain[0])]
         currentType = self.chain[0].type
         for n, c in enumerate(self.chain[1:]):
@@ -184,47 +158,46 @@ class DotAccess():
                 chain.append(repr(c))
             elif currentType.type == 'file':
                 if isinstance(c, Call):
-                    fileName = ''.join(chain)
-                    if repr(c.name) == 'write':
-                        chain = [f'fprintf({fileName}, {c.args})']
-                    elif repr(c.name) == 'close':
-                        chain = [f'fclose({fileName})']
-                    elif repr(c.name) == 'read':
-                        chain = [f'photonRead({fileName})']
-                        self.imports = ['#include "photonInput.h"']
+                    if repr(c.name) in ['write', 'close', 'read']:
+                        chain.append('.')
+                        chain.append(repr(c))
                     else:
                         raise SyntaxError(f'File object has no method {c.name}')
                 else:
                     raise SyntaxError(f'File object has no attribute {c}')
             elif currentType.type == 'array' and isinstance(c, Call):
-                instanceName = ''.join(chain)
-                chain = [f'list_{currentType.elementType.type}']
-                chain.append('_')
-                c.args.args.insert(0, Var(instanceName, currentType))
+                chain.append('.')
                 chain.append(repr(c))
+            elif currentType.type == 'array' and isinstance(c, Var):
+                if repr(c) == 'len':
+                    varName = ''.join(chain)
+                    chain = [f'len({varName})']
+                else:
+                    chain.append('.')
+                    chain.append(c.name)
             elif c.type.type == 'array' and getattr(c, 'indexAccess', None):
-                chain.append('->')
+                chain.append('.')
                 chain.append(c.name)
-                instanceName = ''.join(chain)
-                chain.append('_')
-                c.value = instanceName
-                chain = [repr(c)]
                 c.type = c.type.elementType
             elif currentType.isClass and isinstance(c, Call):
                 instanceName = ''.join(chain)
-                if instanceName == 'super':
+                #TODO this fails sometimes but a method
+                # always should have the self...
+                if c.signature:
+                    del c.signature[0]
+                if c.args.args:
                     del c.args.args[0]
-                    c.args.args.insert(0, Cast(Var('self', currentType), castTo=currentType))
-                    chain = [f'{currentType.type}__{repr(c)}']
+                if instanceName == 'super':
+                    chain.append('().')
+                    chain.append(repr(c))
                 else:
-                    chain = [instanceName]
-                    chain.append('->')
+                    chain.append('.')
                     chain.append(repr(c))
             elif currentType.isModule:
-                chain[n-1] = ''
+                chain.append('.')
                 chain.append(repr(c))
             else:
-                chain.append('->')
+                chain.append('.')
                 chain.append(repr(c))
             currentType = c.type
         if self.mode == 'method':
@@ -234,198 +207,67 @@ class DotAccess():
         self.processed = True
         return ''.join(chain)
 
-    def __repr__(self):
-        if not self.processed:
-            self.value = self.expression()
-            if self.mode == 'format':
-                self.value = self.format()
-        return self.value
-
-    @property
-    def index(self):
-        return None
-
-class Return():
-    def __init__(self, expr=None):
-        self.expr = expr
-        self.type = expr.type
-
+class Return(Return):
     def __repr__(self):
         return f'return {self.expr}'
 
-    @property
-    def index(self):
-        return None
-
-class Array():
-    def __init__(self, *elements, type=None, mode='expr'):
-        self.elements = elements
-        self.type = type
-        self.prepare()
-        self.namespace = ''
-        self.mode = mode
-
+class Array(Array):
+    imports = []
     def prepare(self):
         self.len = len(self.elements)
         self.size = 8 if self.len < 8 else self.len
-        if self.type.known:
-            self.imports = ['#include "asprintf.h"']
-            if not self.type.elementType.isClass:
-                self.imports.append(f'#include "list_{self.type.elementType.type}.h"')
-        else:
-            self.imports = []
 
     def expression(self):
-        if self.elements:
-            return f'list_{self.type.elementType.type}_constructor({self.len}, {self.size}, ' + ','.join([repr(e) for e in self.elements])+')'
-        return f'list_{self.type.elementType.type}_constructor({self.len}, {self.size})'
+        return '[' + ','.join([repr(e) for e in self.elements]) + ']'
 
     def __repr__(self):
         self.prepare()
         value = self.expression()
         if self.mode == 'format':
-            return f'list_{self.type.elementType.type}_str({value})'
+            return f'str({value})'
         return value
 
-class KeyVal():
-    def __init__(self, key='', val=''):
-        self.key = key
-        self.val = val
+class KeyVal(KeyVal):
+    pass
 
+class Map(Map):
     def __repr__(self):
-        return f'{self.key},{self.val}'
+        return f'{' + ', '.join([repr(kv) for kv in self.keyVals])+ '}'
 
-class Map():
-    def __init__(self, *keyVals, type=None):
-        self.keyVals = keyVals
-        self.type = type
-        self.namespace = ''
-        self.prepare()
-    
-    def prepare(self):
-        if self.type.known:
-            self.imports = [
-                f'#include "dict_{self.type.keyType.type}_{self.type.valType.type}.h"',
-                '#include "asprintf.h"']
-        else:
-            self.imports = []
-
+class Open(Open):
     def __repr__(self):
-        self.prepare()
-        size = 8 if (l:=len(self.keyVals)) < 8 else l
-        if self.keyVals:
-            return f'dict_{self.type.keyType.type}_{self.type.valType.type}_constructor({len(self.keyVals)},{size},' + ', '.join([repr(kv) for kv in self.keyVals])+')'
-        return f'dict_{self.type.keyType.type}_{self.type.valType.type}_constructor({len(self.keyVals)},{size})'
+        return f'open({self.args})'
 
-class Open():
+class Input(Input):
     imports = []
-    def __init__(self, args=None, namespace=''):
-        self.args = Args(args)
-        self.type = Type('file')
-        self.namespace = namespace
-
-    def prepare(self):
-        pass
-
     def __repr__(self):
-        return f'fopen({self.args})'
+        return f'input({self.expr})'
 
-    @property
-    def index(self):
-        return None
-
-class Input():
-    def __init__(self, expr=None, namespace=''):
-        self.expr = expr
-        self.imports = ['#include "photonInput.h"']
-        self.type = Type('str')
-        self.namespace = namespace
-
-    def prepare(self):
-        pass
-
-    def __repr__(self):
-        return f'photonInput({self.expr})'
-
-    @property
-    def index(self):
-        return None
-
-class Break():
+class Break(Break):
     def __repr__(self):
         return f'break'
 
-    @property
-    def index(self):
-        return None
-
 # Representation Types
 
-class Sequence():
-    def __init__(self, objs=None, terminator=';', apply=None):
-        self.terminator = terminator
-        self.sequence = [] if objs is None else objs
-        self.apply = apply
+class Sequence(Sequence):
+    def __init__(self, objs=None, terminator='', apply=None):
+        super().__init__(objs=objs, terminator=terminator, apply=apply)
 
-    def add(self, obj):
-        self.sequence.append(obj)
-
-    def __add__(self, sequence):
-        if isinstance(sequence, Sequence):
-            return Sequence(self.sequence + sequence.sequence)
-        raise ValueError(f'Object of type {type(sequence)} cannot be added to Sequence.')
-
-    def __repr__(self):
-        representation = ''
-        for obj in self.sequence:
-            if isinstance(obj, Expr):
-                obj.mode = 'declaration'
-            if self.apply:
-                obj = self.apply(obj)
-            representation += f'{obj}{self.terminator}\n'
-        return representation
-
-    def __len__(self):
-        return len(self.sequence)
-
-    def __getitem__(self, index):
-        return self.sequence[index]
-
-    def __iter__(self):
-        return iter(self.sequence)
-
-    @property
-    def index(self):
-        return None
-
-class Cast():
+class Cast(Cast):
     conversion = {
         'int':{
-            'str': 'strtol({self.expr}, NULL, 10)',
-            'float': '(long)({self.expr})',
+            'str': 'int({self.expr})',
+            'float': 'int({self.expr})',
         },
         'float':{
-            'str': 'strtod({self.expr}, NULL)',
-            'int': '(double)({self.expr})',
+            'str': 'float({self.expr})',
+            'int': 'float({self.expr})',
         },
         'str':{
-            'int': '__photon_format_str("%ld", {self.expr})',
-            'float': '__photon_format_str("%lf", {self.expr})',
+            'int': 'str({self.expr})',
+            'float': 'str({self.expr})',
         },
     }
-
-    def __init__(self, expr, castTo):
-        if isinstance(expr, Cast):
-            self.expr = expr.expr
-        else:
-            self.expr = expr
-        self.castTo = castTo
-        self.type = self.castTo
-        self.namespace = self.expr.namespace
-
-    @property
-    def value(self):
-        return self
 
     def __repr__(self):
         self.expr.namespace = self.namespace
@@ -434,7 +276,7 @@ class Cast():
         if castTo == 'map':
             castTo = self.castTo.valType.type
         elif castTo == 'array' and castFrom == 'array':
-            return f'({self.castTo}) {self.expr}'
+            return f'{self.expr}'
         elif castTo == 'array':
             castTo = self.castTo.elementType.type
         if castFrom == 'map' and self.expr.indexAccess is not None:
@@ -443,118 +285,41 @@ class Cast():
             castFrom = self.expr.type.elementType
         try:
             if self.castTo.isClass:
-                return f'({self.castTo}) {self.expr}'
+                return f'{self.expr}'
             elif castTo != castFrom and castTo in self.conversion:
                 return self.conversion[castTo][castFrom].format(self=self)
             return repr(self.expr)
         except KeyError as e:
             raise SyntaxError(f'Cast not implemented for type {castTo} from {castFrom} {e}')
 
-class Assign(base.Assign):
-    def __init__(self, target='', inMemory=False, cast=None, **kwargs):
-        super().__init__(**kwargs)
-        self.target = target
-        self.namespace = target.namespace
-        self.inMemory = inMemory
-        self.type = self.target.type
-        self.cast = cast
-        if self.cast is not None:
-            self.value = Cast(self.value, self.cast)
-
-    def prepare(self):
-        self.target.namespace = self.namespace
-
+class Assign(Assign):
     def declaration(self):
-        if self.type.type == 'func':
-            self.type.funcName = self.target.value
-            return f'{self.type}'
-        return f'{self.target.type} {self.target}'
+        return f'{self.target}:{self.target.type}'
 
     def expression(self):
         if self.inMemory or isinstance(self.target, DotAccess):
             if self.target.indexAccess:
                 if self.target.type.type == 'array':
-                    return f'list_{self.target.type.elementType.type}_set({self.target.name}, {self.target.indexAccess}, {self.value})'
+                    return f'{self.target.name}[{self.target.indexAccess}] = {self.value}'
                 if self.target.type.type == 'map':
-                    return f'dict_{self.type.keyType.type}_{self.type.valType.type}_set({self.target.name}, {self.target.indexAccess}, {self.value})'
-                if isinstance(self.target, DotAccess) and self.target.chain[-1].type.type == 'array':
-                    return repr(self.target).replace('_get(', '_set(', 1)[:-1] + f', {self.value})'
+                    return f'{self.target.name}[{self.target.indexAccess}] = {self.value}'
                 else:
                     return f'{self.target.name}[{self.target.indexAccess}] = {self.value}'
             return f'{self.target} = {self.value}'
         else:
-            return f'{self.target.type} {self.target} = {self.value}'
+            return f'{self.target}:{self.target.type} = {self.value}'
 
-    def types(self):
-        return f'{self.type}'
+class Args(Args):
+    pass
 
-    @property
-    def index(self):
-        self.prepare()
-        return self.target.index
-
-class Args():
-    def __init__(self, args, mode='expr'):
-        if isinstance(args, Args):
-            self.args = args.args
-            self.mode = args.mode
-        else:
-            self.args = args
-            self.mode = mode
-
-    def prepare(self):
-        for arg in self.args:
-            arg.mode = self.mode
-    
-    def __bool__(self):
-        return True if repr(self) else False
-
-    def __getitem__(self, index):
-        return self.args[index]
-
-    def __repr__(self):
-        self.prepare()
-        return ', '.join([repr(arg) for arg in self.args])
-
-class Kwargs():
-    def __init__(self, kwargs, mode='expr'):
-        if isinstance(kwargs, Kwargs):
-            self.kwargs = kwargs.kwargs
-            self.mode = kwargs.mode
-        else:
-            self.kwargs = kwargs
-            self.mode = mode
-
-    def prepare(self):
-        mode = self.mode
-        if mode == 'value':
-            # value mode is exclusive for kwarg
-            mode = 'expr'
-        for kwarg in self.kwargs:
-            kwarg.mode = mode
-
-    def __bool__(self):
-        return True if repr(self) else False
-
+class Kwargs(Kwargs):
     def __repr__(self):
         self.prepare()
         if self.mode == 'value':
             return ', '.join([repr(kwarg.value) for kwarg in self.kwargs])
         return ', '.join([repr(kwarg) for kwarg in self.kwargs])
 
-class Call(base.Call):
-    def __init__(self, name='', args='', kwargs='', signature='', namespace='', **defaults):
-        super().__init__(**defaults)
-        self.name = name
-        self.type = self.name.type
-        self.args = Args(args)
-        self.kwargs = Kwargs(kwargs)
-        self.signature = signature
-        self.namespace = namespace
-
-    def prepare(self):
-        self.name.namespace = self.namespace
-
+class Call(Call):
     def __repr__(self):
         if self.mode == 'format' and self.type.isClass:
             return f'"<class {self.type.type}>"'
@@ -589,162 +354,64 @@ class Call(base.Call):
             args = self.args
         separator = ', ' if args and kwargs else ''
         if self.type.isClass:
-            return f'{self.name}__new({args}{separator}{kwargs})'
+            return f'{self.name}({args}{separator}{kwargs})'
         else:
             return f'{self.name}({args}{separator}{kwargs})'
 
-class Print():
-    def __init__(self, args=None):
-        self.args = Args(args)
-
+class Print(Print):
     def __repr__(self):
         return f'print({self.args})'
 
-    @property
-    def index(self):
-        return
-
-class Function(base.Function):
-    def __init__(self, name='', args='', kwargs='', code=None, signature=None, **defaults):
-        super().__init__(**defaults)
-        self.name = name
-        self.namespace = name.namespace
-        self.type = name.type
-        self.args = Args(args, mode='declaration')
-        self.kwargs = Kwargs(kwargs, mode='declaration')
-        self.code = Scope(code)
-        self.signature = signature if signature is not None else []
-
-    def prepare(self):
-        self.name.namespace = self.namespace
-        self.separator = ', ' if self.args and self.kwargs else ''
-
-    def declaration(self):
-        oldMode = self.args.mode
-        self.args.mode = 'types'
-        result = f'{self.name.type} (*{self.name.value})({self.args}{self.separator}{self.kwargs})'
-        self.args.mode = oldMode
-        return result
-
+class Function(Function):
     def expression(self):
-        return f'{self.name.type} {self.name}({self.args}{self.separator}{self.kwargs}) {self.code}'
+        return f'def {self.name}({self.args}{self.separator}{self.kwargs}) -> {self.name.type} {self.code}'
 
-    @property
-    def index(self):
-        self.prepare()
-        return self.name.index
-
-class Class():
-    def __init__(self, name='', args=None, code=None, parameters=None, methods=None, new=None):
-        self.name = name
-        self.namespace = name.namespace
-        self.args = Args(args)
-        self.code = Scope(code)
-        self.type = Type(repr(self.name))
-        self.parameters = parameters
-        self.methods = methods if methods is not None else {}
-        self.new = new
-        self.formatNewMethod()
-        self.postCode = ''
-
-    def prepare(self):
-        self.name.namespace = self.namespace
-
+class Class(Class):
     def formatNewMethod(self):
-        paramsInit = [
-            NativeCode(f'{self.new.name.type} self = malloc(sizeof({self.name}))')]
+        paramsInit = []
         for p in self.parameters.values():
             if isinstance(p, Assign):
                 if not p.target.attribute:
                     paramsInit.append(
-                        NativeCode(f'self->{p.target} = {p.value}'))
+                        NativeCode(f'self.{p.target} = {p.value}'))
                 else:
                     paramsInit.append(
-                        NativeCode(f'self->{p.target} = {p.target}'))
-            elif isinstance(p, Function):
-                paramsInit.append( 
-                    NativeCode(f'self->{p.name.value} = {p.name}'))
+                        NativeCode(f'self.{p.target} = {p.target}'))
         code = paramsInit + self.new.code.sequence.sequence
-        code.append(NativeCode(f'return self'))
         self.new.code = Scope(code)
 
-    def declarationMode(self):
-        for _, t in self.parameters.items():
-            t.mode = 'declaration'
-    
-    def writeMode(self):
-        for _, t in self.parameters.items():
-            t.mode = 'expr'
-
     def __repr__(self):
-        self.declarationMode()
-        declarations = Scope(
-            list(self.parameters.values())
-        )
-        value = f'typedef struct {self.name} {declarations} {self.name};\n'
+        value = f'class {self.name}({self.args}):\n'
         self.writeMode()
         for method in self.methods.values():
             if method.name.value == 'new':
-                continue
-            value += f'{method}\n'
-        value += f'{self.new}\n'
+                method = deepcopy(method)
+                method.name.value = '__init__'
+                method.name.type = Type('unknown')
+                if not method.args.args or not repr(method.args.args[0].name) != "self":
+                    method.args.args.insert(0, Var('self', repr(self.name)))
+            method.namespace = ''
+            method.code.indent = ' '*8
+            value += f'    {method}\n'
         return value+self.postCode
 
-    @property
-    def index(self):
-        self.prepare()
-        return self.name.index
-
-class Elif():
-    def __init__(self, expr, block):
-        self.expr = expr
-        self.block = Scope(block)
-
+class Elif(Elif):
     def __repr__(self):
-        return f'else if ({self.expr}) {self.block}'
+        return f'elif {self.expr} {self.block}'
 
-class Else():
-    def __init__(self, block):
-        self.block = Scope(block)
-
+class Else(Else):
     def __repr__(self):
         return f'else {self.block}'
 
-class If():
-    def __init__(self, expr, ifBlock, elifs=None, elseBlock=None):
-        self.expr = expr
-        self.ifBlock = Scope(ifBlock)
-        self.elifs = elifs
-        self.elseBlock = Else(elseBlock) if elseBlock is not None else ''
-
+class If(If):
     def __repr__(self):
-        return f'if ({self.expr}) {self.ifBlock} {"".join(repr(e) for e in self.elifs)} {self.elseBlock}'
+        return f'if {self.expr} {self.ifBlock}{"".join(repr(e) for e in self.elifs)}{self.elseBlock}'
 
-    @property
-    def index(self):
-        return None
-
-class While():
-    def __init__(self, expr, block=None):
-        self.expr = expr
-        self.block = Scope(block)
-
+class While(While):
     def __repr__(self):
-        return f'while ({self.expr}) {self.block}'
+        return f'while {self.expr} {self.block}'
 
-    @property
-    def index(self):
-        return None
-
-class For():
-    def __init__(self, args=None, iterable=None, code=None):
-        self.args = Args(args)
-        self.iterable = iterable
-        self.code = Scope(code)
-        self.imports = []
-        if self.iterable.type.type == 'str':
-            self.imports.append('#include <string.h>')
-
+class For(For):
     def __repr__(self):
         if isinstance(self.iterable, Range):
             if len(self.args.args) == 1:
@@ -754,80 +421,26 @@ class For():
         elif isinstance(self.iterable, Expr):
             if self.iterable.type.type == 'array':
                 if len(self.args.args) == 1:
-                    iterableVar = f'__iterable_{self.args[0]}'
-                    return f'{{{self.iterable.type} {iterableVar} = {self.iterable};\n{self.args[0].type} {self.args[0]} = {iterableVar}->values[0]; for (long __forIndex=0; __forIndex < {iterableVar}->len; __forIndex++, {self.args[0]} = {iterableVar}->values[__forIndex]) {self.code}}}'
+                    return f'for {self.args[0]} in {self.iterable} {self.code}'
                 if len(self.args.args) == 2:
-                    iterableVar = f'__iterable_{self.args[1]}'
-                    return f'{{{self.iterable.type} {iterableVar} = {self.iterable};\n{self.args[1].type} {self.args[1]} = {iterableVar}->values[0]; for ({self.args[0].type} {self.args[0]}=0; {self.args[0]} < {iterableVar}->len; {self.args[0]}++, {self.args[1]} = {iterableVar}->values[{self.args[0]}]) {self.code}}}'
+                    return f'for {self.args[0]}, {self.args[1]} in enumerate({self.iterable}) {self.code}'
             if self.iterable.type.type == 'map':
                 if len(self.args.args) == 1:
-                    iterableVar = f'__iterable_{self.args[0]}'
-                    iterableIndex = f'__iterable_index_{self.args[0]}'
-                    return f'{{{self.iterable.type} {iterableVar} = {self.iterable};\n{self.args[0].type} {self.args[0]} = {iterableVar}->entries[0].key; for (long {iterableIndex}=0; {iterableIndex} < {iterableVar}->len; {iterableIndex}++, {self.args[0]} = {iterableVar}->entries[{iterableIndex}].key) {self.code}}}'
+                    return f'for {self.args[0]} in {self.iterable} {self.code}'
                 if len(self.args.args) == 2:
-                    iterableVar = f'__iterable_{self.args[1]}'
-                    iterableIndex = f'__iterable_index_{self.args[1]}'
-                    return f'{{{self.iterable.type} {iterableVar} = {self.iterable};\n{self.args[0].type} {self.args[0]} = {iterableVar}->entries[0].key;\n{self.args[1].type} {self.args[1]} = {iterableVar}->entries[0].val;\nfor (long {iterableIndex}=0; {iterableIndex} < {iterableVar}->len; {iterableIndex}++, {self.args[0]} = {iterableVar}->entries[{iterableIndex}].key, {self.args[1]} = {iterableVar}->entries[{iterableIndex}].val) {self.code}}}'
+                    return f'for {self.args[0]}, {self.args[1]} in {self.iterable}.items() {self.code}'
             if self.iterable.type.type == 'str':
                 if len(self.args.args) == 1:
-                    iterableVar = f'__iterable_{self.args[0]}'
-                    return f'''{{{self.iterable.type} {iterableVar} = {self.iterable};\n;long __i = 0;char {self.args[0]}[] = " ";\nwhile({iterableVar}[__i] != '\\0') {{
-                        int __len = mblen({iterableVar}+__i, 2);
-                        for (int __j = 0; __j<__len;__j++) {{
-                            {self.args[0]}[__j] = {iterableVar}[__i+__j];
-                        }}
-                        {self.args[0]}[__len] = '\\0';
-                        {self.code}
-                        __i += __len;
-                    }}}}
-                    '''
+                    return f'for {self.args[0]} in {self.iterable} {self.code}'
                 if len(self.args.args) == 2:
-                    iterableVar = f'__iterable_{self.args[1]}'
-                    iterableIndex = f'{self.args[0]}'
-                    return f'''{{{self.iterable.type} {iterableVar} = {self.iterable};\nlong {iterableIndex} = 0;long __i = 0; char {self.args[1]}[] = " ";\nwhile({iterableVar}[__i] != '\\0') {{
-                        int __len = mblen({iterableVar}+__i, 2);
-                        for (int __j = 0; __j<__len;__j++) {{
-                            {self.args[1]}[__j] = {iterableVar}[__i+__j];
-                        }}
-                        {self.args[1]}[__len] = '\\0';
-                        {self.code}
-                        __i += __len;
-                        {iterableIndex} += 1;
-                    }}}}
-                    '''
+                    return f'for {self.args[0]}, {self.args[1]} in enumerate({self.iterable}) {self.code}'
             else:
                 raise TypeError('Iterable type is unknown')
         else:
             raise ValueError(f'Iterable of type {type(self.iterable)} no supported in for.')
 
-    @property
-    def index(self):
-        return None
+class Range(Range):
+    pass
 
-class Range():
-    def __init__(self, initial=None, final=None, step=None):
-        self.initial = initial
-        self.final = final
-        self.step = step
-        if self.initial.type.type == 'int' and self.step.type.type == 'int':
-            self.type = Type('int')
-        else:
-            self.type = Type('float')
-
-class AugAssign():
-    def __init__(self, target=None, expr=None, operator=None):
-        self.target = target
-        self.expr = expr
-        self.operator = operator
-
-    def __repr__(self):
-        if self.operator in ['+','-','*','/','%','&']:
-            return repr(Assign(
-                target=self.target,
-                value=Expr(self.target, self.expr, ops=[self.operator]),
-                inMemory=True))
-        raise NotImplemented('operator not implemented')
-
-    @property
-    def index(self):
-        return None
+class AugAssign(AugAssign):
+    pass

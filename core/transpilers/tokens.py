@@ -37,7 +37,7 @@ class Module():
         self.imports = []
 
     def __repr__(self):
-        return f'//module {self.name}'
+        return f'#module {self.name}'
 
     @property
     def index(self):
@@ -260,7 +260,7 @@ class Expr(Obj):
         elements = deepcopy(self.elements)
         if len(elements) == 1 and len(self.ops) == 1:
             if self.ops[0] == 'not':
-                elements[0] = Expr(value=f'!{elements[0]}', type=Type('bool'))
+                elements[0] = Expr(value=f'{self.opConversions["not"]} {elements[0]}', type=Type('bool'))
                 self.ops = []
             elif self.ops[0] == '-':
                 elements[0] = Expr(value=f'-{elements[0]}', type=elements[0].type)
@@ -300,9 +300,12 @@ class Expr(Obj):
             op = self.opConversions[op]
         if arg1.type == Type('str') and op == '+':
             if arg1.type == arg2.type:
-                return Expr(value=f'__photon_format_str("%s%s", {arg1}, {arg2})', type=t)
+                return self.concatenate(arg1, arg2, t)
             raise RuntimeError(f'Sum of str with {arg2.type.type} not supported')
         return Expr(value=f'{arg1} {op} {arg2}', type=t)
+
+    def concatenate(self, arg1, arg2, t):
+        return Expr(value=f'__photon_format_str("%s%s", {arg1}, {arg2})', type=t)
 
     def __repr__(self):
         self.prepare()
@@ -631,7 +634,7 @@ class Args():
             self.args = args.args
             self.mode = args.mode
         else:
-            self.args = args
+            self.args = args if args else []
             self.mode = mode
 
     def prepare(self):

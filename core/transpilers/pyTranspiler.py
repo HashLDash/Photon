@@ -7,22 +7,16 @@ def debug(*args):
 
 class Transpiler(BaseTranspiler):
     def __init__(self, filename, **kwargs):
-        self.lang = 'py'
-        self.loadTokens(self.lang)
+        self.lang = 'python'
+        self.loadTokens('py')
         super().__init__(filename, **kwargs)
         self.filename = self.filename.replace('.w','.py')
         self.libExtension = 'py'
-        self.commentSymbol = '#'
-        self.imports = set()
-        self.funcIdentifier = 'def '
-        self.constructorName = '__init__'
-        self.block = {'class ','def ', 'for ','while ','if ','elif ','else:'}
-        self.true = 'True'
-        self.false = 'False'
-        self.null = 'None'
-        self.self = 'self'
-        self.notOperator = 'not '
-        self.initializeGlobalVars = False
+        self.imports = {"from collections.abc import Callable","from typing import TypeVar"}
+        self.links = set()
+        self.listTypes = set()
+        self.dictTypes = set()
+        self.classes = {}
         self.nativeTypes = {
             'float':'float',
             'int':'int',
@@ -32,238 +26,10 @@ class Transpiler(BaseTranspiler):
             'unknown':'any',
             'void':'None',
         }
+        self.builtins = {
+            'open':{'type':'file', 'value':'open'},
+        }
     
-    def nativeType(self, varType):
-        try:
-            return self.nativeTypes[varType]
-        except KeyError:
-            return 'any'
-
-    def formatSystemLibImport(self, expr):
-        module = self.getValAndType(expr)['value']
-        self.imports.add(f'from {module} import *')
-        return
-
-    def formatVarInit(self, name, varType):
-        # Python doesn't need var init. But this is used in the interpreter
-        return f'{name}'
-
-    def formatDotAccess(self, tokens):
-        currentType = None
-        names = []
-        for tok in tokens:
-            v = self.getValAndType(tok) 
-            if 'indexAccess' in tok:
-                if 'elementType' in tok:
-                    tok['type'] = 'array'
-                elif 'keyType' in tok:
-                    tok['type'] = 'map'
-                value = self.processIndexAccess(tok)
-                names.append(value['value'])
-                currentType = value['type']
-            elif currentType in {'array', 'map'}:
-                if v['value'] == 'len':
-                    names = [f"len({'.'.join(names)})"]
-                    currentType = 'int'
-                else:
-                    names.append(v['value'])
-                    currentType = v['type']
-            elif v['value'] == 'len' and currentType == 'str':
-                currentType = 'int'
-                chain = '.'.join(names)
-                names = [f"len({chain})"]
-            else:
-                names.append(v['value'])
-                currentType = v['type']
-
-        return '.'.join(names), currentType
-
-    def formatInput(self, expr):
-        message = expr['value']
-        return f'input({message})'
-
-    def formatStr(self, string, expressions):
-        if not '{' in string:
-            return string, []
-        string = string[1:-1].replace('"','\"')
-        for expr in expressions:
-            string = string.replace('{}',f'{{{expr["value"]}}}',1)
-        return f'f"{string}"', []
-
-    def formatArray(self, elements, varType, size):
-        values = ', '.join(v['value'] for v in elements)
-        return f'[{values}]'
-
-    def formatMap(self, elements, varType, size):
-        values = ', '.join(f"{k['value']}:{v['value']}" for k, v in elements)
-        return f'{{{values}}}'
-    
-    def formatIndexAssign(self, target, expr, inMemory=False):
-        target = self.getValAndType(target)
-        varType = target['type']
-        if self.typeKnown(expr['type']) and expr['type'] != varType:
-            cast = self.nativeType(varType)
-        else:
-            cast = None
-        expr = self.formatExpr(expr, cast=cast)
-        return f'{target["value"]} = {expr}'
-
-    def formatArrayAppend(self, target, expr):
-        name = target['value']
-        expr = self.formatExpr(expr)
-        return f'{name}.append({expr})'
-
-    def formatArrayIncrement(self, target, index, expr):
-        name = self.getValAndType(target)['value']
-        varType = target['type']
-        if self.typeKnown(expr['type']) and expr['type'] != varType:
-            cast = self.nativeType(varType)
-        else:
-            cast = None
-        expr = self.formatExpr(expr, cast=cast)
-        return f'{name} += {expr}'
-
-    def formatIncrement(self, target, expr):
-        name = target['value']
-        varType = target['type']
-        if self.typeKnown(expr['type']) and expr['type'] != varType:
-            cast = self.nativeType(varType)
-        else:
-            cast = None
-        expr = self.formatExpr(expr, cast=cast)
-        return f'{name} += {expr}'
-
-    def formatArrayRemoveAll(self, target, expr):
-        name = target['value']
-        varType = target['elementType']
-        expr = self.formatExpr(expr)
-        return f'{name} = [x for x in {name} if x != {expr}]'
-
-    def formatAssign(self, variable, varType, cast, expr, inMemory=False):
-        formattedExpr = self.formatExpr(expr, cast=cast)
-        if varType and not inMemory:
-            varType = self.nativeType(varType)
-            return f'{variable}:{varType} = {formattedExpr}'
-        return f'{variable} = {formattedExpr}'
-
-    def formatCall(self, name, returnType, args, kwargs, className, callback):
-        arguments = ','.join([ arg["value"] for arg in args+kwargs])
-        return f'{name}({arguments})'
-
-    def formatExpr(self, value, cast=None):
-        if cast is None or cast == self.nativeType(value['type']):
-            return value['value']
-        elif cast in {'str', 'int', 'float'}:
-            return f"{cast}({value['value']})"
-        else:
-            raise NotImplemented
-    
-    def formatIf(self, expr):
-        return f'if {expr["value"]}:'
-
-    def formatElif(self, expr):
-        return f'elif {expr["value"]}:'
-
-    def formatElse(self):
-        return 'else:'
-
-    def formatEndIf(self):
-        return '#end'
-    
-    def formatWhile(self, expr):
-        formattedExpr = self.formatExpr(expr)
-        return f'while {formattedExpr}:'
-
-    def formatEndWhile(self):
-        return '#end'
-
-    def formatFor(self, variables, iterable):
-        if 'from' in iterable:
-            var = ', '.join(variables)
-            fromVal = iterable['from']['value']
-            step = iterable['step']['value']
-            toVal = iterable['to']['value']
-            if len(variables) == 2:
-                return f'for {var} in enumerate(range({fromVal}, {toVal}, {step})):'
-            return f'for {var} in range({fromVal}, {toVal}, {step}):'
-        else:
-            if len(variables) == 2:
-                var = ', '.join(variables)
-                return f'for {var} in enumerate({iterable["value"]}):'
-            return f'for {variables[0]} in {iterable["value"]}:'
-
-    def formatEndFor(self):
-        return "#end"
-
-    def formatArgs(self, args):
-        return ','.join([ f'{arg["value"]}: {self.nativeType(arg["type"])}' for arg in args ])
-
-    def formatFunc(self, name, returnType, args, kwargs):
-        if name == 'new':
-            name = self.constructorName
-        kwargs = [{'value':kw['name'], 'type':kw['type']} for kw in kwargs]
-        args = self.formatArgs(args+kwargs)
-        returnType = self.nativeType(returnType)
-        return f'def {name}({args}) -> {returnType}:'
-
-    def formatEndFunc(self):
-        if self.inFunc or self.inClass:
-            if 'def ' in self.outOfMain[-1]:
-                self.insertCode("pass")
-        elif 'def ' in self.source[-1]:
-            self.insertCode("pass")
-        return "#end"
-
-    def formatClass(self, name, args):
-        self.className = name
-        return f'class {self.className}():'
-
-    def formatEndClass(self):
-        return f'#end'
-
-    def formatClassDefaultValue(self, arg):
-        if 'name' in arg:
-            # it's a kwarg
-            name = arg['name']
-            value = arg['value']
-        else:
-            # it's an arg
-            name = arg['value']
-        return f'{self.self}.{name} = {name}'
-
-    def formatClassAttribute(self, attr):
-        if 'returnType' in attr:
-            # It's a method, do nothing
-            return
-        variable = attr['variable']
-        expr = attr['expr']
-        varType = self.nativeType(variable['type'])
-        name = variable['value']
-        expr = self.formatExpr(expr)
-        return f'{name}:{varType} = {expr}'
-
-    def formatReturn(self, expr):
-        if expr:
-            return f'return {expr["value"]}'
-        return 'return'
-
-    def div(self, arg1, arg2):
-        return {'value':f'{arg1["value"]} / {arg2["value"]}', 'type':'float'}
-
-    def andOperator(self, arg1, arg2):
-        return {'value':f'{arg1["value"]} and {arg2["value"]}', 'type':'bool'}
-
-    def orOperator(self, arg1, arg2):
-        return {'value':f'{arg1["value"]} or {arg2["value"]}', 'type':'bool'}
-
-    def formatDelete(self, expr, name, varType):
-        return f'del {expr["value"]}'
-
-    def formatPrint(self, value, terminator='\\n'):
-        if value['value']:
-            return f'print({value["value"]}, end="{terminator}")'
-        return f'print(end="{terminator}")'
-
     def write(self):
         boilerPlateStart = [
         ]

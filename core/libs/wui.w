@@ -21,8 +21,12 @@ class Label(Widget):
     def new(.text="", .fontSize=40, .align="center", .valign="center", Color .color=raylib.BLACK):
 
     def render():
-        if .font.baseSize == 0:
-            .font = raylib.LoadFontEx("assets/Roboto-Italic.ttf", .fontSize, 0, 250)
+        for C:
+            if .font.baseSize == 0:
+                .font = raylib.LoadFontEx("assets/Roboto-Italic.ttf", .fontSize, 0, 250)
+        for Python:
+            fontName = "assets/Roboto-Italic.ttf"
+            .font = raylib.LoadFontEx(fontName.encode(), .fontSize, raylib.ffi.new("int *", 0), 250)
         
         lineBuffer = ''
         word = ''
@@ -74,7 +78,10 @@ class Label(Widget):
                 dx = .x + .width - textWidth
             wuiGraphics.drawText(.font, line, dx, dy, .fontSize, .color)
             dy += .fontSize
-        .lines.len = 0
+        for C:
+            .lines.len = 0
+        for Python:
+            .lines = []
     
 class Button(Label):
     def new(func .onPress=pass, func .onRelease=pass, .radius=0.5, Color .buttonColor=raylib.BLUE):
@@ -134,7 +141,7 @@ class Box(Layout):
                     dx += wWidth
 
 class App():
-    def new(Color .background=raylib.WHITE, .fps=60.0, .width=800, .height=600, .title="Photon"):
+    def new(Color .background=raylib.WHITE, .fps=60, .width=800, .height=600, .title="Photon"):
 
     def run(Widget widget):
         for C:
