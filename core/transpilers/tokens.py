@@ -31,7 +31,7 @@ class Module():
         self.expr = expr
         self.name = name
         self.namespace = namespace
-        self.type = Type('module', name=name)
+        self.type = Type('module', name=name, native=native)
         self.native = native
         self.links = []
         self.imports = []

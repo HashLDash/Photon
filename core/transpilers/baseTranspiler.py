@@ -527,6 +527,7 @@ class BaseTranspiler():
                     c.type = Type('str')
             elif currentType.type == 'module':
                 module = self.currentScope.get(currentType.name)
+                print(module)
                 if isinstance(c, Call):
                     c.name.namespace = module.namespace
                     if module.native:

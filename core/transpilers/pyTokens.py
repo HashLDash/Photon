@@ -194,8 +194,10 @@ class DotAccess(DotAccess):
                     chain.append('.')
                     chain.append(repr(c))
             elif currentType.isModule:
-                chain.append('.')
-                chain.append(repr(c))
+                if currentType.native:
+                    input(f'Is native {c}')
+                else:
+                    chain = [repr(c)]
             else:
                 chain.append('.')
                 chain.append(repr(c))
@@ -377,6 +379,9 @@ class Class(Class):
                 else:
                     paramsInit.append(
                         NativeCode(f'self.{p.target} = {p.target}'))
+            elif isinstance(p, Expr):
+                paramsInit.append(
+                    NativeCode(f'self.{p} = None'))
         code = paramsInit + self.new.code.sequence.sequence
         self.new.code = Scope(code)
 

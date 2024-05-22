@@ -1,4 +1,6 @@
 native import raylib
+for Python:
+    native import pyray
 
 def drawText(Font font, str text, float x, float y, int fontSize, Color color):
     for C:
@@ -7,7 +9,7 @@ def drawText(Font font, str text, float x, float y, int fontSize, Color color):
         pos.y = y
         raylib.DrawTextEx(font, text, pos, fontSize, 0.0, color)
     for Python:
-        raylib.DrawTextEx(text.encode(), Vector2(x, y), fontSize, color)
+        raylib.DrawTextEx(font, text.encode(), pyray.Vector2(x, y), fontSize, 0.0, color)
 
 def measureText(Font font, str text, int fontSize):
     for C:
@@ -25,7 +27,7 @@ def drawRoundedRectangle(float x, float y, float width, float height, float radi
         rec.width = width
         rec.height = height
     for Python:
-        rec = raylib.Rectangle(x, y, width, height)
+        rec = pyray.Rectangle(x, y, width, height)
     raylib.DrawRectangleRounded(rec, radius, segments, color)
 
 def drawRectangle(float x, float y, float width, float height, Color color):

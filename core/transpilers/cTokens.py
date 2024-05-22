@@ -189,8 +189,11 @@ class DotAccess(DotAccess):
         currentType = self.chain[0].type
         for n, c in enumerate(self.chain[1:]):
             if currentType.native:
-                chain.append('.')
-                chain.append(repr(c))
+                if currentType.isModule:
+                    chain = [repr(c)]
+                else:
+                    chain.append('.')
+                    chain.append(repr(c))
             elif currentType.type == 'file':
                 if isinstance(c, Call):
                     fileName = ''.join(chain)
