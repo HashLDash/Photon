@@ -12,7 +12,7 @@ class Type(BaseType):
         'unknown':'None',
         '':'None',
         'obj':'obj',
-        'file':'file',
+        'file':'TypeVar("file")',
     }
 
     def __repr__(self):
@@ -159,6 +159,8 @@ class DotAccess(DotAccess):
             elif currentType.type == 'file':
                 if isinstance(c, Call):
                     if repr(c.name) in ['write', 'close', 'read']:
+                        if repr(c.name) == 'read' and not c.args:
+                            c.name.value = 'readline'
                         chain.append('.')
                         chain.append(repr(c))
                     else:
