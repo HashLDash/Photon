@@ -236,7 +236,7 @@ class KeyVal(KeyVal):
 
 class Map(Map):
     def __repr__(self):
-        return f'{' + ', '.join([repr(kv) for kv in self.keyVals])+ '}'
+        return '{' + ', '.join([repr(kv) for kv in self.keyVals])+ '}'
 
 class Open(Open):
     def __repr__(self):
