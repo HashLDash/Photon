@@ -422,9 +422,9 @@ class For(For):
     def __repr__(self):
         if isinstance(self.iterable, Range):
             if len(self.args.args) == 1:
-                return f'for ({self.args[0].type} {self.args[0]}={self.iterable.initial}; {self.args[0]} < {self.iterable.final}; {self.args[0]} += {self.iterable.step}) {self.code}'
+                return f'for {self.args[0]} in range({self.iterable.initial}, {self.iterable.final}, {self.iterable.step}) {self.code}'
             if len(self.args.args) == 2:
-                return f'{{{self.args[0].type} {self.args[0]}=0; for ({self.args[1].type} {self.args[1]}={self.iterable.initial}; {self.args[1]} < {self.iterable.final}; {self.args[0]}++, {self.args[1]} += {self.iterable.step}) {self.code}}}'
+                return f'for {self.args[0]}, {self.args[1]} in enumerate(range({self.iterable.initial}, {self.iterable.final}, {self.iterable.step})) {self.code}'
         elif isinstance(self.iterable, Expr):
             if self.iterable.type.type == 'array':
                 if len(self.args.args) == 1:
