@@ -31,7 +31,15 @@ def drawRoundedRectangle(float x, float y, float width, float height, float radi
     raylib.DrawRectangleRounded(rec, radius, segments, color)
 
 def drawRectangle(float x, float y, float width, float height, Color color):
-    raylib.DrawRectangle(x, y, width, height, color)
+    for C:
+        raylib.DrawRectangle(x, y, width, height, color)
+    for Python:
+        int xi = x
+        int yi = y
+        int widthi = width
+        int heighti = height
+        raylib.DrawRectangle(xi, yi, widthi, heighti, color)
+
 
 def drawCircle(float x, float y, float radius, Color color):
     raylib.DrawCircle(x, y, radius, color)

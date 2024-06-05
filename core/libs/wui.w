@@ -25,8 +25,9 @@ class Label(Widget):
             if .font.baseSize == 0:
                 .font = raylib.LoadFontEx("assets/Roboto-Italic.ttf", .fontSize, 0, 250)
         for Python:
-            fontName = "assets/Roboto-Italic.ttf"
-            .font = raylib.LoadFontEx(fontName.encode(), .fontSize, raylib.ffi.new("int *", 0), 250)
+            if not .font:
+                fontName = "assets/Roboto-Italic.ttf"
+                .font = raylib.LoadFontEx(fontName.encode(), .fontSize, raylib.ffi.new("int *", 0), 250)
         
         lineBuffer = ''
         word = ''
@@ -90,9 +91,9 @@ class Button(Label):
         int posX = raylib.GetMouseX()
         int posY = raylib.GetMouseY()
         if posX > .x and posX < .x + .width and posY > .y and posY < .y + .height:
-            if raylib.IsMouseButtonPressed(MOUSE_LEFT_BUTTON):
+            if raylib.IsMouseButtonPressed(raylib.MOUSE_LEFT_BUTTON):
                 .onPress()
-            elif raylib.IsMouseButtonReleased(MOUSE_LEFT_BUTTON):
+            elif raylib.IsMouseButtonReleased(raylib.MOUSE_LEFT_BUTTON):
                 .onRelease()
         wuiGraphics.drawRoundedRectangle(.x, .y, .width, .height, .radius, .buttonColor)
         super.render()
