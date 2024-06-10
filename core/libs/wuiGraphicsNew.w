@@ -1,11 +1,19 @@
 native import raylib
 
+class Color():
+    def new(.r=255, .g=255, .b=255, .a=255):
+
 def drawText(Font font, str text, float x, float y, int fontSize, Color color):
     for C:
         Vector2 pos
         pos.x = x
         pos.y = y
-        raylib.DrawTextEx(font, text, pos, fontSize, 0.0, color)
+        raylib.Color rayColor = BLACK
+        rayColor.r = color.r
+        rayColor.g = color.g
+        rayColor.b = color.b
+        rayColor.a = color.a
+        raylib.DrawTextEx(font, text, pos, fontSize, 0.0, rayColor)
     for Python:
         raylib.DrawTextEx(font, text.encode(), pyray.Vector2(x, y), fontSize, 0.0, color)
 
@@ -24,13 +32,24 @@ def drawRoundedRectangle(float x, float y, float width, float height, float radi
         rec.y = y
         rec.width = width
         rec.height = height
+        raylib.Color rayColor = BLACK
+        rayColor.r = color.r
+        rayColor.g = color.g
+        rayColor.b = color.b
+        rayColor.a = color.a
+        raylib.DrawRectangleRounded(rec, radius, segments, rayColor)
     for Python:
         rec = pyray.Rectangle(x, y, width, height)
-    raylib.DrawRectangleRounded(rec, radius, segments, color)
+        raylib.DrawRectangleRounded(rec, radius, segments, color)
 
 def drawRectangle(float x, float y, float width, float height, Color color):
     for C:
-        raylib.DrawRectangle(x, y, width, height, color)
+        raylib.Color rayColor = raylib.BLACK
+        rayColor.r = color.r
+        rayColor.g = color.g
+        rayColor.b = color.b
+        rayColor.a = color.a
+        raylib.DrawRectangle(x, y, width, height, rayColor)
     for Python:
         int xi = x
         int yi = y
@@ -40,6 +59,11 @@ def drawRectangle(float x, float y, float width, float height, Color color):
 
 def drawCircle(float x, float y, float radius, Color color):
     for C:
-        raylib.DrawCircle(x, y, radius, color)
+        raylib.Color rayColor = BLACK
+        rayColor.r = color.r
+        rayColor.g = color.g
+        rayColor.b = color.b
+        rayColor.a = color.a
+        raylib.DrawCircle(x, y, radius, rayColor)
     for Python:
         raylib.DrawCircle(int(x), int(y), radius, color)

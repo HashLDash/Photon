@@ -179,7 +179,7 @@ class DotAccess(DotAccess):
                     chain.append(c.name)
             elif c.type.type == 'array' and getattr(c, 'indexAccess', None):
                 chain.append('.')
-                chain.append(c.name)
+                chain.append(repr(c))
                 c.type = c.type.elementType
             elif currentType.isClass and isinstance(c, Call):
                 instanceName = ''.join(chain)
@@ -308,7 +308,8 @@ class Assign(Assign):
                 if self.target.type.type == 'map':
                     return f'{self.target.name}[{self.target.indexAccess}] = {self.value}'
                 else:
-                    return f'{self.target.name}[{self.target.indexAccess}] = {self.value}'
+                    # indexAccess already processed in self.target
+                    return f'{self.target} = {self.value}'
             return f'{self.target} = {self.value}'
         else:
             return f'{self.target}:{self.target.type} = {self.value}'

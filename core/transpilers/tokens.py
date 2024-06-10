@@ -558,6 +558,7 @@ class Sequence():
         return None
 
 class Cast():
+    imports = []
     conversion = {
         'int':{
             'str': 'castToIntFromStr',
@@ -572,6 +573,9 @@ class Cast():
         self.castTo = castTo
         self.type = self.castTo
         self.namespace = self.expr.namespace
+
+    def prepare(self):
+        pass
 
     @property
     def value(self):

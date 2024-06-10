@@ -213,6 +213,9 @@ class DotAccess(DotAccess):
                 chain = [f'list_{currentType.elementType.type}']
                 chain.append('_')
                 c.args.args.insert(0, Var(instanceName, currentType))
+                if repr(c.name) == 'append':
+                    if c.args.args[1].type != currentType.elementType:
+                        c.args.args[1] = Cast(deepcopy(c.args.args[1]), currentType.elementType)
                 chain.append(repr(c))
             elif c.type.type == 'array' and getattr(c, 'indexAccess', None):
                 chain.append('->')

@@ -477,6 +477,14 @@ class BaseTranspiler():
                     for kwarg in call.kwargs.kwargs:
                         kwarg.namespace = ''
                         signature.append(kwarg)
+            else:
+                call.namespace = namespace
+                call = self.currentScope.get(call.index)
+                if not call.type.isModule:
+                    signature = call.signature
+                    name = call.name
+                else:
+                    namespace = ''
         return Call(
             name=name,
             args=self.processTokens(token['args']),
@@ -527,11 +535,11 @@ class BaseTranspiler():
                     c.type = Type('str')
             elif currentType.type == 'module':
                 module = self.currentScope.get(currentType.name)
-                print(module)
                 if isinstance(c, Call):
                     c.name.namespace = module.namespace
                     if module.native:
                         c.type = Type('unknown', native=True)
+                        c.name.namespace = ''
                     else:
                         #TODO: maybe the class should have a signature precomputed
                         # instead of doing this here and in processCall
@@ -550,6 +558,7 @@ class BaseTranspiler():
                     c.namespace = module.namespace
                     if module.native:
                         c.type = Type('unknown', native=True)
+                        c.namespace = ''
                     else:
                         c.type = self.currentScope.get(c.index).type
             parsedChain.append(c)

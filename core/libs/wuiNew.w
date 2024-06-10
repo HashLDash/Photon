@@ -1,4 +1,4 @@
-import wuiGraphics
+import wuiGraphicsNew
 native import raylib
 
 def pass():
@@ -16,7 +16,7 @@ class Widget():
 class Label(Widget):
     Font font
     str[] lines = []
-    def new(.text="", .fontSize=40, .align="center", .valign="center", Color .color=raylib.BLACK):
+    def new(.text="", .fontSize=40, .align="center", .valign="center", .color=wuiGraphicsNew.Color(0,0,0)):
 
     def render():
         for C:
@@ -32,7 +32,7 @@ class Label(Widget):
         .lines = []
         for c in .text:
             if c == ' ':
-                if wuiGraphics.measureText(.font, lineBuffer+' '+word, .fontSize) > .width:
+                if wuiGraphicsNew.measureText(.font, lineBuffer+' '+word, .fontSize) > .width:
                     .lines.append(lineBuffer)
                     lineBuffer = word
                 else:
@@ -42,7 +42,7 @@ class Label(Widget):
                         lineBuffer += ' ' + word
                 word = ''
             elif c == '\n':
-                if wuiGraphics.measureText(.font, lineBuffer+' '+word, .fontSize) > .width:
+                if wuiGraphicsNew.measureText(.font, lineBuffer+' '+word, .fontSize) > .width:
                     .lines.append(lineBuffer)
                     .lines.append(word)
                 else:
@@ -54,7 +54,7 @@ class Label(Widget):
                 word = ''
             else:
                 word += c
-        if wuiGraphics.measureText(.font, lineBuffer+word, .fontSize) > .width:
+        if wuiGraphicsNew.measureText(.font, lineBuffer+word, .fontSize) > .width:
             .lines.append(lineBuffer)
             .lines.append(word)
         else:
@@ -68,14 +68,14 @@ class Label(Widget):
 
         dx = 0.0
         for line in .lines:
-            textWidth = wuiGraphics.measureText(.font, line, .fontSize)
+            textWidth = wuiGraphicsNew.measureText(.font, line, .fontSize)
             if .align == "center":
                 dx = .x + (.width - textWidth)/2
             elif .align == "left":
                 dx = .x
             elif .align == "right":
                 dx = .x + .width - textWidth
-            wuiGraphics.drawText(.font, line, dx, dy, .fontSize, .color)
+            wuiGraphicsNew.drawText(.font, line, dx, dy, .fontSize, .color)
             dy += .fontSize
         for C:
             .lines.len = 0
@@ -83,7 +83,7 @@ class Label(Widget):
             .lines = []
     
 class Button(Label):
-    def new(func .onPress=pass, func .onRelease=pass, .radius=0.5, Color .buttonColor=raylib.BLUE):
+    def new(func .onPress=pass, func .onRelease=pass, .radius=0.5, .buttonColor=wuiGraphicsNew.Color(0,0,255)):
 
     def render():
         int posX = raylib.GetMouseX()
@@ -93,7 +93,7 @@ class Button(Label):
                 .onPress()
             elif raylib.IsMouseButtonReleased(raylib.MOUSE_LEFT_BUTTON):
                 .onRelease()
-        wuiGraphics.drawRoundedRectangle(.x, .y, .width, .height, .radius, .buttonColor)
+        wuiGraphicsNew.drawRoundedRectangle(.x, .y, .width, .height, .radius, .buttonColor)
         super.render()
 
 class Layout(Widget):
@@ -140,7 +140,7 @@ class Box(Layout):
                     dx += wWidth
 
 class App():
-    def new(Color .background=raylib.WHITE, .fps=60, .width=800, .height=600, .title="Photon"):
+    def new(.background=wuiGraphicsNew.Color(), .fps=60, .width=800, .height=600, .title="Photon"):
 
     def run(Widget widget):
         for C:
