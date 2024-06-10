@@ -137,7 +137,7 @@ class Delete(Delete):
         if self.expr.type.type in ['array', 'map']:
             return f'del {self.expr}[{self.expr.value.indexAccess}]'
         if isinstance(self.expr.value, DotAccess):
-            return repr(self.expr.value).replace('_get(', '_del(', 1)
+            return f'del {self.expr}[{self.expr.value.indexAccess}]'
         raise SyntaxError(f'Delete not supported for type {type(self.expr.value)}')
 
 class DotAccess(DotAccess):
