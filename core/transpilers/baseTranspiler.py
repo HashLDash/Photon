@@ -130,6 +130,17 @@ class BaseTranspiler():
         self.currentNamespace = self.moduleName
         self.importedModules = []
 
+    #def __getattribute__(self,name):
+    #    attr = object.__getattribute__(self, name)
+    #    if hasattr(attr, '__call__'):
+    #        def newfunc(*args, **kwargs):
+    #            print(f'calling %s' %attr.__name__)
+    #            result = attr(*args, **kwargs)
+    #            return result
+    #        return newfunc
+    #    else:
+    #        return attr
+
     def loadTokens(self, lang):
         import importlib
         tokens = importlib.import_module(f'.{lang}Tokens', package=__package__)
@@ -194,6 +205,18 @@ class BaseTranspiler():
             expr=self.preprocess(token['expr']),
         )
 
+    def processType(self, token):
+        tokenType = token
+        if isinstance(token, dict):
+            typeExpr = self.preprocess(token)
+            typeExpr.namespace = ''
+            try:
+                tokenType = self.currentScope.get(repr(typeExpr)).type.type
+            except KeyError:
+                # token was not found, maybe it is a native type
+                tokenType = repr(typeExpr)
+        return tokenType
+
     def processVar(self, token):
         namespace = self.currentNamespace
         indexAccess = self.preprocess(token['indexAccess']) if 'indexAccess' in token else None
@@ -204,8 +227,7 @@ class BaseTranspiler():
             typeExpr = self.preprocess(elementType)
             token['elementType'] = self.currentScope.get(repr(typeExpr)).type.type
         elif tokenType is not None and isinstance(tokenType, dict):
-            typeExpr = self.preprocess(tokenType)
-            token['type'] = self.currentScope.get(repr(typeExpr)).type.type
+            token['type'] = self.processType(tokenType)
         varType = Type(**token)
 
         #TODO: do the same for map

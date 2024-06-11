@@ -8,8 +8,6 @@ arrayType = (type var expr) lbracket rbracket (var space)
 
 mapType = (type var) beginBlock (type var)
 
-typeDeclaration = (var type) var
-
 var = var underline var
     | underline var
     | var underline
@@ -21,6 +19,8 @@ floatNumber = num dot num
 dotAccess = expr dot expr
           | (type expr) space dot expr
           | dot expr
+
+typeDeclaration = (type expr) var
 
 group = lparen expr rparen
 

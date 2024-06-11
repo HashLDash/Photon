@@ -230,7 +230,7 @@ def typeDeclaration(i, t):
     arraySize = ''
     keyType = ''
     valType = ''
-    if t[i]['token'] in {'type', 'var'}:
+    if t[i]['token'] in {'type', 'var', 'expr'}:
         for n, tok in enumerate(t[i:]):
             if tok['token'] == 'type':
                 if tok['type'] == 'array':
@@ -250,13 +250,21 @@ def typeDeclaration(i, t):
                 varType.append(name)
                 name = tok['name']
                 break
+            elif tok['token'] == 'expr':
+                varType.append(tok)
             elif not tok['token'] in {'type','var'}:
                 # subtract to not consume the token
                 n -= 1
                 break
     if not name:
         raise SyntaxError('Type declaration error')
-    t[i] = {'token':'var', 'name':name, 'type':' '.join(varType)} 
+    if not varType:
+        varType = ''
+    elif len(varType) > 1:
+        varType = ' '.join(varType)
+    else:
+        varType = varType[0]
+    t[i] = {'token':'var', 'name':name, 'type': varType} 
     if elementType:
         # It's an array, include size and elementType
         t[i]['type'] = 'array'
