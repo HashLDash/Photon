@@ -207,15 +207,17 @@ class BaseTranspiler():
 
     def processType(self, token):
         tokenType = token
+        native = False
         if isinstance(token, dict):
             typeExpr = self.preprocess(token)
-            typeExpr.namespace = ''
             try:
                 tokenType = self.currentScope.get(repr(typeExpr)).type.type
             except KeyError:
                 # token was not found, maybe it is a native type
+                typeExpr.namespace = ''
                 tokenType = repr(typeExpr)
-        return tokenType
+                native = True
+        return tokenType, native
 
     def processVar(self, token):
         namespace = self.currentNamespace
@@ -227,7 +229,7 @@ class BaseTranspiler():
             typeExpr = self.preprocess(elementType)
             token['elementType'] = self.currentScope.get(repr(typeExpr)).type.type
         elif tokenType is not None and isinstance(tokenType, dict):
-            token['type'] = self.processType(tokenType)
+            token['type'], token['native'] = self.processType(tokenType)
         varType = Type(**token)
 
         #TODO: do the same for map
@@ -245,14 +247,6 @@ class BaseTranspiler():
                         self.listTypes.add(varType.elementType.type)
                 except KeyError as e:
                     varType.native = True
-        elif varType.isClass:
-            try:
-                typeName = Var(token['type'], namespace=self.moduleName)
-                # if this doesn't fail it's because the type is a class
-                c = self.currentScope.get(typeName.index)
-                varType = Type(c.index)
-            except KeyError:
-                varType.native = True
 
         # correct namespace if this token was imported
         var = Var(value=token['name'], namespace=self.currentNamespace)
