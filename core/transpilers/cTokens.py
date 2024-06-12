@@ -41,8 +41,8 @@ class Null(Null):
         return 'NULL'
 
 class Module(Module):
-    def __init__(self, expr, name, namespace, native=False):
-        super().__init__(expr, name, namespace, native=native)
+    def __init__(self, expr, name, namespace, native=False, scope=None):
+        super().__init__(expr, name, namespace, native=native, scope=scope)
         if self.native:
             self.imports = [f'#include "{self.name}.h"']
             if self.name not in ['time']:
@@ -179,7 +179,7 @@ class Delete(Delete):
 class DotAccess(DotAccess):
     imports = ['#include "photonInput.h"']
     def format(self):
-        call = repr(self.type).replace("*","")
+        call = repr(self.type).replace("*","").replace("struct ", "")
         if self.type.isClass or self.type.type in ['array', 'map']:
             return f'{call}_str({self.value})'
         return self.value

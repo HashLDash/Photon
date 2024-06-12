@@ -41,8 +41,8 @@ class Null(Null):
         return 'None'
 
 class Module(Module):
-    def __init__(self, expr, name, namespace, native=False):
-        super().__init__(expr, name, namespace, native=native)
+    def __init__(self, expr, name, namespace, native=False, scope=None):
+        super().__init__(expr, name, namespace, native=native, scope=scope)
         if self.native:
             self.imports = [f'import {self.name}']
 

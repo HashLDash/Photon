@@ -16,7 +16,7 @@ class Widget():
 class Label(Widget):
     Font font
     str[] lines = []
-    def new(.text="", .fontSize=40, .align="center", .valign="center", Color .color=raylib.BLACK):
+    def new(.text="", .fontSize=40, .align="center", .valign="center", .color=wuiGraphics.Color()):
 
     def render():
         for C:
@@ -83,7 +83,7 @@ class Label(Widget):
             .lines = []
     
 class Button(Label):
-    def new(func .onPress=pass, func .onRelease=pass, .radius=0.5, Color .buttonColor=raylib.BLUE):
+    def new(func .onPress=pass, func .onRelease=pass, .radius=0.5, .buttonColor=wuiGraphics.Color(b=255)):
 
     def render():
         int posX = raylib.GetMouseX()
@@ -140,7 +140,7 @@ class Box(Layout):
                     dx += wWidth
 
 class App():
-    def new(Color .background=raylib.WHITE, .fps=60, .width=800, .height=600, .title="Photon"):
+    def new(.background=wuiGraphics.Color(r=255, g=255, b=255), .fps=60, .width=800, .height=600, .title="Photon"):
 
     def run(Widget widget):
         for C:
@@ -150,7 +150,7 @@ class App():
         raylib.SetTargetFPS(.fps)
         while not raylib.WindowShouldClose():
             raylib.BeginDrawing()
-            raylib.ClearBackground(.background)
+            raylib.ClearBackground(.background.toNative())
             widget.update()
             widget.render()
             raylib.EndDrawing()

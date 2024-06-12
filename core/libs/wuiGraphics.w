@@ -1,18 +1,19 @@
 native import raylib
+for Python:
+    native import pyray
 
 class Color():
-    def new(.r=0.0, .g=0.0, .b=0.0, .a=1.0):
+    def new(.r=0.0, .g=0.0, .b=0.0, .a=255.0):
 
     def toNative():
         for C:
             raylib.Color color = raylib.BLACK
-            color.r = .r * 255.0
-            color.g = .g * 255.0
-            color.b = .b * 255.0
-            color.a = .a * 255.0
+            color.r = .r
+            color.g = .g
+            color.b = .b
+            color.a = .a
         for Python:
-            native import pyray
-            pyray.Color color = pyray.Color(int(.r*255), int(.g*255), int(.b*255), int(.a*255))
+            pyray.Color color = pyray.Color(int(.r), int(.g), int(.b), int(.a))
         return color
 
 def drawText(Font font, str text, float x, float y, int fontSize, Color color):

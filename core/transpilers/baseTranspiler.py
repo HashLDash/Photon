@@ -31,8 +31,6 @@ class CurrentScope():
                 self.localScope[-1][token.index] = token
             else:
                 self.currentScope[token.index] = token
-                if isinstance(token, Module):
-                    self.currentScope[token.name] = token
 
     def update(self, scope):
         self.currentScope.update(scope.currentScope)
@@ -128,7 +126,7 @@ class BaseTranspiler():
         self.sequence = Sequence()
         self.currentScope = CurrentScope()
         self.currentNamespace = self.moduleName
-        self.importedModules = []
+        self.importedModules = {}
 
     #def __getattribute__(self,name):
     #    attr = object.__getattribute__(self, name)
@@ -217,6 +215,15 @@ class BaseTranspiler():
                 typeExpr.namespace = ''
                 tokenType = repr(typeExpr)
                 native = True
+        elif isinstance(token, str):
+            typeName = Var(token, namespace=self.currentNamespace)
+            try:
+                varInScope = self.currentScope.get(typeName.index)
+                tokenType = typeName.index
+            except KeyError:
+                # token was not found, maybe it is a native type
+                tokenType = token
+                native = True
         return tokenType, native
 
     def processVar(self, token):
@@ -225,38 +232,49 @@ class BaseTranspiler():
         elementType = token.get('elementType', None)
         tokenType = token.get('type', 'unknown')
         # type can be an expression. E.g. dotAccess
-        if elementType is not None and isinstance(elementType, dict):
-            typeExpr = self.preprocess(elementType)
-            token['elementType'] = self.currentScope.get(repr(typeExpr)).type.type
+        if elementType is not None:# and isinstance(elementType, dict):
+            #typeExpr = self.preprocess(elementType)
+            #token['elementType'] = self.currentScope.get(repr(typeExpr)).type.type
+            token['elementType'], _ = self.processType(elementType)
         elif tokenType is not None and isinstance(tokenType, dict):
             token['type'], token['native'] = self.processType(tokenType)
         varType = Type(**token)
+        if not varType.known:
+            try:
+                varName = Var(token['name'], namespace=namespace)
+                varCorrect = self.currentScope.get(varName.index)
+                varType = varCorrect.type
+                namespace = varCorrect.namespace
+            except: pass
 
         #TODO: do the same for map
-        if varType.type == 'array':
-            if varType.elementType.isClass:
-                try:
-                    if not isinstance(elementType, dict):
-                        # elementType was not a token and not already processed, proceed
-                        typeName = Var(varType.elementType.type, namespace=self.moduleName)
-                        # if this doesn't fail it's because the type is a class
-                        c = self.currentScope.get(typeName.index)
-                        varType = Type('array', elementType=c.index)
-                        self.listTypes.add(c.index)
-                    else:
-                        self.listTypes.add(varType.elementType.type)
-                except KeyError as e:
-                    varType.native = True
+        #if varType.type == 'array':
+        #    print(0, varType)
+        #    if varType.elementType.isClass:
+        #        try:
+        #            if not isinstance(elementType, dict):
+        #                # elementType was not a token and not already processed, proceed
+        #                typeName = Var(varType.elementType.type, namespace=self.moduleName)
+        #                # if this doesn't fail it's because the type is a class
+        #                c = self.currentScope.get(typeName.index)
+        #                varType = Type('array', elementType=c.index)
+        #                self.listTypes.add(c.index)
+        #            else:
+        #                self.listTypes.add(varType.elementType.type)
+        #        except KeyError as e:
+        #            print(1, 'here')
+        #            varType.native = True
 
         # correct namespace if this token was imported
-        var = Var(value=token['name'], namespace=self.currentNamespace)
-        try:
-            var = self.currentScope.get(var.index)
-            namespace = var.namespace
-            varType = var.type
-        except KeyError:
-            # Not already processed, continue
-            pass
+        #var = Var(value=token['name'], namespace=self.currentNamespace)
+        #try:
+        #    var = self.currentScope.get(var.index)
+        #    namespace = var.namespace
+        #    input('here')
+        #    varType = var.type
+        #except KeyError:
+        #    # Not already processed, continue
+        #    pass
 
         var = Var(
             value=token['name'],
@@ -475,17 +493,33 @@ class BaseTranspiler():
 
     def processCall(self, token, className=None):
         name = self.preprocess(token['name'])
-        namespace = self.currentNamespace
+        namespace = name.namespace
         try:
-            call = self.currentScope.get(name.index)
+            # always search in the current module's scope
+            name.namespace = self.moduleName
+            callIndex = name.index
+            call = self.currentScope.get(callIndex)
         except KeyError:
             call = None
         signature = []
         if call:
-            if not call.type.isModule:
+            if call.type.isModule:
+                module = call
+                if not module.native:
+                    name.namespace = module.namespace
+                    call = module.scope.get(name.index)
+                    if not call.type.isModule:
+                        signature = call.signature
+                        name = call.name
+                    else:
+                        namespace = ''
+                else:
+                    namespace = ''
+            else:
                 namespace = call.name.namespace
                 if call.type.isClass:
-                    call = self.currentScope.get(call.index).new
+                    call = call.new
+                    name.namespace = namespace
                 if getattr(call, 'args', None) is not None and (call.args or call.kwargs):
                     for arg in call.args.args:
                         arg.namespace = ''
@@ -493,14 +527,6 @@ class BaseTranspiler():
                     for kwarg in call.kwargs.kwargs:
                         kwarg.namespace = ''
                         signature.append(kwarg)
-            else:
-                call.namespace = namespace
-                call = self.currentScope.get(call.index)
-                if not call.type.isModule:
-                    signature = call.signature
-                    name = call.name
-                else:
-                    namespace = ''
         return Call(
             name=name,
             args=self.processTokens(token['args']),
@@ -511,7 +537,6 @@ class BaseTranspiler():
 
     def processDotAccess(self, token):
         initialType = self.preprocess(token['dotAccess'][0]).type
-        oldNamespace = self.currentNamespace
         chain = self.processTokens(token['dotAccess'])
         chain[0].type = initialType
         currentType = initialType
@@ -521,7 +546,8 @@ class BaseTranspiler():
             c.prepare()
             if currentType.isClass:
                 try:
-                    scope = self.currentScope.get(currentType.type).__dict__
+                    #scope = self.currentScope.get(currentType.type).__dict__
+                    scope = self.classes[currentType.type].__dict__
                 except KeyError:
                     pass
                 else:
@@ -550,16 +576,18 @@ class BaseTranspiler():
                 if isinstance(c, Call) and f'{c.name}' == 'read':
                     c.type = Type('str')
             elif currentType.type == 'module':
-                module = self.currentScope.get(currentType.name)
+                moduleIndex = Var(currentType.name, namespace=self.moduleName).index
+                module = self.currentScope.get(moduleIndex)
                 if isinstance(c, Call):
                     c.name.namespace = module.namespace
                     if module.native:
                         c.type = Type('unknown', native=True)
                         c.name.namespace = ''
+                        c.signature = []
                     else:
                         #TODO: maybe the class should have a signature precomputed
                         # instead of doing this here and in processCall
-                        cOriginal = self.currentScope.get(c.name.index)
+                        cOriginal = module.scope.get(c.name.index)
                         signature = []
                         if isinstance(cOriginal, Class):
                             for arg in cOriginal.new.args.args:
@@ -580,6 +608,7 @@ class BaseTranspiler():
             parsedChain.append(c)
 
             currentType = c.type
+
         dotAccess = DotAccess(
             chain,
             type=currentType,
@@ -598,14 +627,22 @@ class BaseTranspiler():
                 value=Call(Var(className.name))))
         parameters = {}
         methods = {}
-        new = None
         newArgs = []
         newKwargs = []
         args = self.processTokens(token['args'])
         parentMethods = {}
+        new = Function(name=Var(f'new', namespace=className))
+        methods[new.name.value] = new
+        self.classes[repr(className)] = Class(
+            name=className,
+            args=args,
+            new=new,
+            parameters=parameters
+        )
         # First pass for type inference
         parentClass = None
         for arg in args:
+            arg.namespace = self.currentNamespace
             parentClass = self.currentScope.get(arg.index)
             parameters.update(parentClass.parameters)
             newArgs = newArgs + parentClass.new.args.args
@@ -774,6 +811,7 @@ class BaseTranspiler():
         #TODO: this method and processImport need to be refactored
         folder = None
         native = False
+        scope = CurrentScope()
         moduleExpr = self.preprocess(token['module'])
         moduleExpr.namespace = ''
         name = f'{moduleExpr}'
@@ -793,33 +831,35 @@ class BaseTranspiler():
                 # Photon module import
                 # Inject assets folder
                 #raise SyntaxError('Standard lib import not implemented yet.')
-            if filename in self.importedModules:
-                return
-            self.importedModules.append(filename)
-            interpreter = Interpreter(
-                    filename=filename,
-                    lang=self.lang,
-                    target=self.target,
-                    module=True,
-                    standardLibs=self.standardLibs,
-                    transpileOnly=True,
-                    debug=self.debug)
-            interpreter.engine.importedModules = deepcopy(self.importedModules)
-            interpreter.run()
-            self.classes.update(interpreter.engine.classes)
-            self.currentScope.update(interpreter.engine.currentScope)
-            self.imports = self.imports.union(interpreter.engine.imports)
-            self.links = self.links.union(interpreter.engine.links)
-            self.sequence = self.sequence + interpreter.engine.sequence
-            self.importedModules = interpreter.engine.importedModules
+            if filename not in self.importedModules:
+                self.importedModules[filename] = repr(moduleExpr)
+                interpreter = Interpreter(
+                        filename=filename,
+                        lang=self.lang,
+                        target=self.target,
+                        module=True,
+                        standardLibs=self.standardLibs,
+                        transpileOnly=True,
+                        debug=self.debug)
+                interpreter.engine.importedModules = deepcopy(self.importedModules)
+                interpreter.run()
+                self.classes.update(interpreter.engine.classes)
+                #self.currentScope.update(interpreter.engine.currentScope)
+                scope = interpreter.engine.currentScope
+                self.imports = self.imports.union(interpreter.engine.imports)
+                self.links = self.links.union(interpreter.engine.links)
+                self.sequence = self.sequence + interpreter.engine.sequence
+                self.importedModules = interpreter.engine.importedModules
+                if symbols == '*':
+                    symbols = interpreter.engine.currentScope.values(namespace=name)
+                for symbol in symbols:
+                    symbol.namespace = name
+                    t = scope.get(symbol.index)
+                    symbol.namespace = self.currentNamespace
+                    self.currentScope.addAlias(symbol.index, t)
+            else:
+                scope = self.importedModules[filename].scope
             namespace = name
-            if symbols == '*':
-                symbols = interpreter.engine.currentScope.values(namespace=namespace)
-            for symbol in symbols:
-                symbol.namespace = name
-                t = self.currentScope.get(symbol.index)
-                symbol.namespace = self.currentNamespace
-                self.currentScope.addAlias(symbol.index, t)
         elif f"{name}.{self.libExtension}" in os.listdir(self.standardLibs + f'/native/{self.lang}/'):
             # Native Photon lib module import
             raise SyntaxError('Native Photon lib module import not implemented yet.')
@@ -829,7 +869,9 @@ class BaseTranspiler():
         else:
             raise RuntimeError(f'Cannot import {name}.')
             #raise SyntaxError('System library import not implemented yet.')
-        module = Module(moduleExpr, name, namespace, native=native)
+        module = Module(moduleExpr, name, namespace, native=native, scope=scope)
+        if filename not in self.importedModules:
+            self.importedModules[filename] = module
         for i in module.imports:
             self.imports.add(i)
         for i in module.links:
@@ -840,6 +882,7 @@ class BaseTranspiler():
         #TODO: relative path and package imports
         folder = None
         native = token['native']
+        scope = CurrentScope()
 
         moduleExpr = self.preprocess(token['expr'])
         moduleExpr.namespace = ''
@@ -852,6 +895,7 @@ class BaseTranspiler():
         moduleExpr.namespace = self.currentNamespace
         if native:
             # System library import
+            filename = repr(moduleExpr)
             namespace = ''
         elif f"{name}.w" in os.listdir(folder) + os.listdir(self.standardLibs):
             if f"{name}.w" in os.listdir(folder):
@@ -864,25 +908,26 @@ class BaseTranspiler():
                 # Photon module import
                 # Inject assets folder
                 #raise SyntaxError('Standard lib import not implemented yet.')
-            if filename in self.importedModules:
-                return
-            self.importedModules.append(filename)
-            interpreter = Interpreter(
-                    filename=filename,
-                    lang=self.lang,
-                    target=self.target,
-                    module=True,
-                    standardLibs=self.standardLibs,
-                    transpileOnly=True,
-                    debug=self.debug)
-            interpreter.engine.importedModules = deepcopy(self.importedModules)
-            interpreter.run()
-            self.classes.update(interpreter.engine.classes)
-            self.currentScope.update(interpreter.engine.currentScope)
-            self.imports = self.imports.union(interpreter.engine.imports)
-            self.links = self.links.union(interpreter.engine.links)
-            self.sequence = self.sequence + interpreter.engine.sequence
-            self.importedModules = interpreter.engine.importedModules
+            if filename not in self.importedModules:
+                interpreter = Interpreter(
+                        filename=filename,
+                        lang=self.lang,
+                        target=self.target,
+                        module=True,
+                        standardLibs=self.standardLibs,
+                        transpileOnly=True,
+                        debug=self.debug)
+                interpreter.engine.importedModules = deepcopy(self.importedModules)
+                interpreter.run()
+                self.classes.update(interpreter.engine.classes)
+                #self.currentScope.update(interpreter.engine.currentScope)
+                scope = interpreter.engine.currentScope
+                self.imports = self.imports.union(interpreter.engine.imports)
+                self.links = self.links.union(interpreter.engine.links)
+                self.sequence = self.sequence + interpreter.engine.sequence
+                self.importedModules = interpreter.engine.importedModules
+            else:
+                scope = self.importedModules[filename].scope
             namespace = name
         elif f"{name}.{self.libExtension}" in os.listdir(self.standardLibs + f'/native/{self.lang}/'):
             # Native Photon lib module import
@@ -893,7 +938,9 @@ class BaseTranspiler():
         else:
             raise RuntimeError(f'Cannot import {name}.')
             #raise SyntaxError('System library import not implemented yet.')
-        module = Module(moduleExpr, name, namespace, native=native)
+        module = Module(moduleExpr, name, namespace, native=native, scope=scope)
+        if filename not in self.importedModules:
+            self.importedModules[filename] = module
         for i in module.imports:
             self.imports.add(i)
         for i in module.links:

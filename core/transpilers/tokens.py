@@ -27,7 +27,7 @@ class Null():
         return None
 
 class Module():
-    def __init__(self, expr, name, namespace, native=False):
+    def __init__(self, expr, name, namespace, native=False, scope=None):
         self.expr = expr
         self.name = name
         self.namespace = namespace
@@ -35,6 +35,7 @@ class Module():
         self.native = native
         self.links = []
         self.imports = []
+        self.scope = scope
 
     def __repr__(self):
         return f'#module {self.name}'
@@ -350,7 +351,7 @@ class DotAccess():
         pass
 
     def format(self):
-        call = repr(self.type).replace("*","")
+        call = repr(self.type).replace("*","")#.replace("struct ", '')
         if self.type.isClass or self.type.type in ['array', 'map']:
             return f'{call}_str({self.value})'
         return self.value
