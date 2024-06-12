@@ -236,7 +236,6 @@ class BaseTranspiler():
             #typeExpr = self.preprocess(elementType)
             #token['elementType'] = self.currentScope.get(repr(typeExpr)).type.type
             token['elementType'], _ = self.processType(elementType)
-            input(token)
         elif tokenType is not None and isinstance(tokenType, dict):
             token['type'], token['native'] = self.processType(tokenType)
         varType = Type(**token)
