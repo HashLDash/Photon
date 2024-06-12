@@ -219,7 +219,7 @@ class BaseTranspiler():
             typeName = Var(token, namespace=self.currentNamespace)
             try:
                 varInScope = self.currentScope.get(typeName.index)
-                tokenType = typeName.index
+                tokenType = varInScope.index
             except KeyError:
                 # token was not found, maybe it is a native type
                 tokenType = token
@@ -236,6 +236,7 @@ class BaseTranspiler():
             #typeExpr = self.preprocess(elementType)
             #token['elementType'] = self.currentScope.get(repr(typeExpr)).type.type
             token['elementType'], _ = self.processType(elementType)
+            input(token)
         elif tokenType is not None and isinstance(tokenType, dict):
             token['type'], token['native'] = self.processType(tokenType)
         varType = Type(**token)
