@@ -603,8 +603,13 @@ class BaseTranspiler():
                     if module.native:
                         c.type = Type('unknown', native=True)
                         c.namespace = ''
+                    elif c.type.isModule:
+                        pass
                     else:
-                        c.type = self.currentScope.get(c.index).type
+                        c.type = module.scope.get(c.index).type
+                        c.namespace = ''
+                        continue
+                        #c.type = self.currentScope.get(c.index).type
             parsedChain.append(c)
 
             currentType = c.type

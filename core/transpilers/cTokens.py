@@ -236,7 +236,7 @@ class DotAccess(DotAccess):
                     chain.append('->')
                     chain.append(repr(c))
             elif currentType.isModule:
-                chain[n-1] = ''
+                chain[-1] = ''
                 chain.append(repr(c))
             else:
                 chain.append('->')
