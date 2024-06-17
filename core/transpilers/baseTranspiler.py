@@ -207,10 +207,14 @@ class BaseTranspiler():
         tokenType = token
         native = False
         if isinstance(token, dict):
+            print(token)
             typeExpr = self.preprocess(token)
+            input(typeExpr)
             try:
                 tokenType = self.currentScope.get(repr(typeExpr)).type.type
+                input(tokenType)
             except KeyError:
+                input('native')
                 # token was not found, maybe it is a native type
                 typeExpr.namespace = ''
                 tokenType = repr(typeExpr)
@@ -238,6 +242,8 @@ class BaseTranspiler():
             token['elementType'], _ = self.processType(elementType)
         elif tokenType is not None and isinstance(tokenType, dict):
             token['type'], token['native'] = self.processType(tokenType)
+            input('here')
+        print(token)
         varType = Type(**token)
         if not varType.known:
             try:
@@ -607,9 +613,7 @@ class BaseTranspiler():
                         pass
                     else:
                         c.type = module.scope.get(c.index).type
-                        c.namespace = ''
                         continue
-                        #c.type = self.currentScope.get(c.index).type
             parsedChain.append(c)
 
             currentType = c.type
