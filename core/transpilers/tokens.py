@@ -27,10 +27,11 @@ class Null():
         return None
 
 class Module():
-    def __init__(self, expr, name, namespace, native=False, scope=None):
+    def __init__(self, expr, name, namespace, native=False, scope=None, filepath=''):
         self.expr = expr
         self.name = name
         self.namespace = namespace
+        self.filepath = filepath
         self.type = Type('module', name=name, native=native)
         self.native = native
         self.links = []

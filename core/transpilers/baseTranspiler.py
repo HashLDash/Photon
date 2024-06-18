@@ -823,8 +823,8 @@ class BaseTranspiler():
             symbols = '*'
         else:
             symbols = self.processTokens(token['symbols'])
-        if f"{name}.w" in os.listdir(folder) + os.listdir(self.standardLibs):
-            if f"{name}.w" in os.listdir(folder):
+        if f"{name}.w" in self.listdir(folder) + self.listdir(self.standardLibs):
+            if f"{name}.w" in self.listdir(folder):
                 # Local module import
                 moduleExpr.namespace = ''
                 filename = f'{name}.w'
@@ -863,15 +863,14 @@ class BaseTranspiler():
             else:
                 scope = self.importedModules[filename].scope
             namespace = name
-        elif f"{name}.{self.libExtension}" in os.listdir(self.standardLibs + f'/native/{self.lang}/'):
+        elif f"{name}.{self.libExtension}" in self.listdir(self.standardLibs + f'/native/{self.lang}/'):
             # Native Photon lib module import
             raise SyntaxError('Native Photon lib module import not implemented yet.')
-        elif f"{name}.{self.libExtension}" in os.listdir():
+        elif f"{name}.{self.libExtension}" in self.listdir():
             # Native Photon local module import
             raise SyntaxError('Native Photon local module import not implemented yet.')
         else:
             raise RuntimeError(f'Cannot import {name}.')
-            #raise SyntaxError('System library import not implemented yet.')
         module = Module(moduleExpr, name, namespace, native=native, scope=scope)
         if filename not in self.importedModules:
             self.importedModules[filename] = module
@@ -880,10 +879,16 @@ class BaseTranspiler():
         for i in module.links:
             self.links.add(i)
         return module
-
+    
+    def listdir(self, path):
+        try:
+            return os.listdir(path)
+        except FileNotFoundError:
+            return []
+        
     def processImport(self, token):
         #TODO: relative path and package imports
-        folder = None
+        folder = './'
         native = token['native']
         scope = CurrentScope()
 
@@ -891,23 +896,22 @@ class BaseTranspiler():
         moduleExpr.namespace = ''
         if token['expr']['args'][0]['token'] == 'dotAccess':
             names = [n['name'] for n in token['expr']['args'][0]['dotAccess']]
-            name = '/'.join(names)
+            folder = './' + '/'.join(names[:-1]) + '/'
             moduleExpr = Var(value=names[-1], namespace='')
-        else:
-            name = f'{moduleExpr}'
+        name = f'{moduleExpr}'
         moduleExpr.namespace = self.currentNamespace
         if native:
             # System library import
             filename = repr(moduleExpr)
             namespace = ''
-        elif f"{name}.w" in os.listdir(folder) + os.listdir(self.standardLibs):
-            if f"{name}.w" in os.listdir(folder):
+        elif f"{name}.w" in self.listdir(folder) + self.listdir(f'{self.standardLibs}/{folder}'):
+            if f"{name}.w" in self.listdir(folder):
                 # Local module import
                 moduleExpr.namespace = ''
-                filename = f'{name}.w'
+                filename = f'{folder}{name}.w'
                 moduleExpr.namespace = self.currentNamespace
             else:
-                filename = f'{self.standardLibs}/{name}.w'
+                filename = f'{self.standardLibs}/{folder}{name}.w'
                 # Photon module import
                 # Inject assets folder
                 #raise SyntaxError('Standard lib import not implemented yet.')
@@ -932,16 +936,18 @@ class BaseTranspiler():
             else:
                 scope = self.importedModules[filename].scope
             namespace = name
-        elif f"{name}.{self.libExtension}" in os.listdir(self.standardLibs + f'/native/{self.lang}/'):
+        elif f"{name}.{self.libExtension}" in self.listdir(self.standardLibs + f'/native/{self.lang}/'):
             # Native Photon lib module import
-            raise SyntaxError('Native Photon lib module import not implemented yet.')
-        elif f"{name}.{self.libExtension}" in os.listdir():
+            filename = self.standardLibs + f'/native/{self.lang}/{name}.{self.libExtension}'
+            namespace = ''
+            native = True
+            #raise SyntaxError('Native Photon lib module import not implemented yet.')
+        elif f"{name}.{self.libExtension}" in self.listdir():
             # Native Photon local module import
             raise SyntaxError('Native Photon local module import not implemented yet.')
         else:
             raise RuntimeError(f'Cannot import {name}.')
-            #raise SyntaxError('System library import not implemented yet.')
-        module = Module(moduleExpr, name, namespace, native=native, scope=scope)
+        module = Module(moduleExpr, name, namespace, native=native, scope=scope, filepath=filename)
         if filename not in self.importedModules:
             self.importedModules[filename] = module
         for i in module.imports:

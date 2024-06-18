@@ -41,12 +41,23 @@ class Null(Null):
         return 'NULL'
 
 class Module(Module):
-    def __init__(self, expr, name, namespace, native=False, scope=None):
+    def __init__(self, expr, name, namespace, native=False, scope=None, filepath=''):
         super().__init__(expr, name, namespace, native=native, scope=scope)
         if self.native:
             self.imports = [f'#include "{self.name}.h"']
-            if self.name not in ['time']:
-                self.links = [f'-l{self.name}']
+            self.links = []
+            try:
+                with open(filepath) as f:
+                    for line in f:
+                        if line.startswith('//PHOTON_FLAGS'):
+                            self.links.extend([flag.strip() for flag in line.replace('//PHOTON_FLAGS','').split(' ') if flag])
+                        elif line.startswith('//PHOTON_INCLUDES'):
+                            self.imports.extend([f'#include "{lib.strip()}"' for lib in line.replace('//PHOTON_INCLUDES','').split(' ') if lib])
+                        else:
+                            break
+            except FileNotFoundError:
+                if name not in ['time']:
+                    self.links.append(f'-l{name}')
 
     def __repr__(self):
         return f'//module {self.name}'

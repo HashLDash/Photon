@@ -1,5 +1,5 @@
-//PHOTON_FLAGS curl
-//PHOTON_INCLUDES asprintf
+//PHOTON_FLAGS -lcurl
+//PHOTON_INCLUDES asprintf.h
 #include <stdio.h>
 #include <curl/curl.h>
 #include "asprintf.h"
