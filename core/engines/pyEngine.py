@@ -1,4 +1,5 @@
 from transpilers.pyTranspiler import Transpiler
+from transpilers.pyTokens import Sequence, Print
 import os
 
 def debug(*args):
@@ -9,31 +10,25 @@ class Engine():
     def __init__(self, filename, **kwargs):
         self.transpiler = Transpiler(filename, **kwargs)
         self.globals = {}
+        self.importedLibs = set()
 
     def process(self, token):
         if token:
             self.transpiler.process(token)
-            source = list(self.transpiler.imports) + self.transpiler.outOfMain + self.transpiler.source
-            code = ''
-            indent = 0
-            for line in source:
-                if line:
-                    if line.startswith('#end'):
-                        indent -= 4
-                    code += ' '*indent+line+'\n'
-                    if self.transpiler.isBlock(line):
-                        indent += 4
+            for lib in self.transpiler.imports - self.importedLibs:
+                bytecode = compile(lib,'<string>','exec')
+                exec(bytecode, self.globals, self.globals)
+                self.importedLibs.add(lib)
             try:
                 if token['token'] in {'expr'}:
-                    if code[-2] == ';':
-                        code = code[:-2]
-                    bytecode = compile(f'print({code})','<string>','exec')
+                    code = repr(Print(args=[self.transpiler.sequence[-1]]))
+                    bytecode = compile(code,'<string>','exec')
                     exec(bytecode, self.globals, self.globals)
                 else:
+                    code = repr(self.transpiler.sequence[-1])
                     bytecode = compile(code,'<string>','exec')
                     exec(code, self.globals, self.globals)
             except Exception as e:
                 print(f'RuntimeError: {e}')
-            self.transpiler.source = []
-            self.transpiler.outOfMain = []
-            self.transpiler.imports = set()
+            #self.transpiler.sequence = Sequence()
+            #self.transpiler.imports = set()

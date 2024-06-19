@@ -880,7 +880,7 @@ class BaseTranspiler():
             self.links.add(i)
         return module
     
-    def listdir(self, path):
+    def listdir(self, path=''):
         try:
             return os.listdir(path)
         except FileNotFoundError:
