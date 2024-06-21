@@ -19,7 +19,7 @@ class Interpreter():
             from transpilers.pyTranspiler import Transpiler
         elif lang == 'dart':
             from transpilers.dartTranspiler import Transpiler
-        elif lang == 'js':
+        elif lang in ['js', 'javascript']:
             from transpilers.jsTranspiler import Transpiler
         elif lang == 'ts':
             from transpilers.tsTranspiler import Transpiler

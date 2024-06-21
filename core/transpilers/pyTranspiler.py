@@ -51,7 +51,7 @@ class Transpiler(BaseTranspiler):
             for imp in self.imports:
                 module = imp.split(' ')[-1].replace('.w', '').replace('"', '')
                 debug(f'Importing {module}')
-                if f'{module}.c' in os.listdir('Sources/py'):
+                if f'{module}.py' in os.listdir('Sources/py'):
                     with open(f'Sources/py/{module}.py', 'r') as m:
                         for line in m:
                             f.write(line)
