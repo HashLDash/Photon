@@ -145,6 +145,8 @@ class App():
     def run(Widget widget):
         for C:
             raylib.InitWindow(.width, .height, .title)
+        for Javascript:
+            raylib.InitWindow(.width, .height, .title)
         for Python:
             raylib.InitWindow(.width, .height, .title.encode())
         raylib.SetTargetFPS(.fps)

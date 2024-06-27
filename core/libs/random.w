@@ -14,6 +14,11 @@ for Python:
         float a = random.random()
         return a
 
+for Javascript:
+    def random():
+        float a = Math.random()
+        return a
+
 def randint(int begin, int end):
     int a = random()*(end-begin)+begin
     return a
