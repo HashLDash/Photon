@@ -232,7 +232,8 @@ class Array(Array):
         return value
 
 class KeyVal(KeyVal):
-    pass
+    def __repr__(self):
+        return f'{self.key}:{self.val}'
 
 class Map(Map):
     def __repr__(self):

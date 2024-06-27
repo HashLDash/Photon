@@ -293,9 +293,9 @@ class KeyVal(KeyVal):
 class Map(Map):
     def prepare(self):
         if self.type.known:
-            self.imports = [
-                f'#include "dict_{self.type.keyType.type}_{self.type.valType.type}.h"',
-                '#include "asprintf.h"']
+            self.imports = ['#include "asprintf.h"']
+            if not self.type.valType.isClass:
+                self.imports.append(f'#include "dict_{self.type.keyType.type}_{self.type.valType.type}.h"')
         else:
             self.imports = []
 
@@ -451,9 +451,13 @@ class Print(Print):
             if argType.type == 'map':
                 if getattr(arg, 'indexAccess', None) is not None:
                     argType = argType.valType
+                    if argType.isClass:
+                        argType = Type('str')
             elif argType.type == 'array':
                 if getattr(arg, 'indexAccess', None) is not None:
                     argType = argType.elementType
+                    if argType.isClass:
+                        argType = Type('str')
             elif argType.type == 'func':
                 argType = argType.returnType
                 argType.funcName = arg.value

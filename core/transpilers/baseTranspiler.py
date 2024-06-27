@@ -230,13 +230,17 @@ class BaseTranspiler():
         namespace = self.currentNamespace
         indexAccess = self.preprocess(token['indexAccess']) if 'indexAccess' in token else None
         elementType = token.get('elementType', None)
+        keyType = token.get('keyType', None)
+        valType = token.get('valType', None)
         tokenType = token.get('type', 'unknown')
         # type can be an expression. E.g. dotAccess
-        if elementType is not None:# and isinstance(elementType, dict):
-            #typeExpr = self.preprocess(elementType)
-            #token['elementType'] = self.currentScope.get(repr(typeExpr)).type.type
+        if elementType is not None:
             token['elementType'], _ = self.processType(elementType)
-        elif tokenType is not None and isinstance(tokenType, dict):
+        if keyType is not None:
+            token['keyType'], _ = self.processType(keyType)
+        if valType is not None:
+            token['valType'], _ = self.processType(valType)
+        if tokenType is not None and isinstance(tokenType, dict):
             token['type'], token['native'] = self.processType(tokenType)
         varType = Type(**token)
         if not varType.known:
@@ -246,35 +250,6 @@ class BaseTranspiler():
                 varType = varCorrect.type
                 namespace = varCorrect.namespace
             except: pass
-
-        #TODO: do the same for map
-        #if varType.type == 'array':
-        #    print(0, varType)
-        #    if varType.elementType.isClass:
-        #        try:
-        #            if not isinstance(elementType, dict):
-        #                # elementType was not a token and not already processed, proceed
-        #                typeName = Var(varType.elementType.type, namespace=self.moduleName)
-        #                # if this doesn't fail it's because the type is a class
-        #                c = self.currentScope.get(typeName.index)
-        #                varType = Type('array', elementType=c.index)
-        #                self.listTypes.add(c.index)
-        #            else:
-        #                self.listTypes.add(varType.elementType.type)
-        #        except KeyError as e:
-        #            print(1, 'here')
-        #            varType.native = True
-
-        # correct namespace if this token was imported
-        #var = Var(value=token['name'], namespace=self.currentNamespace)
-        #try:
-        #    var = self.currentScope.get(var.index)
-        #    namespace = var.namespace
-        #    input('here')
-        #    varType = var.type
-        #except KeyError:
-        #    # Not already processed, continue
-        #    pass
 
         var = Var(
             value=token['name'],
@@ -538,7 +513,13 @@ class BaseTranspiler():
     def processDotAccess(self, token):
         initialType = self.preprocess(token['dotAccess'][0]).type
         chain = self.processTokens(token['dotAccess'])
-        chain[0].type = initialType
+        if getattr(chain[0], 'indexAccess', None) is not None:
+            if initialType.type == 'array':
+                initialType = initialType.elementType
+            elif initialType.type == 'map':
+                initialType = initialType.valType
+        else:
+            chain[0].type = initialType
         currentType = initialType
         parsedChain = [chain[0]]
         for n, c in enumerate(chain[1:]):

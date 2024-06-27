@@ -41,9 +41,10 @@ class Transpiler(BaseTranspiler):
         formatCodes = {'int':'%ld', 'str':'\\"%s\\"', 'float':'%lf'}
         with open(f'{self.standardLibs}/native/c/dict_{keyType}.template') as template:
             dictLib = template.read()
-        valNativeType = self.nativeTypes[valType]
         if valType in self.classes:
-            valNativeType += "*"
+            valNativeType = f"{valType}*"
+        else:
+            valNativeType = self.nativeTypes[valType]
         #TODO: Call instance repr if it exists instead of the placeholder
         dictLib = dictLib.replace('!@valType@!', valType).replace('!@valNativeType@!', valNativeType).replace('!@formatCode@!', formatCodes[valType] if valType in formatCodes else f'<class {valType}>')
         with open(f'Sources/c/dict_{keyType}_{valType}.h', 'w') as lib:
@@ -80,15 +81,20 @@ class Transpiler(BaseTranspiler):
         with open(f'Sources/c/main.h', 'w') as f:
             indent = 0
             f.write('#ifndef __main_h\n#define __main_h\n')
-            if self.listTypes:
+            if self.listTypes or self.dictTypes:
                 self.imports.add('#include "asprintf.h"')
             listTypeHints = []
+            dictTypeHints = []
             for listType in self.listTypes:
                 if listType in self.classes:
                     listTypeHints.append(f'typedef struct list_{listType} list_{listType};')
                     self.classes[listType].postCode=f'\n#include "list_{listType}.h"\n'
+            for keyType, valType in self.dictTypes:
+                if valType in self.classes:
+                    dictTypeHints.append(f'typedef struct dict_{keyType}_{valType} dict_{keyType}_{valType};')
+                    self.classes[valType].postCode+=f'\n#include "dict_{keyType}_{valType}.h"\n'
             #TODO: do the same type hint for dicts
-            for line in listTypeHints:
+            for line in listTypeHints + dictTypeHints:
                 #if '}' in line:
                 #    indent -= 4
                 f.write(' '*indent + line+'\n')

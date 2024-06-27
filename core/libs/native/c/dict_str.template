@@ -20,8 +20,8 @@ typedef struct dict_str_!@valType@! {
 
 int str_prehash(char* value) {
     // P and M
-    int p = 31;
-    int m = 1e9 + 9;
+    const int p = 31;
+    const int m = 1e9 + 9;
     int power_of_p = 1;
     int hash_val = 0;
  
@@ -29,7 +29,8 @@ int str_prehash(char* value) {
     // by iterating over the elements of string
     int length = strlen(value);
     for (int i = 0; i < length; i++) {
-        hash_val = (hash_val + (value[i] - 'a' + 1) * power_of_p) % m;
+        // if hash_val overflows, abs turns it into positive again
+        hash_val = abs((hash_val + (value[i] - 'a' + 1) * power_of_p) % m);
         power_of_p = (power_of_p * p) % m;
     }
    
@@ -161,14 +162,28 @@ void dict_str_!@valType@!_del(dict_str_!@valType@!* self, char* key) {
     self->len--;
 }
 
+char* dict_str_!@valType@!_str(dict_str_!@valType@!* self) {
+    int dictLen = self->len-1;
+    char* out = "{";
+    for (int i=0; i<dictLen; i++) {
+        asprintf(&out, "%s\"%s\": !@formatCode@!, ", out, self->entries[i].key, self->entries[i].val);
+    }
+    if (dictLen > -1) {
+        asprintf(&out, "%s\"%s\": !@formatCode@!}", out, self->entries[dictLen].key, self->entries[dictLen].val);
+    } else {
+        asprintf(&out, "%s}", out);
+    }
+    return out;
+}
+
 void dict_str_!@valType@!_repr(dict_str_!@valType@!* self) {
     int dictLen = self->len-1;
     printf("{\n");
     for (int i=0; i<dictLen; i++) {
-        printf("    \"%s\": !@formatCode@!,\n", self->entries[i].key, self->entries[i].val);
+        printf("    %s: !@formatCode@!,\n", self->entries[i].key, self->entries[i].val);
     }
     if (dictLen > -1) {
-        printf("    \"%s\": !@formatCode@!\n", self->entries[dictLen].key, self->entries[dictLen].val);
+        printf("    %s: !@formatCode@!\n", self->entries[dictLen].key, self->entries[dictLen].val);
     }
     printf("}\n");
 }
