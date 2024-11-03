@@ -706,16 +706,22 @@ def imports(i, t):
         native = False
     t[i]['native'] = native
     t[i]['token'] = 'import'
-    t[i]['expr'] = t[i+1]
+    t[i]['module'] = t[i+1]
     del t[i+1] # expr
     return t
 
 def fromImport(i, t):
     ''' Return a fromImport token if valid '''
+    if t[i]['token'] == 'nativeStatement':
+        native = True
+        del t[i]
+    else:
+        native = False
     t[i] = {
         'token':'fromImport',
         'module':t[i+1],
-        'symbols':[]
+        'symbols':[],
+        'native': native,
     }
     if t[i+3]['token'] == 'args':
         t[i]['symbols'] = t[i+3]['args']

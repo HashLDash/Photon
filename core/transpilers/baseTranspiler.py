@@ -791,27 +791,44 @@ class BaseTranspiler():
         return Comment()
 
     def processFromImport(self, token):
+        return self.processImport(token, fromImport=True)
+
+    def listdir(self, path=''):
+        try:
+            return os.listdir(path)
+        except FileNotFoundError:
+            return []
+
+    def processImport(self, token, fromImport=False):
         #TODO: relative path and package imports
         #TODO: this method and processImport need to be refactored
-        folder = None
-        native = False
+        folder = './'
+        native = token['native']
         scope = CurrentScope()
         moduleExpr = self.preprocess(token['module'])
         moduleExpr.namespace = ''
+        if token['module']['args'][0]['token'] == 'dotAccess':
+            names = [n['name'] for n in token['module']['args'][0]['dotAccess']]
+            folder = './' + '/'.join(names[:-1]) + '/'
+            moduleExpr = Var(value=names[-1], namespace='')
         name = f'{moduleExpr}'
         moduleExpr.namespace = self.currentNamespace
         if len(token['symbols']) == 1 and token['symbols'][0].get('operator') == '*':
             symbols = '*'
         else:
             symbols = self.processTokens(token['symbols'])
-        if f"{name}.w" in self.listdir(folder) + self.listdir(self.standardLibs):
+        if native:
+            # System library import
+            filename = repr(moduleExpr)
+            namespace = ''
+        elif f"{name}.w" in self.listdir(folder) + self.listdir(f'{self.standardLibs}/{folder}'):
             if f"{name}.w" in self.listdir(folder):
                 # Local module import
                 moduleExpr.namespace = ''
-                filename = f'{name}.w'
+                filename = f'{folder}{name}.w'
                 moduleExpr.namespace = self.currentNamespace
             else:
-                filename = f'{self.standardLibs}/{name}.w'
+                filename = f'{self.standardLibs}/{folder}{name}.w'
                 # Photon module import
                 # Inject assets folder
                 #raise SyntaxError('Standard lib import not implemented yet.')
@@ -852,82 +869,6 @@ class BaseTranspiler():
             raise SyntaxError('Native Photon local module import not implemented yet.')
         else:
             raise RuntimeError(f'Cannot import {name}.')
-        module = Module(moduleExpr, name, namespace, native=native, scope=scope)
-        if filename not in self.importedModules:
-            self.importedModules[filename] = module
-        for i in module.imports:
-            self.imports.add(i)
-        for i in module.links:
-            self.links.add(i)
-        return module
-    
-    def listdir(self, path=''):
-        try:
-            return os.listdir(path)
-        except FileNotFoundError:
-            return []
-        
-    def processImport(self, token):
-        #TODO: relative path and package imports
-        folder = './'
-        native = token['native']
-        scope = CurrentScope()
-
-        moduleExpr = self.preprocess(token['expr'])
-        moduleExpr.namespace = ''
-        if token['expr']['args'][0]['token'] == 'dotAccess':
-            names = [n['name'] for n in token['expr']['args'][0]['dotAccess']]
-            folder = './' + '/'.join(names[:-1]) + '/'
-            moduleExpr = Var(value=names[-1], namespace='')
-        name = f'{moduleExpr}'
-        moduleExpr.namespace = self.currentNamespace
-        if native:
-            # System library import
-            filename = repr(moduleExpr)
-            namespace = ''
-        elif f"{name}.w" in self.listdir(folder) + self.listdir(f'{self.standardLibs}/{folder}'):
-            if f"{name}.w" in self.listdir(folder):
-                # Local module import
-                moduleExpr.namespace = ''
-                filename = f'{folder}{name}.w'
-                moduleExpr.namespace = self.currentNamespace
-            else:
-                filename = f'{self.standardLibs}/{folder}{name}.w'
-                # Photon module import
-                # Inject assets folder
-                #raise SyntaxError('Standard lib import not implemented yet.')
-            if filename not in self.importedModules:
-                interpreter = Interpreter(
-                        filename=filename,
-                        lang=self.lang,
-                        target=self.target,
-                        module=True,
-                        standardLibs=self.standardLibs,
-                        transpileOnly=True,
-                        debug=self.debug)
-                interpreter.engine.importedModules = deepcopy(self.importedModules)
-                interpreter.run()
-                self.classes.update(interpreter.engine.classes)
-                #self.currentScope.update(interpreter.engine.currentScope)
-                scope = interpreter.engine.currentScope
-                self.imports = self.imports.union(interpreter.engine.imports)
-                self.links = self.links.union(interpreter.engine.links)
-                self.sequence = self.sequence + interpreter.engine.sequence
-                self.importedModules = interpreter.engine.importedModules
-            else:
-                scope = self.importedModules[filename].scope
-            namespace = name
-        elif f"{name}.{self.libExtension}" in self.listdir(self.standardLibs + f'/native/{self.lang}/'):
-            # Native Photon lib module import
-            filename = self.standardLibs + f'/native/{self.lang}/{name}.{self.libExtension}'
-            namespace = ''
-            native = True
-            #raise SyntaxError('Native Photon lib module import not implemented yet.')
-        elif f"{name}.{self.libExtension}" in self.listdir():
-            # Native Photon local module import
-            raise SyntaxError('Native Photon local module import not implemented yet.')
-        else:
-            raise RuntimeError(f'Cannot import {name}.')
         module = Module(moduleExpr, name, namespace, native=native, scope=scope, filepath=filename)
         if filename not in self.importedModules:
             self.importedModules[filename] = module
@@ -935,6 +876,7 @@ class BaseTranspiler():
             self.imports.add(i)
         for i in module.links:
             self.links.add(i)
+        print(self.currentScope)
         return module
 
     def processTokens(self, tokens, addToScope=False):

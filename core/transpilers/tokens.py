@@ -349,7 +349,7 @@ class DotAccess():
         self.processed = False
 
     def prepare(self):
-        pass
+        self.chain[0].namespace = self.namespace
 
     def format(self):
         call = repr(self.type).replace("*","")#.replace("struct ", '')
