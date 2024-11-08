@@ -800,8 +800,6 @@ class BaseTranspiler():
             return []
 
     def processImport(self, token, fromImport=False):
-        #TODO: relative path and package imports
-        #TODO: this method and processImport need to be refactored
         folder = './'
         native = token['native']
         scope = CurrentScope()
@@ -813,10 +811,12 @@ class BaseTranspiler():
             moduleExpr = Var(value=names[-1], namespace='')
         name = f'{moduleExpr}'
         moduleExpr.namespace = self.currentNamespace
-        if len(token['symbols']) == 1 and token['symbols'][0].get('operator') == '*':
-            symbols = '*'
-        else:
-            symbols = self.processTokens(token['symbols'])
+        symbols = token.get('symbols', [])
+        if symbols:
+            if len(token['symbols']) == 1 and token['symbols'][0].get('operator') == '*':
+                symbols = '*'
+            else:
+                symbols = self.processTokens(token['symbols'])
         if native:
             # System library import
             filename = repr(moduleExpr)
@@ -833,7 +833,6 @@ class BaseTranspiler():
                 # Inject assets folder
                 #raise SyntaxError('Standard lib import not implemented yet.')
             if filename not in self.importedModules:
-                self.importedModules[filename] = repr(moduleExpr)
                 interpreter = Interpreter(
                         filename=filename,
                         lang=self.lang,
