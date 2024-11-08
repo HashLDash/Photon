@@ -143,6 +143,8 @@ class App():
     def new(.background=wuiGraphics.Color(r=255, g=255, b=255), .fps=60, .width=800, .height=600, .title="Photon"):
 
     def run(Widget widget):
+        widget.width = .width
+        widget.height = .height
         for C:
             raylib.InitWindow(.width, .height, .title)
         for Javascript:
