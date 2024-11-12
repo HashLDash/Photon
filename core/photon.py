@@ -1,127 +1,106 @@
 #!/usr/bin/env python3
 ''' Photon command-line interface. '''
 
-import os
-import sys
+import os, sys
+from pattern_cli import cli, flags, kwargs, cli_help
 
-def photonConfigLang(defineLang = None):
+PHOTON_INSTALL_PATH = getattr(sys, '_MEIPASS', os.path.dirname(os.path.realpath(__file__)))
+sys.path.insert(0, PHOTON_INSTALL_PATH)
+
+__version__ = '0.0.10'
+
+allowed_kwargs = {
+    'lang': ['c', 'd', 'js', 'ts', 'dart', 'haxe', 'python'],
+    'platform': ['linux', 'windows', 'mac', 'android', 'web'],
+    'framework': ['raylib', 'html5', 'flutter', 'opengl', 'canvas'],
+}
+
+def get_home():
     import json
     import pathlib
-    home = pathlib.Path.home()
+    return pathlib.Path.home()
+
+def get_conf():
+    import json
+    try:
+        with open(f'{get_home()}/.photon/photon.conf') as c:
+            return json.load(c)
+    except FileNotFoundError:
+        createConfFolder()
+        return {'lang':'c'}
+
+def set_conf(**kwargs):
+    import json
+    data = get_conf()
+    for key, val in kwargs.items():
+        if key in allowed_kwargs:
+            if val in allowed_kwargs[key]:
+                data[key] = val
+                if key == 'lang':
+                    from dependencies import haveDependencies, resolveDependencies
+                    if not haveDependencies(val, sys.platform):
+                        resolveDependencies(val, sys.platform)
+                        print('Dependencies successfuly installed.')
+            else:
+                print(f'Value {val} is not allowed. You can try these: {", ".join(allowed_kwargs[key])}')
+        else:
+            print(f'Value {key} or {val} is not allowed. You can try these:')
+            print(f'{"\n  ".join([""] + allowed_kwargs)}')
+    with open(f'{get_home()}/.photon/photon.conf', 'w') as c:
+        json.dump(data, c)
+
+def getParameters():
+    parameters = get_conf()
+    parameters.update(kwargs)
+    return parameters
+
+def createConfFolder():
+    home = get_home()
     if not '.photon' in os.listdir(home):
         os.mkdir(f'{home}/.photon')
-    if 'photon.conf' in os.listdir(f'{home}/.photon'):
-        try:
-            with open(f'{home}/.photon/photon.conf', 'r') as conf:
-                defaultConfig = json.load(conf)
-        except json.decoder.JSONDecodeError:
-            print('Seems like your photon.conf is corrupted. Please fix it and try again.')
-            exit(-1)
-    else:
-        defaultConfig = {}
-        if defineLang != '' and defineLang != None:
-            defineLang = 'c'
-    if not os.path.isfile(f'{home}/.photon/photon.conf'):
-        defineLang = 'c'
-    if defineLang != '' and defineLang != None:
-        defaultConfig['lang'] = defineLang
-        with open(f'{home}/.photon/photon.conf', 'w') as conf:
-            json.dump(defaultConfig, conf)
-    return defaultConfig['lang']
 
-if __name__ == "__main__":
-    langs = ['c', 'd', 'js', 'ts', 'dart', 'haxe', 'python']
-    platforms = ['web', 'linux', 'flutter-android']
-    PHOTON_INSTALL_PATH = getattr(sys, '_MEIPASS', os.path.dirname(os.path.realpath(__file__)))
-    sys.path.insert(0, PHOTON_INSTALL_PATH)
+@cli('version')
+def version():
+    'Show photon version'
+    print(f'Photon {__version__}')        
+
+@cli('update')
+def update():
+    'Update photon'
+    os.system(f'git -C {PHOTON_INSTALL_PATH} pull')
+
+@cli('set')
+def set_config(**kwargs):
+    'Set a default parameter in the photon config'
+    set_conf(**kwargs)
+
+@cli('<str:filename>')
+def run(filename, **kwargs):
+    'Run a script'
     from interpreter import Interpreter
-    from builder import Builder
-    from dependencies import haveDependencies, resolveDependencies
-    __version__ = '0.0.10'
-    try:
-        if '-d' in sys.argv:
-            sys.argv.remove('-d')
-            DEBUG = True
-        elif '--debug' in sys.argv:
-            sys.argv.remove('--debug')
-            DEBUG = True
+    DEBUG = '-d' in flags or '--debug' in flags
+    Interpreter(
+        filename=filename,
+        standardLibs=os.path.join(
+            PHOTON_INSTALL_PATH, 'libs'),
+        debug=DEBUG,
+        **getParameters()).run()
+
+@cli('')
+def interpreter():
+    'Open the interpreter'
+    if flags:
+        if '-v' in flags or '--version' in flags:
+            version()
+        elif '-h' in flags or '--help' in flags:
+            cli_help()
         else:
-            DEBUG = False
-        first = sys.argv[1]
-    except IndexError:
-        print(f'Photon - {__version__} - pyEngine')
-        Interpreter(standardLibs = os.path.join(PHOTON_INSTALL_PATH, 'libs'), debug = DEBUG).run()
-        sys.exit()
-    if first == '--version' or first == '-v' :
-        print(f'Photon Version {__version__}')
-    elif first == '--build' or first == '-b':
-        try:
-            filename = "main.w"
-            if "shared" != sys.argv[-1] and (sys.argv[-1][-2] + sys.argv[-1][-1]) == ".w":
-                filename = sys.argv[-1]
-            Builder(platform = sys.argv[2], filename = filename, standardLibs = os.path.join(PHOTON_INSTALL_PATH, 'libs'), debug = DEBUG)
-        except IndexError:
-            print(f'ERROR: Platform [{(", ".join(platforms))}] not informed.')
-    elif first == '--lang' or first == '-l':
-        command = ' '.join(sys.argv[2:])    
-        command = command.lower()
-        if command in langs:
-            command = photonConfigLang(command)
-            print(f'Setting default lang to: {command}')
-            if not haveDependencies(command, sys.platform):
-                resolveDependencies(command, sys.platform)
-                print('Dependencies successfuly installed.')
-        elif command == '':
-            command = photonConfigLang()
-            index = langs.index(command)
-            langs[index] = f'({langs[index]})'
-            print(f'List of languages: {(", ".join(langs))}')
-            print('-' * 49)
-            print(f'The current language is: {command}')
-        else:
-            print(f'ERROR: It was not possible to select the language ({command}).')
-    elif first == '--help' or first == '-h' or first == '-?':
-        print('Available commands:\r\n')
-        print('# Runs the script using the default lang')
-        print('>> photon [file.w]\r\n')
-        print('# Builds and runs the project for the target platform')
-        print(f'>> photon --build [{(", ".join(platforms))}]')
-        print(f'>> photon -b [{(", ".join(platforms))}]\r\n')
-        print('# Lists available languages')
-        print('>> photon --lang')
-        print('>> photon -l\r\n')
-        print('# Sets the default language')
-        print(f'>> photon --lang [{(", ".join(langs))}]')
-        print(f'>> photon -l [{(", ".join(langs))}]\r\n')
-        print('# Shows the the current version')
-        print('>> photon --version')
-        print('>> photon -v\r\n')
-        print('# Updates the version of Photon (Git is required)')
-        print('>> photon --update')
-        print('>> photon -u')
-    elif first == '--update' or first == '-u':
-        os.system(f'git -C {PHOTON_INSTALL_PATH} pull')
-    elif first == '--android-logcat' or first == '-al':
-        try:
-            packageName = sys.argv[2]
-            os.system(f"adb shell 'logcat --pid=$(pidof -s {packageName})'")
-        except IndexError:
-            print('Please provide the package name. Example:')
-            print('>> photon --android-logcat com.photon.example')
-            print('>> photon -al com.photon.example')
-    elif first == '--android-view' or first == '-av':
-        os.system('adb exec-out screenrecord --output-format=h264 - | ffplay -framerate 60 -probesize 32 -sync video  -')
+            print(f'Flag {flags[0]} not valid here')
     else:
-        lang = photonConfigLang()
-        """ Performs the transpilation process for the language provided;
-            without changing the language defined in the photon.conf file
-        """
-        otherParams = sys.argv[2:]
-        if len(otherParams) > 1 and \
-            (otherParams[0] == '-l' or otherParams[0] == '--lang') and \
-            (otherParams[1].lower() in langs):
-            lang = otherParams[1].lower()
-            if not haveDependencies(lang, sys.platform):
-                resolveDependencies(lang, sys.platform)
-                print('Dependencies successfuly installed.')
-        Interpreter(filename = first, lang = lang, standardLibs = os.path.join(PHOTON_INSTALL_PATH, 'libs'), debug = DEBUG).run()
+        from interpreter import Interpreter
+        DEBUG = '-d' in flags or '--debug' in flags
+        print(f'Photon - {__version__} - pyEngine')
+        Interpreter(
+            standardLibs=os.path.join(
+                PHOTON_INSTALL_PATH, 'libs'),
+            debug=DEBUG).run()
