@@ -625,7 +625,7 @@ def forTarget(i, t):
         # not valid for target
         raise SyntaxError("The token {t[i+1]['args'][0]['token']} is not a valid target token.")
     t[i]['token'] = 'forTarget'
-    t[i]['target'] = t[i+1]['args'][0]['name']
+    t[i]['target'] = t[i+1]
     del t[i+1] # target
     del t[i+1] # beginBlock
     return t

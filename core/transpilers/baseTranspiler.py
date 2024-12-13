@@ -78,10 +78,10 @@ class CurrentScope():
             return Type('unknown')
 
 class BaseTranspiler():
-    def __init__(self, filename, target='web', module=False, standardLibs='', debug=False):
+    def __init__(self, filename, platform='web', framework='', module=False, standardLibs='', debug=False):
         self.debug = debug
         self.standardLibs = standardLibs
-        self.target = target
+        self.platform = platform
         self.libExtension = 'photonExt'
         self.filename = filename.split('/')[-1].replace('.w','.photon')
         self.moduleName = self.filename.replace('.photon','')
@@ -459,8 +459,25 @@ class BaseTranspiler():
         return forToken
 
     def processForTarget(self, token):
-        target = token['target'].lower()
-        if target in [self.lang, self.target]:
+        targets = []
+        for t in token['target']['args']:
+            targets.append(t['name'].lower() in [self.lang, self.platform])
+        ops = token['target']['ops'].copy()
+        for op in ['and', 'or']:
+            while op in ops:
+                index = ops.index(op)
+                arg1 = targets[index]
+                arg2 = targets[index+1]
+                if op == 'and':
+                    targets[index] = arg1 and arg2
+                elif op == 'or':
+                    targets[index] = arg1 or arg2
+                else:
+                    raise RuntimeError(f'Operator {op} not allowed in forTarget')
+                del ops[index]
+                del targets[index+1]
+            
+        if targets[0]:
             block = self.processTokens(token['block'], addToScope=True)
         else:
             block = []
@@ -836,7 +853,8 @@ class BaseTranspiler():
                 interpreter = Interpreter(
                         filename=filename,
                         lang=self.lang,
-                        target=self.target,
+                        platform=self.platform,
+                        framework=self.framework,
                         module=True,
                         standardLibs=self.standardLibs,
                         transpileOnly=True,

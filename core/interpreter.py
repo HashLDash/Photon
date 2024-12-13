@@ -11,7 +11,7 @@ from photonParser import debug as debugFunc
 import sys
 
 class Interpreter():
-    def __init__(self, filename='', lang='c', target=sys.platform, module=False, standardLibs='', debug=False, transpileOnly=False):
+    def __init__(self, filename='', lang='c', platform=sys.platform, framework='', module=False, standardLibs='', debug=False, transpileOnly=False):
         self.debug = debug
         if lang == 'c':
             from transpilers.cTranspiler import Transpiler
@@ -32,7 +32,7 @@ class Interpreter():
             sys.exit()
         self.filename = filename
         if filename:
-            self.engine = Transpiler(filename=filename, target=target, module=module, standardLibs=standardLibs, debug=debug)
+            self.engine = Transpiler(filename=filename, platform=platform, framework=framework, module=module, standardLibs=standardLibs, debug=debug)
             self.input = self.file
             try:
                 # Read utf8 but write as the default on the OS
@@ -55,7 +55,7 @@ class Interpreter():
                     # Run without history and arrow key functionality
                     pass
             from engines.pyEngine import Engine
-            self.engine = Engine(filename=filename,target=target, module=module, standardLibs=standardLibs)
+            self.engine = Engine(filename=filename, platform=platform, framework=framework, module=module, standardLibs=standardLibs)
             self.input = self.console
         self.end = False
         self.processing = True

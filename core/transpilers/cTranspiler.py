@@ -140,7 +140,7 @@ class Transpiler(BaseTranspiler):
             print('Compilation error. Check errors above.')
             exit()
         else:
-            if self.target in {'linux', 'darwin'}:
+            if self.platform in {'linux', 'darwin'}:
                 # don't call on Sources/c folder because of file paths
                 call('./Sources/c/main')
                 #call('./main', cwd='Sources/c')
