@@ -82,6 +82,7 @@ class BaseTranspiler():
         self.debug = debug
         self.standardLibs = standardLibs
         self.platform = platform
+        self.framework = framework
         self.libExtension = 'photonExt'
         self.filename = filename.split('/')[-1].replace('.w','.photon')
         self.moduleName = self.filename.replace('.photon','')
