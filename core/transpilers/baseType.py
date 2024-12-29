@@ -54,6 +54,13 @@ class BaseType():
             return False
     
     @property
+    def isPackage(self):
+        if self.type == 'package' and self.name is not None:
+            return True
+        else:
+            return False
+
+    @property
     def isModule(self):
         if self.type == 'module' and self.name is not None:
             return True
@@ -64,7 +71,7 @@ class BaseType():
     def isClass(self):
         if self.known and self.type in self.nativeTypes:
             return False
-        elif self.known and not self.native and not self.type in self.nativeTypes and self.type not in ['array', 'map', 'module'] and not 'func' in self.type.split(' '):
+        elif self.known and not self.native and not self.type in self.nativeTypes and self.type not in ['array', 'map', 'module','package'] and not 'func' in self.type.split(' '):
             return True
         else:
             return False

@@ -246,11 +246,14 @@ class DotAccess(DotAccess):
                     chain = [instanceName]
                     chain.append('->')
                     chain.append(repr(c))
+            elif currentType.isPackage:
+                del chain[-1]
             elif currentType.isModule:
-                chain[-1] = ''
+                del chain[-1]
                 chain.append(repr(c))
             else:
-                chain.append('->')
+                if len(chain):
+                    chain.append('->')
                 chain.append(repr(c))
             currentType = c.type
         if self.mode == 'method':

@@ -84,7 +84,7 @@ class BaseTranspiler():
         self.target = target
         self.libExtension = 'photonExt'
         self.filename = filename.split('/')[-1].replace('.w','.photon')
-        self.moduleName = self.filename.replace('.photon','')
+        self.moduleName = module if module else self.filename.replace('.photon','')
         self.module = module
 
         self.instructions = {
@@ -249,7 +249,10 @@ class BaseTranspiler():
                 varCorrect = self.currentScope.get(varName.index)
                 varType = varCorrect.type
                 namespace = varCorrect.namespace
-            except: pass
+            except Exception as e: 
+                print(f'didnt find {e} in scope')
+                print(self.currentScope)
+                pass
 
         var = Var(
             value=token['name'],
@@ -520,6 +523,7 @@ class BaseTranspiler():
                 initialType = initialType.valType
         else:
             chain[0].type = initialType
+
         currentType = initialType
         parsedChain = [chain[0]]
         for n, c in enumerate(chain[1:]):
@@ -556,11 +560,14 @@ class BaseTranspiler():
             elif currentType.type == 'file': #TODO: Make this part of the token class
                 if isinstance(c, Call) and f'{c.name}' == 'read':
                     c.type = Type('str')
+            elif currentType.type == 'package':
+                package = self.currentScope.get(parsedChain[-1].index)
+                c = package.get([c.index])
             elif currentType.type == 'module':
                 moduleIndex = Var(currentType.name, namespace=self.moduleName).index
                 module = self.currentScope.get(moduleIndex)
                 if isinstance(c, Call):
-                    c.name.namespace = module.namespace
+                    c.name.namespace = self.moduleName + '__' + module.namespace
                     if module.native:
                         c.type = Type('unknown', native=True)
                         c.name.namespace = ''
@@ -580,7 +587,7 @@ class BaseTranspiler():
                             c.signature = signature
                         c.type = cOriginal.type
                 elif isinstance(c, Var):
-                    c.namespace = module.namespace
+                    c.namespace = self.moduleName + '__' + module.namespace
                     if module.native:
                         c.type = Type('unknown', native=True)
                         c.namespace = ''
@@ -588,7 +595,6 @@ class BaseTranspiler():
                         pass
                     else:
                         c.type = module.scope.get(c.index).type
-                        continue
             parsedChain.append(c)
 
             currentType = c.type
@@ -805,11 +811,16 @@ class BaseTranspiler():
         scope = CurrentScope()
         moduleExpr = self.preprocess(token['module'])
         moduleExpr.namespace = ''
+        isPackage = False
         if token['module']['args'][0]['token'] == 'dotAccess':
+            isPackage = True
             names = [n['name'] for n in token['module']['args'][0]['dotAccess']]
             folder = './' + '/'.join(names[:-1]) + '/'
             moduleExpr = Var(value=names[-1], namespace='')
-        name = f'{moduleExpr}'
+            package = Package(names, namespace=self.currentNamespace)
+            self.currentScope.add(package)
+        else:
+            names = [f'{moduleExpr}']
         moduleExpr.namespace = self.currentNamespace
         symbols = token.get('symbols', [])
         if symbols:
@@ -821,14 +832,14 @@ class BaseTranspiler():
             # System library import
             filename = repr(moduleExpr)
             namespace = ''
-        elif f"{name}.w" in self.listdir(folder) + self.listdir(f'{self.standardLibs}/{folder}'):
-            if f"{name}.w" in self.listdir(folder):
+        elif f"{names[-1]}.w" in self.listdir(folder) + self.listdir(f'{self.standardLibs}/{folder}'):
+            if f"{names[-1]}.w" in self.listdir(folder):
                 # Local module import
                 moduleExpr.namespace = ''
-                filename = f'{folder}{name}.w'
+                filename = f'{folder}{names[-1]}.w'
                 moduleExpr.namespace = self.currentNamespace
             else:
-                filename = f'{self.standardLibs}/{folder}{name}.w'
+                filename = f'{self.standardLibs}/{folder}{names[-1]}.w'
                 # Photon module import
                 # Inject assets folder
                 #raise SyntaxError('Standard lib import not implemented yet.')
@@ -837,12 +848,14 @@ class BaseTranspiler():
                         filename=filename,
                         lang=self.lang,
                         target=self.target,
-                        module=True,
+                        module=self.currentNamespace + '__' + '__'.join(names),
                         standardLibs=self.standardLibs,
                         transpileOnly=True,
                         debug=self.debug)
                 interpreter.engine.importedModules = deepcopy(self.importedModules)
+                print('Importing module')
                 interpreter.run()
+                print('Done')
                 self.classes.update(interpreter.engine.classes)
                 #self.currentScope.update(interpreter.engine.currentScope)
                 scope = interpreter.engine.currentScope
@@ -851,31 +864,39 @@ class BaseTranspiler():
                 self.sequence = self.sequence + interpreter.engine.sequence
                 self.importedModules = interpreter.engine.importedModules
                 if symbols == '*':
-                    symbols = interpreter.engine.currentScope.values(namespace=name)
+                    symbols = interpreter.engine.currentScope.values(namespace='_'.join(names))
                 for symbol in symbols:
-                    symbol.namespace = name
+                    symbol.namespace = self.moduleName + '__' + '__'.join(names)
                     t = scope.get(symbol.index)
                     symbol.namespace = self.currentNamespace
                     self.currentScope.addAlias(symbol.index, t)
             else:
                 scope = self.importedModules[filename].scope
-            namespace = name
-        elif f"{name}.{self.libExtension}" in self.listdir(self.standardLibs + f'/native/{self.lang}/'):
+            namespace = '__'.join(names)
+        elif f"{names[-1]}.{self.libExtension}" in self.listdir(self.standardLibs + f'/native/{self.lang}/'):
             # Native Photon lib module import
             raise SyntaxError('Native Photon lib module import not implemented yet.')
-        elif f"{name}.{self.libExtension}" in self.listdir():
+        elif f"{names[-1]}.{self.libExtension}" in self.listdir():
             # Native Photon local module import
             raise SyntaxError('Native Photon local module import not implemented yet.')
         else:
-            raise RuntimeError(f'Cannot import {name}.')
-        module = Module(moduleExpr, name, namespace, native=native, scope=scope, filepath=filename)
+            raise RuntimeError(f'Cannot import {names[-1]}.')
+        module = Module(
+            Var('__'.join(names), namespace=self.currentNamespace),
+            '__'.join(names),
+            namespace,
+            native=native,
+            scope=scope,
+            filepath=filename
+        )
         if filename not in self.importedModules:
             self.importedModules[filename] = module
+            if isPackage:
+                package.addModule(names, module)
         for i in module.imports:
             self.imports.add(i)
         for i in module.links:
             self.links.add(i)
-        print(self.currentScope)
         return module
 
     def processTokens(self, tokens, addToScope=False):
@@ -884,6 +905,7 @@ class BaseTranspiler():
             for t in tokens:
                 processedToken = self.preprocess(t)
                 self.currentScope.add(processedToken)
+                print(self.currentScope)
                 processedTokens.append(processedToken)
             return processedTokens
         return [self.preprocess(t) for t in tokens]

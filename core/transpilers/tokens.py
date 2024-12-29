@@ -26,6 +26,42 @@ class Null():
     def index(self):
         return None
 
+class Package():
+    def __init__(self, names, namespace, native=False):
+        self.name = names[0]
+        self.namespace = namespace
+        self.type = Type('package', name=self.name, native=native)
+        self.native = native
+        self.links = []
+        self.imports = []
+        self.scope = {}
+        currentDepth = self.scope
+        for name in names[1:]:
+            currentDepth[name] = {}
+            currentDepth = currentDepth[name]
+
+    def addModule(self, names, module):
+        currentDepth = self.scope
+        for name in names[1:-1]:
+            currentDepth[name] = {}
+            currentDepth = currentDepth[name]
+        currentDepth[names[-1]] = module
+
+    def get(self, names):
+        currentDepth = self.scope
+        input(currentDepth)
+        for name in names[1:-1]:
+            currentDepth[name] = {}
+            currentDepth = currentDepth[name]
+        return currentDepth[names[-1]]
+
+    def __repr__(self):
+        return f'#Package {self.name}'
+
+    @property
+    def index(self):
+        return self.namespace+'__'+self.name
+
 class Module():
     def __init__(self, expr, name, namespace, native=False, scope=None, filepath=''):
         self.expr = expr
@@ -404,6 +440,10 @@ class DotAccess():
             elif currentType.isModule:
                 chain[n-1] = ''
                 chain.append(repr(c))
+            elif currentType.isPackage:
+                chain[n-1] = ''
+                chain.append(repr(c))
+                input('here')
             else:
                 chain.append('->')
                 chain.append(repr(c))

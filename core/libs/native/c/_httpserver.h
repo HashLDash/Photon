@@ -1,7 +1,10 @@
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
 #include <unistd.h>
 #include <arpa/inet.h>
 
-int photon_run_http_server() {
+int photon_run_http_server(char* addr, int port) {
     int server_fd, new_socket;
     struct sockaddr_in address;
     int addrlen = sizeof(address);
@@ -16,7 +19,7 @@ int photon_run_http_server() {
     // Setting up the address structure
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = INADDR_ANY;
-    address.sin_port = htons(PORT);
+    address.sin_port = htons(port);
 
     // Binding the socket to the specified port
     if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0) {
