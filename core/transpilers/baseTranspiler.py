@@ -37,14 +37,18 @@ class CurrentScope():
         for localScope in scope.localScope:
             self.localScope[-1].update(localScope)
 
-    def values(self, namespace=None):
+    def values(self, namespace=None, modules=False):
         vals = []
         for token in self.currentScope.values():
             if token.namespace == namespace:
+                if not modules and (token.type.isModule or token.type.isPackage):
+                    continue
                 vals.append(deepcopy(token))
         for localScope in self.localScope:
             for token in localScope.values():
                 if token.namespace == namespace:
+                    if not modules and (token.type.isModule or token.type.isPackage):
+                        continue
                     vals.append(deepcopy(token))
         return vals
 
@@ -593,6 +597,7 @@ class BaseTranspiler():
                     else:
                         #TODO: maybe the class should have a signature precomputed
                         # instead of doing this here and in processCall
+                        input(module.scope)
                         cOriginal = module.scope.get(c.name.index)
                         signature = []
                         if isinstance(cOriginal, Class):
@@ -865,7 +870,7 @@ class BaseTranspiler():
                 interpreter = Interpreter(
                         filename=filename,
                         lang=self.lang,
-                        module=self.currentNamespace + '__' + '__'.join(names),
+                        module=self.moduleName + '__' + '__'.join(names),
                         platform=self.platform,
                         framework=self.framework,
                         standardLibs=self.standardLibs,
@@ -881,9 +886,9 @@ class BaseTranspiler():
                 self.imports = self.imports.union(interpreter.engine.imports)
                 self.links = self.links.union(interpreter.engine.links)
                 self.sequence = self.sequence + interpreter.engine.sequence
-                self.importedModules = interpreter.engine.importedModules
+                #self.importedModules = interpreter.engine.importedModules
                 if symbols == '*':
-                    symbols = interpreter.engine.currentScope.values(namespace='_'.join(names))
+                    symbols = interpreter.engine.currentScope.values(namespace=self.moduleName + '__' + '__'.join(names))
                 for symbol in symbols:
                     symbol.namespace = self.moduleName + '__' + '__'.join(names)
                     t = scope.get(symbol.index)
@@ -910,6 +915,8 @@ class BaseTranspiler():
         )
         if filename not in self.importedModules:
             self.importedModules[filename] = module
+            print(f'Imported Modules from {self.moduleName}')
+            input(self.importedModules)
             if isPackage:
                 package.addModule(names, module)
         for i in module.imports:
