@@ -10,7 +10,7 @@ class TranspilersTest(unittest.TestCase):
 
     def runFile(self, file, lang='c'):
         out = ''
-        result = Popen(f'photon testFiles/{file} --lang {lang}', shell=True, stdout=PIPE)
+        result = Popen(f'photon testFiles/{file} lang={lang}', shell=True, stdout=PIPE)
         for line in result.stdout:
             out += str(line, encoding='utf8').strip()
             sys.stdout.buffer.write(line)
