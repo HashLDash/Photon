@@ -832,8 +832,6 @@ class BaseTranspiler():
         folder = './'
         native = token['native']
         scope = CurrentScope()
-        moduleExpr = self.preprocess(token['module'])
-        moduleExpr.namespace = ''
         isPackage = False
         if token['module']['args'][0]['token'] == 'dotAccess':
             isPackage = True
@@ -841,8 +839,14 @@ class BaseTranspiler():
             folder = './' + '/'.join(names[:-1]) + '/'
             moduleExpr = Var(value=names[-1], namespace='')
             package = Package(names, namespace=self.currentNamespace)
-            self.currentScope.add(package)
+            try:
+                package = self.currentScope.get(package.index)
+                # already in scope, updating
+            except:
+                self.currentScope.add(package)
         else:
+            moduleExpr = self.preprocess(token['module'])
+            moduleExpr.namespace = ''
             names = [f'{moduleExpr}']
         moduleExpr.namespace = self.currentNamespace
         symbols = token.get('symbols', [])
